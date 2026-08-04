@@ -1,6 +1,17 @@
 # Activar Ghost ERP — deploy Firebase
 
-## IMPORTANTE: qué secret usar
+## Opción sin Blaze (onboarding ya funciona)
+
+Ghost ERP intenta Cloud Functions primero. Si fallan (`internal`), **crea la organización directo en Firestore** (plan Spark gratuito).
+
+Solo necesitas:
+1. Secret `FIREBASE_SERVICE_ACCOUNT` en GitHub (para deploy de reglas + hosting)
+2. El deploy automático publica **reglas Firestore** (no requiere Blaze)
+
+**Onboarding:** https://ghost-contable.web.app/onboarding  
+**Inventario:** sigue requiriendo Blaze + Functions (o próxima actualización client-side).
+
+---
 
 | Lo que tienes | Nombre del secret en GitHub |
 |---------------|----------------------------|

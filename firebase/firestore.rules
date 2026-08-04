@@ -11,23 +11,71 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid));
     }
 
+    function isOrgOwner(orgId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
+        && 'owner' in get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.roles;
+    }
+
+    function userMembershipCount() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.memberships.size()
+        : 0;
+    }
+
+    // Reserva de slug (onboarding sin Cloud Functions)
+    match /organizationSlugs/{slug} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && userMembershipCount() == 0
+        && request.resource.data.organizationId is string
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     match /users/{userId} {
       allow read: if isSignedIn() && request.auth.uid == userId;
-      allow write: if false;
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.memberships.size() == 1
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isSignedIn()
+        && request.auth.uid == userId
+        && resource.data.memberships.size() == 0
+        && request.resource.data.memberships.size() == 1;
+      allow delete: if false;
     }
 
     match /organizations/{organizationId} {
       allow read: if isOrgMember(organizationId);
-      allow create, update, delete: if false;
+      allow create: if isSignedIn()
+        && userMembershipCount() == 0
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.status == 'trial'
+        && request.resource.data.name is string
+        && request.resource.data.slug is string;
+      allow update, delete: if false;
 
       match /members/{memberId} {
         allow read: if isSignedIn() && request.auth.uid == memberId;
-        allow write: if false;
+        allow create: if isSignedIn()
+          && memberId == request.auth.uid
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.roles.size() == 1
+          && request.resource.data.roles[0] == 'owner'
+          && request.resource.data.isActive == true;
+        allow update, delete: if false;
       }
 
       match /branches/{branchId} {
         allow read: if isOrgMember(organizationId);
-        allow write: if false;
+        allow create: if isSignedIn()
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid
+          && (isOrgOwner(organizationId) || userMembershipCount() == 0);
+        allow update, delete: if false;
       }
 
       match /auditLogs/{logId} {

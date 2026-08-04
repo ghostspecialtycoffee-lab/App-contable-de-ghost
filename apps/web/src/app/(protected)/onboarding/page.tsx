@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { getCallableErrorMessage } from "@/lib/auth/errors";
-import { callCreateOrganization } from "@/lib/firebase/functions";
+import { createOrganization } from "@/lib/organizations/create-organization";
 import { useAuth } from "@/providers/auth-provider";
 import { slugifyOrganizationName } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
@@ -28,7 +28,7 @@ export default function OnboardingPage() {
     setLoading(true);
 
     try {
-      await callCreateOrganization({
+      await createOrganization({
         name: name.trim(),
         slug: effectiveSlug.trim(),
         branchName: branchName.trim(),

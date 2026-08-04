@@ -30,6 +30,13 @@
 **Decisión:** Mappers y paths Firestore en infrastructure; domain sin dependencias Firebase.  
 **Consecuencias:** Domain testeable sin emuladores; infrastructure crece por módulo.
 
+## ADR-006: Onboarding directo a Firestore (plan Spark)
+
+**Estado:** Aceptada  
+**Contexto:** Cloud Functions requiere plan Blaze; usuarios en Spark no pueden completar onboarding.  
+**Decisión:** Onboarding con escritura directa a Firestore + reglas estrictas; fallback automático si Functions no está disponible.  
+**Consecuencias:** Inventario sigue vía Functions (Blaze); onboarding funciona sin Blaze.
+
 ## ADR-005: Balances de inventario desnormalizados
 
 **Estado:** Aceptada  
