@@ -13,6 +13,7 @@ import { createInventoryItem, createWarehouse } from "@/lib/inventory/inventory"
 import {
   confirmPurchaseInvoice,
   createPurchaseInvoice,
+  updatePurchaseInvoice,
 } from "@/lib/purchases/purchases";
 import { useActiveMembership } from "@/providers/auth-provider";
 import {
@@ -27,6 +28,7 @@ import {
   type BaseUnit,
   type CoTaxCategory,
   type InventoryItem,
+  type PurchaseInvoice,
   type PurchaseInvoiceLineInput,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
@@ -58,6 +60,8 @@ export default function PurchasesPage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [creatingWarehouse, setCreatingWarehouse] = useState(false);
   const [creatingItemIndex, setCreatingItemIndex] = useState<number | null>(null);
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const branchId = membership?.branchIds[0] ?? "";
   const selectedWarehouseId = warehouseId || warehouses[0]?.id || "";
@@ -67,6 +71,53 @@ export default function PurchasesPage() {
     const built = buildPurchaseInvoiceLines(lines.filter((line) => line.description.trim()));
     return summarizePurchaseInvoice(built);
   }, [lines]);
+
+  function removeLine(index: number) {
+    setLines((current) =>
+      current.length <= 1 ? current : current.filter((_, lineIndex) => lineIndex !== index),
+    );
+  }
+
+  function resetForm() {
+    setEditingInvoiceId(null);
+    setSupplierName("");
+    setInvoiceNumber("");
+    setInvoiceDate(todayIsoDate());
+    setLines([emptyLine()]);
+    setAttachmentDataUrl("");
+    setAttachmentName("");
+    setSubmitError(null);
+    setSaveMessage(null);
+  }
+
+  function loadInvoiceForEdit(invoice: PurchaseInvoice) {
+    if (invoice.status !== "draft") {
+      return;
+    }
+
+    setEditingInvoiceId(invoice.id);
+    setSupplierName(invoice.supplierName);
+    setInvoiceNumber(invoice.invoiceNumber);
+    setInvoiceDate(invoice.invoiceDate);
+    setWarehouseId(invoice.warehouseId ?? "");
+    setLines(
+      invoice.lines.length > 0
+        ? invoice.lines.map((line) => ({
+            inventoryItemId: line.inventoryItemId,
+            description: line.description,
+            quantity: line.quantity,
+            unit: line.unit,
+            unitPriceNet: line.unitPriceNet,
+            taxCategory: line.taxCategory,
+          }))
+        : [emptyLine()],
+    );
+    setAttachmentDataUrl(invoice.attachmentDataUrl ?? "");
+    setAttachmentName(invoice.attachmentName ?? "");
+    setSubmitError(null);
+    setSaveMessage(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   function updateLine(index: number, patch: Partial<PurchaseInvoiceLineInput>) {
     setLines((current) =>
@@ -198,6 +249,7 @@ export default function PurchasesPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitError(null);
+    setSaveMessage(null);
     setSubmitting(true);
 
     try {
@@ -205,7 +257,7 @@ export default function PurchasesPage() {
         throw new Error("Crea una bodega antes de registrar la compra.");
       }
 
-      await createPurchaseInvoice({
+      const payload = {
         supplierName,
         invoiceNumber,
         invoiceDate,
@@ -213,12 +265,16 @@ export default function PurchasesPage() {
         lines: lines.filter((line) => line.description.trim()),
         attachmentDataUrl: attachmentDataUrl || undefined,
         attachmentName: attachmentName || undefined,
-      });
-      setSupplierName("");
-      setInvoiceNumber("");
-      setLines([emptyLine()]);
-      setAttachmentDataUrl("");
-      setAttachmentName("");
+      };
+
+      if (editingInvoiceId) {
+        await updatePurchaseInvoice({ invoiceId: editingInvoiceId, ...payload });
+        setSaveMessage("Factura actualizada. Puedes seguir agregando productos antes de confirmar.");
+      } else {
+        await createPurchaseInvoice(payload);
+        setSaveMessage("Borrador guardado. Puedes editarlo para agregar más productos.");
+        resetForm();
+      }
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -254,8 +310,9 @@ export default function PurchasesPage() {
         </p>
         <h1 className="text-2xl font-semibold">Compras</h1>
         <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-          Registra facturas de compra con precio, cantidad, unidad e IVA Colombia. Al confirmar,
-          entra inventario con costo promedio para las{" "}
+          Una factura puede incluir <strong>varios productos</strong> (café, leche, vasos, etc.).
+          Usa <strong>+ Agregar producto</strong> por cada ítem de la factura. Al confirmar, cada
+          producto actualiza su costo en inventario para las{" "}
           <Link href="/costing" className="underline">
             fichas de costeo
           </Link>
@@ -287,7 +344,12 @@ export default function PurchasesPage() {
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
-        <Card title="Nueva factura de compra">
+        <Card title={editingInvoiceId ? "Editar borrador" : "Nueva factura de compra"}>
+          {editingInvoiceId ? (
+            <p className="mb-3 text-sm text-[var(--ghost-brand-500)]">
+              Editando borrador · agrega o quita productos y guarda de nuevo.
+            </p>
+          ) : null}
           <form className="space-y-3" onSubmit={handleSubmit}>
             <label className="block space-y-1">
               <span className="text-sm font-medium">Proveedor</span>
@@ -338,13 +400,13 @@ export default function PurchasesPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium">Líneas</span>
+                <span className="text-sm font-medium">Productos de la factura</span>
                 <Button
                   type="button"
                   variant="secondary"
                   onClick={() => setLines((current) => [...current, emptyLine()])}
                 >
-                  + Línea
+                  + Agregar producto
                 </Button>
               </div>
               {lines.map((line, index) => (
@@ -352,6 +414,20 @@ export default function PurchasesPage() {
                   key={index}
                   className="space-y-2 rounded-lg border border-[var(--ghost-border)] p-3"
                 >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium uppercase text-[var(--ghost-text-muted)]">
+                      Producto {index + 1}
+                    </span>
+                    {lines.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => removeLine(index)}
+                        className="text-xs text-[var(--ghost-danger)] underline"
+                      >
+                        Quitar
+                      </button>
+                    ) : null}
+                  </div>
                   <select
                     value={line.inventoryItemId ?? ""}
                     onChange={(event) => linkInventoryItem(index, event.target.value)}
@@ -484,9 +560,23 @@ export default function PurchasesPage() {
             {submitError ? (
               <p className="text-sm text-[var(--ghost-danger)]">{submitError}</p>
             ) : null}
-            <Button type="submit" fullWidth disabled={submitting || !canSubmitPurchase}>
-              {submitting ? "Guardando..." : "Guardar borrador"}
-            </Button>
+            {saveMessage ? (
+              <p className="text-sm text-[var(--ghost-brand-500)]">{saveMessage}</p>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" fullWidth disabled={submitting || !canSubmitPurchase}>
+                {submitting
+                  ? "Guardando..."
+                  : editingInvoiceId
+                    ? "Guardar cambios"
+                    : "Guardar borrador"}
+              </Button>
+              {editingInvoiceId ? (
+                <Button type="button" variant="secondary" fullWidth onClick={resetForm}>
+                  Cancelar edición
+                </Button>
+              ) : null}
+            </div>
           </form>
         </Card>
 
@@ -512,8 +602,19 @@ export default function PurchasesPage() {
                         {invoice.supplierName} · {invoice.invoiceNumber}
                       </p>
                       <p className="text-sm text-[var(--ghost-text-muted)]">
-                        {formatDate(invoice.invoiceDate)} · {invoice.lines.length} líneas
+                        {formatDate(invoice.invoiceDate)} · {invoice.lines.length} producto(s)
                       </p>
+                      <ul className="mt-2 space-y-1 text-sm">
+                        {invoice.lines.map((line, lineIndex) => (
+                          <li key={lineIndex} className="text-[var(--ghost-text-muted)]">
+                            {line.description}
+                            <span className="ml-1">
+                              · {line.quantity} {BASE_UNIT_LABELS[line.unit]} ·{" "}
+                              {formatMoney(line.lineTotal)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                     <div className="text-right">
                       <p className="font-medium">{formatMoney(invoice.total)}</p>
@@ -523,16 +624,25 @@ export default function PurchasesPage() {
                     </div>
                   </div>
                   {invoice.status === "draft" ? (
-                    <Button
-                      className="mt-3"
-                      fullWidth
-                      disabled={confirmingId === invoice.id}
-                      onClick={() => handleConfirm(invoice.id)}
-                    >
-                      {confirmingId === invoice.id
-                        ? "Confirmando..."
-                        : "Confirmar y entrar inventario"}
-                    </Button>
+                    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        fullWidth
+                        onClick={() => loadInvoiceForEdit(invoice)}
+                      >
+                        Editar productos
+                      </Button>
+                      <Button
+                        fullWidth
+                        disabled={confirmingId === invoice.id}
+                        onClick={() => handleConfirm(invoice.id)}
+                      >
+                        {confirmingId === invoice.id
+                          ? "Confirmando..."
+                          : "Confirmar y entrar inventario"}
+                      </Button>
+                    </div>
                   ) : null}
                   {invoice.attachmentDataUrl ? (
                     <a
