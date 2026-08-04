@@ -31,8 +31,11 @@ export interface KitchenOrder extends AuditMetadata {
   id: EntityId;
   organizationId: EntityId;
   branchId: EntityId;
-  saleId: EntityId;
-  saleNumber: string;
+  saleId?: EntityId;
+  saleNumber?: string;
+  tableSessionId?: EntityId;
+  tableNumber?: number;
+  tableLabel?: string;
   station: KitchenStation;
   status: KitchenOrderStatus;
   lines: KitchenOrderLine[];

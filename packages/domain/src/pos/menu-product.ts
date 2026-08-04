@@ -42,6 +42,8 @@ export interface MenuProduct extends AuditMetadata {
   description?: string;
   saleTaxCategory?: CoTaxCategory;
   recipeCost?: number;
+  imageDataUrl?: string;
+  imageMimeType?: string;
 }
 
 export interface CreateMenuProductInput {

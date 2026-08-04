@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
-import { createMenuProduct, seedDefaultMenu } from "@/lib/pos/pos";
+import { createMenuProduct, seedDefaultMenu, updateMenuProductImage } from "@/lib/pos/pos";
+import { compressImageFile } from "@/lib/image/compress-image";
 import { saveRecipe } from "@/lib/recipes/recipes";
 import {
   BASE_UNITS,
@@ -51,6 +52,12 @@ export default function PosMenuPage() {
   const [submitting, setSubmitting] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [seedMessage, setSeedMessage] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoPayload, setPhotoPayload] = useState<{
+    dataUrl: string;
+    mimeType: string;
+  } | null>(null);
 
   const unitCosts = useMemo(() => {
     const costs: Record<string, number> = {};
@@ -154,9 +161,19 @@ export default function PosMenuPage() {
         });
       }
 
+      if (photoPayload) {
+        await updateMenuProductImage({
+          productId: result.productId,
+          imageDataUrl: photoPayload.dataUrl,
+          imageMimeType: photoPayload.mimeType,
+        });
+      }
+
       setName("");
       setPrice("");
       setRecipeLines([emptyRecipeLine()]);
+      setPhotoPreview(null);
+      setPhotoPayload(null);
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -287,6 +304,47 @@ export default function PosMenuPage() {
                 ))}
               </select>
             </label>
+
+            <div className="rounded-lg border border-dashed border-[var(--ghost-border)] p-3">
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (!file) {
+                    return;
+                  }
+                  try {
+                    const compressed = await compressImageFile(file);
+                    setPhotoPreview(compressed.dataUrl);
+                    setPhotoPayload({
+                      dataUrl: compressed.dataUrl,
+                      mimeType: compressed.mimeType,
+                    });
+                  } catch (cause) {
+                    setSubmitError(getCallableErrorMessage(cause));
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                fullWidth
+                onClick={() => photoInputRef.current?.click()}
+              >
+                Foto del producto
+              </Button>
+              {photoPreview ? (
+                <img
+                  src={photoPreview}
+                  alt="Vista previa"
+                  className="mt-2 h-24 w-full rounded-lg object-cover"
+                />
+              ) : null}
+            </div>
 
             <div className="space-y-2 border-t border-[var(--ghost-border)] pt-3">
               <div className="flex items-center justify-between gap-2">

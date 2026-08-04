@@ -51,6 +51,10 @@ export interface Sale extends AuditMetadata {
   notes?: string;
   soldAt?: string;
   soldOn?: string;
+  tableId?: EntityId;
+  tableNumber?: number;
+  tableLabel?: string;
+  tableSessionId?: EntityId;
 }
 
 export interface CreateSaleLineInput {

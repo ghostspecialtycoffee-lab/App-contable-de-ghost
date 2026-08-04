@@ -19,6 +19,7 @@ const publicNavItems = [
 const appNavItems = [
   { href: "/dashboard", label: "Panel" },
   { href: "/pos", label: "Mostrador" },
+  { href: "/pos/tables", label: "Mesas" },
   { href: "/kds", label: "Comandas" },
   { href: "/billing", label: "Registros" },
   { href: "/purchases", label: "Compras" },
@@ -32,6 +33,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { primaryLogo } = useBrandAssets();
 
   const navItems = firebaseUser ? appNavItems : publicNavItems;
+  const isGuestTableRoute = pathname.startsWith("/mesa");
+
+  if (isGuestTableRoute) {
+    return (
+      <div className="min-h-screen bg-[var(--ghost-surface-0)]">
+        <header className="border-b border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] px-4 py-3 text-center">
+          <p className="text-sm font-semibold">Ghost Contable · Menú</p>
+        </header>
+        <main>{children}</main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--ghost-surface-0)]">

@@ -52,6 +52,9 @@ export function SaleReceipt({ sale, showPrint = true }: SaleReceiptProps) {
           {sale.customerName ? (
             <p className="mt-1 text-xs">Referencia: {sale.customerName}</p>
           ) : null}
+          {sale.tableNumber ? (
+            <p className="mt-1 text-xs font-medium">Mesa {sale.tableNumber}</p>
+          ) : null}
         </div>
 
         <ul className="space-y-2 py-3">

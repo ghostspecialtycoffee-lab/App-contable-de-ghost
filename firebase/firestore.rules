@@ -33,6 +33,29 @@ service cloud.firestore {
       return isOrgMember(orgId) || hasActiveMembershipInProfile(orgId);
     }
 
+    function guestTokenMatchesTable(orgId, tableId, token) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)/diningTables/$(tableId)).data.qrToken == token;
+    }
+
+    function validGuestSessionCreate(orgId) {
+      return request.resource.data.organizationId == orgId
+        && request.resource.data.status == 'open'
+        && request.resource.data.guestToken is string
+        && request.resource.data.tableId is string
+        && guestTokenMatchesTable(orgId, request.resource.data.tableId, request.resource.data.guestToken);
+    }
+
+    function validGuestSessionUpdate(orgId) {
+      return resource.data.organizationId == orgId
+        && request.resource.data.guestToken == resource.data.guestToken
+        && request.resource.data.tableId == resource.data.tableId
+        && guestTokenMatchesTable(orgId, resource.data.tableId, resource.data.guestToken)
+        && (
+          (resource.data.status == 'open' && request.resource.data.status == 'open')
+          || (resource.data.status == 'open' && request.resource.data.status == 'requested_bill')
+        );
+    }
+
     function isOrgOwner(orgId) {
       return isSignedIn()
         && exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
@@ -136,13 +159,22 @@ service cloud.firestore {
       }
 
       match /menuProducts/{productId} {
-        allow read: if canAccessOrg(organizationId);
+        allow read: if canAccessOrg(organizationId)
+          || resource.data.status == 'active';
         allow create: if canAccessOrg(organizationId)
           && request.resource.data.organizationId == organizationId
           && request.resource.data.createdBy == request.auth.uid
-          && request.resource.data.price >= 0;
+          && request.resource.data.price >= 0
+          && (
+            !('imageDataUrl' in request.resource.data)
+            || request.resource.data.imageDataUrl.size() <= 500000
+          );
         allow update: if canAccessOrg(organizationId)
-          && resource.data.organizationId == organizationId;
+          && resource.data.organizationId == organizationId
+          && (
+            !('imageDataUrl' in request.resource.data)
+            || request.resource.data.imageDataUrl.size() <= 500000
+          );
         allow delete: if false;
       }
 
@@ -197,6 +229,31 @@ service cloud.firestore {
         allow update: if canAccessOrg(organizationId)
           && resource.data.organizationId == organizationId
           && resource.data.status == 'draft';
+        allow delete: if false;
+      }
+
+      match /diningTables/{tableId} {
+        allow read: if canAccessOrg(organizationId)
+          || resource.data.status != 'closed';
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.qrToken is string;
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
+      match /tableSessions/{sessionId} {
+        allow read: if canAccessOrg(organizationId)
+          || (resource.data.status == 'open' && resource.data.guestToken is string);
+        allow create: if (canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid)
+          || validGuestSessionCreate(organizationId);
+        allow update: if (canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId)
+          || validGuestSessionUpdate(organizationId);
         allow delete: if false;
       }
     }

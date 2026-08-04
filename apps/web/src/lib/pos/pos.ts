@@ -3,6 +3,7 @@ import {
   createSaleClient,
   seedDefaultMenuClient,
   updateKitchenOrderStatusClient,
+  updateMenuProductImageClient,
 } from "./pos-client";
 
 export type { PaymentMethod } from "@ghost/domain";
@@ -11,6 +12,12 @@ export async function createMenuProduct(
   input: Parameters<typeof createMenuProductClient>[0],
 ) {
   return createMenuProductClient(input);
+}
+
+export async function updateMenuProductImage(
+  input: Parameters<typeof updateMenuProductImageClient>[0],
+) {
+  return updateMenuProductImageClient(input);
 }
 
 export async function seedDefaultMenu() {

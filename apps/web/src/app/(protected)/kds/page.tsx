@@ -85,8 +85,8 @@ export default function KdsPage() {
           {orders.map((order) => (
             <Card
               key={order.id}
-              title={`Ticket #${order.ticketNumber} · ${order.saleNumber}`}
-              description={`${KITCHEN_STATION_LABELS[order.station]} · ${KITCHEN_ORDER_STATUS_LABELS[order.status]}`}
+              title={`${order.tableNumber ? `Mesa ${order.tableNumber} · ` : ""}Ticket #${order.ticketNumber}`}
+              description={`${KITCHEN_STATION_LABELS[order.station]} · ${KITCHEN_ORDER_STATUS_LABELS[order.status]}${order.saleNumber ? ` · ${order.saleNumber}` : ""}`}
             >
               <ul className="space-y-2 text-sm">
                 {order.lines.map((line, index) => (
