@@ -1,0 +1,21 @@
+{
+  "name": "ghost-erp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Ghost ERP — sistema POS y contable para negocios gastronómicos",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.2"
+  },
+  "packageManager": "pnpm@10.6.5",
+  "engines": {
+    "node": ">=20"
+  }
+}

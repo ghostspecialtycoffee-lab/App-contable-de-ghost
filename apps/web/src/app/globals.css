@@ -1,0 +1,62 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --ghost-brand-500: #2b579f;
+  --ghost-brand-600: #234681;
+  --ghost-accent-500: #d4a574;
+  --ghost-surface-0: #f8fafc;
+  --ghost-surface-1: #ffffff;
+  --ghost-surface-2: #f1f5f9;
+  --ghost-surface-3: #e2e8f0;
+  --ghost-border: #cbd5e1;
+  --ghost-text: #0f172a;
+  --ghost-text-muted: #64748b;
+  --ghost-danger: #dc2626;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --ghost-brand-500: #6a8abf;
+  --ghost-brand-600: #a9bddc;
+  --ghost-accent-500: #d4a574;
+  --ghost-surface-0: #0b1220;
+  --ghost-surface-1: #111827;
+  --ghost-surface-2: #1f2937;
+  --ghost-surface-3: #374151;
+  --ghost-border: #334155;
+  --ghost-text: #f8fafc;
+  --ghost-text-muted: #94a3b8;
+  --ghost-danger: #f87171;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--ghost-surface-0);
+  color: var(--ghost-text);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

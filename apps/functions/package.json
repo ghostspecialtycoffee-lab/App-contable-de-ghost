@@ -1,0 +1,24 @@
+{
+  "name": "@ghost/functions",
+  "version": "0.1.0",
+  "private": true,
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf lib"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "@ghost/domain": "workspace:*",
+    "@ghost/shared": "workspace:*",
+    "firebase-admin": "^13.2.0",
+    "firebase-functions": "^6.3.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  }
+}
