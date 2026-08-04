@@ -6,24 +6,39 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userMembershipCount() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? userDoc().data.memberships.size()
+        : 0;
+    }
+
+    function hasActiveMembershipInProfile(orgId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userMembershipCount() > 0
+        && userDoc().data.memberships[0].organizationId == orgId
+        && userDoc().data.memberships[0].isActive == true;
+    }
+
     function isOrgMember(orgId) {
       return isSignedIn()
         && exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid));
     }
 
+    function canAccessOrg(orgId) {
+      return isOrgMember(orgId) || hasActiveMembershipInProfile(orgId);
+    }
+
     function isOrgOwner(orgId) {
       return isSignedIn()
         && exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
-        && 'owner' in get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.roles;
+        && get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.roles.hasAny(['owner']);
     }
 
-    function userMembershipCount() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.memberships.size()
-        : 0;
-    }
-
-    // Reserva de slug (onboarding sin Cloud Functions)
     match /organizationSlugs/{slug} {
       allow read: if isSignedIn();
       allow create: if isSignedIn()
@@ -47,7 +62,7 @@ service cloud.firestore {
     }
 
     match /organizations/{organizationId} {
-      allow read: if isOrgMember(organizationId);
+      allow read: if canAccessOrg(organizationId);
       allow create: if isSignedIn()
         && userMembershipCount() == 0
         && request.resource.data.createdBy == request.auth.uid
@@ -65,12 +80,16 @@ service cloud.firestore {
           && request.resource.data.organizationId == organizationId
           && request.resource.data.roles.size() == 1
           && request.resource.data.roles[0] == 'owner'
-          && request.resource.data.isActive == true;
+          && request.resource.data.isActive == true
+          && (
+            userMembershipCount() == 0
+            || hasActiveMembershipInProfile(organizationId)
+          );
         allow update, delete: if false;
       }
 
       match /branches/{branchId} {
-        allow read: if isOrgMember(organizationId);
+        allow read: if canAccessOrg(organizationId);
         allow create: if isSignedIn()
           && request.resource.data.organizationId == organizationId
           && request.resource.data.createdBy == request.auth.uid
@@ -79,28 +98,41 @@ service cloud.firestore {
       }
 
       match /auditLogs/{logId} {
-        allow read: if isOrgMember(organizationId);
+        allow read: if canAccessOrg(organizationId);
         allow create, update, delete: if false;
       }
 
       match /inventoryItems/{itemId} {
-        allow read: if isOrgMember(organizationId);
-        allow write: if false;
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
+        allow delete: if false;
       }
 
       match /warehouses/{warehouseId} {
-        allow read: if isOrgMember(organizationId);
-        allow write: if false;
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update, delete: if false;
       }
 
       match /inventoryMovements/{movementId} {
-        allow read: if isOrgMember(organizationId);
-        allow write: if false;
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.actorUserId == request.auth.uid;
+        allow update, delete: if false;
       }
 
       match /inventoryBalances/{balanceId} {
-        allow read: if isOrgMember(organizationId);
-        allow write: if false;
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId;
+        allow delete: if false;
       }
     }
   }
