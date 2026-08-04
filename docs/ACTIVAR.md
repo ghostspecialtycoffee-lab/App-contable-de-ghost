@@ -53,7 +53,23 @@ Copia el token → secret **`FIREBASE_TOKEN`** (solo el token, no JSON).
 
 ---
 
-## Seguridad
+## Permisos IAM (si falla Storage)
+
+En Google Cloud IAM, al service account  
+`firebase-adminsdk-fbsvc@ghost-contable.iam.gserviceaccount.com`  
+agrega estos roles:
+
+https://console.cloud.google.com/iam-admin/iam?project=ghost-contable
+
+| Rol | Para qué |
+|-----|----------|
+| **Firebase Admin** | Deploy general |
+| **Cloud Functions Admin** | Functions |
+| **Service Usage Consumer** | Activar APIs |
+
+La app web puede publicarse aunque Storage falle; el deploy lo intenta al final.
+
+---
 
 Si compartiste la clave privada en chat o capturas:
 
