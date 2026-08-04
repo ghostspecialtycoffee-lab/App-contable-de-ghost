@@ -18,6 +18,7 @@ Sistema ERP y POS para cafeterías, restaurantes, panaderías y negocios gastron
 | [CHANGELOG.md](CHANGELOG.md) | Historial de cambios |
 | [FIREBASE_SETUP.md](FIREBASE_SETUP.md) | **Configurar Google/Firebase (NO Code.gs)** |
 | [docs/ACCESO.md](docs/ACCESO.md) | **URLs PC + celular + pruebas** |
+| [docs/DEPLOY_PASO_A_PASO.md](docs/DEPLOY_PASO_A_PASO.md) | **Deploy a ghost-contable.web.app** |
 
 Documentación por módulo: [docs/](docs/) (AUTH, INVENTARIO, ADRs).
 
