@@ -7,9 +7,9 @@ import { useAuth } from "@/providers/auth-provider";
 
 const tabs = [
   { href: "/dashboard", label: "Inicio" },
-  { href: "/inventory", label: "Inventario" },
-  { href: "/inventory/items", label: "Ítems" },
-  { href: "/inventory/movements", label: "Movim." },
+  { href: "/pos", label: "POS" },
+  { href: "/kds", label: "Comandas" },
+  { href: "/billing", label: "Ventas" },
 ];
 
 const hiddenPrefixes = ["/login", "/register", "/onboarding"];
@@ -36,10 +36,7 @@ export function MobileBottomNav() {
           const active =
             tab.href === "/dashboard"
               ? pathname === "/dashboard"
-              : tab.href === "/inventory"
-                ? pathname === "/inventory" ||
-                  pathname.startsWith("/inventory/warehouses")
-                : pathname.startsWith(tab.href);
+              : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
 
           return (
             <li key={tab.href}>

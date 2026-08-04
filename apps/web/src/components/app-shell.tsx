@@ -16,6 +16,9 @@ const publicNavItems = [
 
 const appNavItems = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/pos", label: "POS" },
+  { href: "/kds", label: "Comandas" },
+  { href: "/billing", label: "Ventas" },
   { href: "/inventory", label: "Inventario" },
 ];
 
