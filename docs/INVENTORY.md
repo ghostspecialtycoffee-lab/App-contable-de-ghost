@@ -1,5 +1,7 @@
 # Inventario
 
+> Esquema completo: [DATABASE.md](../DATABASE.md) · Estándares: [CODING_STANDARDS.md](../CODING_STANDARDS.md)
+
 ## Modelo de datos
 
 ```

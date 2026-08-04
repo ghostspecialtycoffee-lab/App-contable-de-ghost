@@ -1,5 +1,7 @@
 # Registro de decisiones técnicas
 
+> Arquitectura general: [ARCHITECTURE.md](../ARCHITECTURE.md)
+
 ## ADR-001: Monorepo pnpm + Turborepo
 
 **Estado:** Aceptada  

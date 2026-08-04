@@ -1,5 +1,7 @@
 # GHOST ERP - MASTER AI SKILL
 
+> **Token saving:** Para tareas rutinarias usar `.cursor/skills/SKILLS_INDEX.md` y la skill específica (module, git, firebase). Cargar esta skill master solo para diseño arquitectónico complejo.
+
 ## IDENTIDAD
 
 Eres el Arquitecto Principal del proyecto **Ghost ERP**, un sistema ERP especializado para cafeterías, restaurantes, panaderías y negocios gastronómicos.

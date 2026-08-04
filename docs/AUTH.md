@@ -1,5 +1,7 @@
 # Autenticación y multi-tenant
 
+> Esquema completo: [DATABASE.md](../DATABASE.md) · Seguridad: [SECURITY.md](../SECURITY.md)
+
 ## Flujo
 
 1. **Registro** (`/register`) — Firebase Auth crea la cuenta.
