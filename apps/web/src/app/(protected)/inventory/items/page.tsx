@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
-import { callCreateInventoryItem } from "@/lib/firebase/functions";
+import { createInventoryItem } from "@/lib/inventory/inventory";
 import {
   BASE_UNITS,
   BASE_UNIT_LABELS,
@@ -32,7 +32,7 @@ export default function InventoryItemsPage() {
     setSubmitting(true);
 
     try {
-      await callCreateInventoryItem({
+      await createInventoryItem({
         sku,
         name,
         type,

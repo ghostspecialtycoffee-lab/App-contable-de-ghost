@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useWarehouses } from "@/hooks/use-warehouses";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
-import { callRegisterInventoryMovement } from "@/lib/firebase/functions";
+import { registerInventoryMovement } from "@/lib/inventory/inventory";
 import { useActiveMembership } from "@/providers/auth-provider";
 import { INVENTORY_MOVEMENT_LABELS, INVENTORY_MOVEMENT_TYPES } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
@@ -48,7 +48,7 @@ export default function MovementsPage() {
     setSubmitting(true);
 
     try {
-      const response = await callRegisterInventoryMovement({
+      const response = await registerInventoryMovement({
         branchId,
         warehouseId: effectiveWarehouseId,
         itemId,

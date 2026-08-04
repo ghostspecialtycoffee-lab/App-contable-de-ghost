@@ -29,6 +29,31 @@ export function getAuthErrorMessage(error: unknown): string {
   return "Ocurrió un error inesperado.";
 }
 
+const FIRESTORE_ERROR_MESSAGES: Record<string, string> = {
+  "permission-denied":
+    "Permisos insuficientes en Firestore. Recarga la página; si persiste, contacta al administrador.",
+  unavailable: "Firestore no está disponible. Intenta en unos minutos.",
+};
+
+export function getFirestoreErrorMessage(error: unknown): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    typeof error.code === "string"
+  ) {
+    const code = error.code.replace("firestore/", "");
+    return (
+      FIRESTORE_ERROR_MESSAGES[code] ??
+      ("message" in error && typeof error.message === "string" && error.message
+        ? error.message
+        : "No fue posible acceder a los datos.")
+    );
+  }
+
+  return getAuthErrorMessage(error);
+}
+
 export function getCallableErrorMessage(error: unknown): string {
   if (
     error &&
@@ -36,6 +61,10 @@ export function getCallableErrorMessage(error: unknown): string {
     "code" in error &&
     typeof error.code === "string"
   ) {
+    if (error.code.startsWith("firestore/")) {
+      return getFirestoreErrorMessage(error);
+    }
+
     const code = error.code.replace("functions/", "");
     const messages: Record<string, string> = {
       unauthenticated: "Debes iniciar sesión.",

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 
 import { getFirestoreDb } from "@/lib/firebase/client";
+import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { useActiveMembership } from "@/providers/auth-provider";
 import type { InventoryItem } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -60,7 +61,7 @@ export function useInventoryItems() {
         setError(null);
       },
       (cause) => {
-        setError(cause.message);
+        setError(getFirestoreErrorMessage(cause));
         setLoading(false);
       },
     );

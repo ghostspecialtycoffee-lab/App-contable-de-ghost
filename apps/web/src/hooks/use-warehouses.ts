@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 
 import { getFirestoreDb } from "@/lib/firebase/client";
+import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { useActiveMembership } from "@/providers/auth-provider";
 import type { Warehouse } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -54,7 +55,7 @@ export function useWarehouses() {
         setError(null);
       },
       (cause) => {
-        setError(cause.message);
+        setError(getFirestoreErrorMessage(cause));
         setLoading(false);
       },
     );

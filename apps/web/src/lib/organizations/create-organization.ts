@@ -1,3 +1,4 @@
+import { isFunctionsUnavailable } from "@/lib/firebase/is-functions-unavailable";
 import { callCreateOrganization } from "@/lib/firebase/functions";
 
 import {
@@ -5,19 +6,6 @@ import {
   type CreateOrganizationInput,
   type CreateOrganizationResult,
 } from "./create-organization-client";
-
-function isFunctionsUnavailable(error: unknown): boolean {
-  if (!error || typeof error !== "object" || !("code" in error)) {
-    return false;
-  }
-
-  const code =
-    typeof error.code === "string"
-      ? error.code.replace("functions/", "")
-      : "";
-
-  return code === "internal" || code === "not-found" || code === "unavailable";
-}
 
 /**
  * Crea organización: intenta Cloud Function; si no hay Blaze/backend, usa Firestore directo (Spark).

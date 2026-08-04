@@ -15,12 +15,11 @@ import {
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb, isFirebaseConfigured } from "@/lib/firebase/client";
 import { firestorePaths, mapOrganization, mapUserProfile } from "@ghost/infrastructure";
 import type { FirestoreOrganization, FirestoreUserProfile } from "@ghost/infrastructure";
-import { getDoc } from "firebase/firestore";
 
 interface AuthContextValue {
   firebaseUser: User | null;
@@ -33,6 +32,41 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+async function ensureMemberDocument(
+  userId: string,
+  userProfile: UserProfile,
+): Promise<void> {
+  const activeMembership = userProfile.memberships.find(
+    (membership) => membership.isActive,
+  );
+
+  if (!activeMembership) {
+    return;
+  }
+
+  const memberRef = doc(
+    getFirestoreDb(),
+    firestorePaths.organizationMember(
+      activeMembership.organizationId,
+      userId,
+    ),
+  );
+  const memberSnap = await getDoc(memberRef);
+
+  if (memberSnap.exists()) {
+    return;
+  }
+
+  await setDoc(memberRef, {
+    userId,
+    organizationId: activeMembership.organizationId,
+    roles: activeMembership.roles,
+    branchIds: activeMembership.branchIds,
+    isActive: true,
+    joinedAt: serverTimestamp(),
+  });
+}
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
@@ -120,7 +154,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
           snapshot.data() as FirestoreUserProfile,
         );
         setProfile(mappedProfile);
-        void loadOrganization(mappedProfile).finally(() => setLoading(false));
+        void ensureMemberDocument(snapshot.id, mappedProfile)
+          .catch(() => undefined)
+          .then(() => loadOrganization(mappedProfile))
+          .finally(() => setLoading(false));
       },
       () => {
         setProfile(null);

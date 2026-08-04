@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { useWarehouses } from "@/hooks/use-warehouses";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
-import { callCreateWarehouse } from "@/lib/firebase/functions";
+import { createWarehouse } from "@/lib/inventory/inventory";
 import { useActiveMembership } from "@/providers/auth-provider";
 import { Button, Card } from "@ghost/ui";
 
@@ -30,7 +30,7 @@ export default function WarehousesPage() {
     setSubmitting(true);
 
     try {
-      await callCreateWarehouse({
+      await createWarehouse({
         branchId,
         name: name.trim(),
         code: code.trim(),
