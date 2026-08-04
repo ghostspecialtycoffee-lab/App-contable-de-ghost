@@ -16,6 +16,7 @@ const publicNavItems = [
 const appNavItems = [
   { href: "/", label: "Inicio" },
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/inventory", label: "Inventario" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

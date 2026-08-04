@@ -3,8 +3,30 @@
     {
       "collectionGroup": "organizations",
       "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "slug", "order": "ASCENDING" }]
+    },
+    {
+      "collectionGroup": "inventoryItems",
+      "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "slug", "order": "ASCENDING" }
+        { "fieldPath": "organizationId", "order": "ASCENDING" },
+        { "fieldPath": "sku", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "inventoryItems",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "inventoryMovements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "itemId", "order": "ASCENDING" },
+        { "fieldPath": "occurredAt", "order": "DESCENDING" }
       ]
     },
     {

@@ -1,17 +1,11 @@
 import { getFirebaseApp } from "@/lib/firebase/client";
-import { getFunctions, httpsCallable, connectFunctionsEmulator } from "firebase/functions";
+import {
+  connectFunctionsEmulator,
+  getFunctions,
+  httpsCallable,
+} from "firebase/functions";
 
-interface CreateOrganizationRequest {
-  name: string;
-  slug?: string;
-  branchName?: string;
-}
-
-interface CreateOrganizationResponse {
-  organizationId: string;
-  branchId: string;
-  slug: string;
-}
+import type { BaseUnit, InventoryItemType } from "@ghost/domain";
 
 let functionsConnectedToEmulator = false;
 
@@ -36,6 +30,83 @@ export async function callCreateOrganization(
     CreateOrganizationRequest,
     CreateOrganizationResponse
   >(getFirebaseFunctions(), "createOrganization");
+
+  const result = await callable(input);
+  return result.data;
+}
+
+interface CreateOrganizationRequest {
+  name: string;
+  slug?: string;
+  branchName?: string;
+}
+
+interface CreateOrganizationResponse {
+  organizationId: string;
+  branchId: string;
+  slug: string;
+}
+
+interface CreateInventoryItemRequest {
+  sku: string;
+  name: string;
+  type: InventoryItemType;
+  baseUnit: BaseUnit;
+  category?: string;
+  minStock?: number;
+  maxStock?: number;
+  trackLot?: boolean;
+}
+
+export async function callCreateInventoryItem(
+  input: CreateInventoryItemRequest,
+): Promise<{ itemId: string }> {
+  const callable = httpsCallable<
+    CreateInventoryItemRequest,
+    { itemId: string }
+  >(getFirebaseFunctions(), "createInventoryItem");
+
+  const result = await callable(input);
+  return result.data;
+}
+
+interface RegisterMovementRequest {
+  branchId: string;
+  warehouseId: string;
+  itemId: string;
+  type: string;
+  quantity: number;
+  unitCost?: number;
+  reference?: string;
+  notes?: string;
+}
+
+export async function callRegisterInventoryMovement(
+  input: RegisterMovementRequest,
+): Promise<{ movementId: string; balanceAfter: number }> {
+  const callable = httpsCallable<
+    RegisterMovementRequest,
+    { movementId: string; balanceAfter: number }
+  >(getFirebaseFunctions(), "registerInventoryMovement");
+
+  const result = await callable(input);
+  return result.data;
+}
+
+interface CreateWarehouseRequest {
+  branchId: string;
+  name: string;
+  code: string;
+  isDefault?: boolean;
+}
+
+export async function callCreateWarehouse(
+  input: CreateWarehouseRequest,
+): Promise<{ warehouseId: string }> {
+  const callable = httpsCallable<
+    CreateWarehouseRequest,
+    { warehouseId: string }
+  >(getFirebaseFunctions(), "createWarehouse");
 
   const result = await callable(input);
   return result.data;

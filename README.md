@@ -32,7 +32,7 @@ docs/               # Documentación técnica
 | Infraestructura / arquitectura | ✅ Base monorepo |
 | Autenticación | ✅ Login, registro, sesión, guards |
 | Base de datos / multi-tenant | ✅ Onboarding organización + sucursal |
-| Inventario | 🔜 Siguiente |
+| Inventario | ✅ Catálogo de ítems, functions kardex (base) |
 
 ## Requisitos
 
@@ -70,6 +70,7 @@ NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true pnpm dev
 ## Documentación
 
 - [Autenticación y multi-tenant](docs/AUTH.md)
+- [Inventario](docs/INVENTORY.md)
 - [Decisiones técnicas (ADR)](docs/DECISIONS.md)
 
 ## Roadmap
