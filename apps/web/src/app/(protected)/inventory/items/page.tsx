@@ -50,7 +50,7 @@ export default function InventoryItemsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-4">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm text-[var(--ghost-text-muted)]">
@@ -71,7 +71,7 @@ export default function InventoryItemsPage() {
                 required
                 value={sku}
                 onChange={(event) => setSku(event.target.value)}
-                className="w-full rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] px-3 py-2 text-sm"
+                className="ghost-input"
               />
             </label>
             <label className="block space-y-1">
@@ -80,7 +80,7 @@ export default function InventoryItemsPage() {
                 required
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                className="w-full rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] px-3 py-2 text-sm"
+                className="ghost-input"
               />
             </label>
             <label className="block space-y-1">
@@ -90,7 +90,7 @@ export default function InventoryItemsPage() {
                 onChange={(event) =>
                   setType(event.target.value as InventoryItemType)
                 }
-                className="w-full rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] px-3 py-2 text-sm"
+                className="ghost-input"
               >
                 {INVENTORY_ITEM_TYPES.map((itemType) => (
                   <option key={itemType} value={itemType}>
@@ -104,7 +104,7 @@ export default function InventoryItemsPage() {
               <select
                 value={baseUnit}
                 onChange={(event) => setBaseUnit(event.target.value as BaseUnit)}
-                className="w-full rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] px-3 py-2 text-sm"
+                className="ghost-input"
               >
                 {BASE_UNITS.map((unit) => (
                   <option key={unit} value={unit}>
@@ -121,7 +121,7 @@ export default function InventoryItemsPage() {
                 step="0.01"
                 value={minStock}
                 onChange={(event) => setMinStock(event.target.value)}
-                className="w-full rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] px-3 py-2 text-sm"
+                className="ghost-input"
               />
             </label>
             {submitError ? (

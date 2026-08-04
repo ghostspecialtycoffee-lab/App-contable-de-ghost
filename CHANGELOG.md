@@ -5,11 +5,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- App web optimizada para celular: bottom nav, PWA manifest, inputs táctiles 48px
+- Páginas `/inventory/warehouses` y `/inventory/movements` funcionales
+- [FIREBASE_SETUP.md](FIREBASE_SETUP.md) — guía completa Google/Firebase (sin Code.gs)
+- Iconos PWA en `apps/web/public/icons/`
 - Documentación raíz: ARCHITECTURE, ROADMAP, TASKS, DATABASE, CODING_STANDARDS, SECURITY, CONTRIBUTING
-- Skills permanentes del agente en `.cursor/skills/` (autonomous, module, git, firebase, docs, security)
-
-### Changed
-- README.md reestructurado con índice de documentación
+- Skills permanentes del agente en `.cursor/skills/`
 
 ## [0.3.0] — 2026-08-04
 
