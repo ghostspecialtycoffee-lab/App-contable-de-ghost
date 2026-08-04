@@ -35,6 +35,7 @@ export default function DashboardPage() {
         taxAmount: sale.taxAmount,
         total: sale.total,
         paymentMethod: sale.paymentMethod,
+        tableNumber: sale.tableNumber,
         lines: sale.lines,
       })),
       todayPeriod.from,
@@ -78,6 +79,17 @@ export default function DashboardPage() {
               </p>
               <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
                 {todayReport.invoiceCount} comprobante(s)
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-[var(--ghost-text-muted)]">
+                Mesas hoy
+              </p>
+              <p className="mt-2 text-2xl font-semibold">
+                {salesLoading ? "—" : formatMoney(todayReport.tableSalesTotal)}
+              </p>
+              <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
+                {todayReport.tableSalesCount} cuenta(s) cerrada(s)
               </p>
             </div>
             <div>

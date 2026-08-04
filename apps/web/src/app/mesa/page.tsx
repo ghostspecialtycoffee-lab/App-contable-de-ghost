@@ -7,14 +7,12 @@ import {
   doc,
   onSnapshot,
   query,
-  serverTimestamp,
-  setDoc,
 } from "firebase/firestore";
 
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
 import { getFirestoreDb } from "@/lib/firebase/client";
-import { addTableSessionLines, openTableSession } from "@/lib/tables/table-sessions";
+import { addTableSessionLines, openTableSession, requestTableBillGuest } from "@/lib/tables/table-sessions";
 import { findDiningTableByTokenClient } from "@/lib/tables/tables";
 import {
   activeSessionLines,
@@ -223,19 +221,11 @@ function GuestTableContent() {
     setError(null);
 
     try {
-      const sessionRef = doc(
-        getFirestoreDb(),
-        firestorePaths.organizationTableSession(organizationId, sessionId),
-      );
-      await setDoc(
-        sessionRef,
-        {
-          status: "requested_bill",
-          updatedAt: serverTimestamp(),
-          updatedBy: "guest",
-        },
-        { merge: true },
-      );
+      await requestTableBillGuest({
+        organizationId,
+        sessionId,
+        guestToken: qrToken,
+      });
       setMessage("Cuenta solicitada. Un mesero te atenderá.");
     } catch (cause) {
       setError(getFirestoreErrorMessage(cause));
@@ -259,6 +249,19 @@ function GuestTableContent() {
       </div>
     );
   }
+
+  if (sessionStatus === "closed") {
+    return (
+      <div className="mx-auto max-w-lg space-y-3 p-6 text-center">
+        <h1 className="text-xl font-semibold">Cuenta cerrada</h1>
+        <p className="text-sm text-[var(--ghost-text-muted)]">
+          Gracias por tu visita. Esta mesa ya fue cobrada.
+        </p>
+      </div>
+    );
+  }
+
+  const canOrder = sessionStatus === "open";
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4 pb-24">
@@ -337,8 +340,8 @@ function GuestTableContent() {
       ) : null}
 
       <div className="space-y-2">
-        <Button fullWidth size="lg" disabled={submitting} onClick={handleSubmitOrder}>
-          {submitting ? "Enviando..." : "Enviar pedido"}
+        <Button fullWidth size="lg" disabled={submitting || !canOrder} onClick={handleSubmitOrder}>
+          {submitting ? "Enviando..." : canOrder ? "Enviar pedido" : "Cuenta solicitada"}
         </Button>
         <Button
           fullWidth

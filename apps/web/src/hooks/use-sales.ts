@@ -35,6 +35,10 @@ function mapSale(documentId: string, data: Record<string, unknown>): Sale {
     soldOn:
       (typeof data.soldOn === "string" && data.soldOn) ||
       soldAt.slice(0, 10),
+    tableId: typeof data.tableId === "string" ? data.tableId : undefined,
+    tableNumber: typeof data.tableNumber === "number" ? data.tableNumber : undefined,
+    tableLabel: typeof data.tableLabel === "string" ? data.tableLabel : undefined,
+    tableSessionId: typeof data.tableSessionId === "string" ? data.tableSessionId : undefined,
     createdAt: soldAt,
     updatedAt: parseFirestoreDate(data.updatedAt) || soldAt,
     createdBy: String(data.createdBy ?? ""),

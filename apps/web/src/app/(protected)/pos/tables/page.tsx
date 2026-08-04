@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
 
 import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useTableSessions } from "@/hooks/use-table-sessions";
@@ -10,7 +11,10 @@ import { buildTableQrUrl, createDiningTable } from "@/lib/tables/tables";
 import { DINING_TABLE_STATUS_LABELS } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
-export default function PosTablesPage() {
+function PosTablesContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const paidSaleNumber = searchParams.get("paid");
   const { tables, loading, error } = useDiningTables();
   const { sessions } = useTableSessions({ openOnly: true });
   const [tableNumber, setTableNumber] = useState("");
@@ -32,12 +36,13 @@ export default function PosTablesPage() {
     setSubmitting(true);
 
     try {
-      await createDiningTable({
+      const result = await createDiningTable({
         number: Number(tableNumber),
         label: tableLabel.trim() || undefined,
       });
       setTableNumber("");
       setTableLabel("");
+      router.push(`/pos/tables/session?id=${result.tableId}`);
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -56,10 +61,22 @@ export default function PosTablesPage() {
           </p>
           <h1 className="text-2xl font-semibold">Mesas</h1>
           <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            Enumera mesas, imprime QR y gestiona pedidos por mesa con comandas.
+            Al crear la mesa se abre la cuenta. El cliente escanea el QR o el staff agrega ítems
+            manualmente. Al cobrar se cierra y aparece en el informe de ventas.
           </p>
         </div>
       </div>
+
+      {paidSaleNumber ? (
+        <div className="rounded-xl border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-1)] px-4 py-3 text-sm">
+          Cuenta cobrada · comprobante{" "}
+          <span className="font-mono font-medium">{paidSaleNumber}</span> registrado en ventas del
+          día.{" "}
+          <Link href="/billing" className="underline">
+            Ver informe
+          </Link>
+        </div>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[340px_1fr]">
         <Card title="Nueva mesa">
@@ -89,7 +106,7 @@ export default function PosTablesPage() {
               <p className="text-sm text-[var(--ghost-danger)]">{submitError}</p>
             ) : null}
             <Button type="submit" fullWidth disabled={submitting}>
-              {submitting ? "Creando..." : "Crear mesa + QR"}
+              {submitting ? "Creando..." : "Crear mesa y abrir cuenta"}
             </Button>
           </form>
         </Card>
@@ -142,7 +159,7 @@ export default function PosTablesPage() {
 
                     <Link href={`/pos/tables/session?id=${table.id}`} className="mt-3 block">
                       <Button fullWidth variant={session ? "primary" : "secondary"}>
-                        {session ? "Ver pedido" : "Abrir mesa"}
+                        {session ? "Ver cuenta" : "Gestionar mesa"}
                       </Button>
                     </Link>
                   </div>
@@ -153,5 +170,13 @@ export default function PosTablesPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function PosTablesPage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-[var(--ghost-text-muted)]">Cargando...</p>}>
+      <PosTablesContent />
+    </Suspense>
   );
 }

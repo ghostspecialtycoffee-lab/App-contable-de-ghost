@@ -265,7 +265,8 @@ service cloud.firestore {
 
       match /tableSessions/{sessionId} {
         allow read: if canAccessOrg(organizationId)
-          || (resource.data.status == 'open' && resource.data.guestToken is string);
+          || (resource.data.guestToken is string
+            && (resource.data.status == 'open' || resource.data.status == 'requested_bill'));
         allow create: if (canAccessOrg(organizationId)
           && request.resource.data.organizationId == organizationId
           && request.resource.data.createdBy == request.auth.uid)

@@ -13,6 +13,10 @@ export interface SalesReport {
   subtotal: number;
   taxAmount: number;
   averageTicket: number;
+  tableSalesCount: number;
+  tableSalesTotal: number;
+  counterSalesCount: number;
+  counterSalesTotal: number;
   byPaymentMethod: Record<PaymentMethod, number>;
   topProducts: Array<{
     name: string;
@@ -29,6 +33,7 @@ export interface SaleForReport {
   taxAmount: number;
   total: number;
   paymentMethod: PaymentMethod;
+  tableNumber?: number;
   lines: Array<{
     name: string;
     quantity: number;
@@ -72,6 +77,10 @@ export function buildSalesReport(sales: SaleForReport[]): SalesReport {
   let subtotal = 0;
   let taxAmount = 0;
   let totalSales = 0;
+  let tableSalesCount = 0;
+  let tableSalesTotal = 0;
+  let counterSalesCount = 0;
+  let counterSalesTotal = 0;
 
   for (const sale of sales) {
     subtotal += sale.subtotal;
@@ -79,6 +88,14 @@ export function buildSalesReport(sales: SaleForReport[]): SalesReport {
     totalSales += sale.total;
     byPaymentMethod[sale.paymentMethod] =
       (byPaymentMethod[sale.paymentMethod] ?? 0) + sale.total;
+
+    if (sale.tableNumber !== undefined) {
+      tableSalesCount += 1;
+      tableSalesTotal += sale.total;
+    } else {
+      counterSalesCount += 1;
+      counterSalesTotal += sale.total;
+    }
 
     for (const line of sale.lines) {
       const current = productMap.get(line.name) ?? {
@@ -103,6 +120,10 @@ export function buildSalesReport(sales: SaleForReport[]): SalesReport {
     subtotal,
     taxAmount,
     averageTicket: invoiceCount > 0 ? Math.round(totalSales / invoiceCount) : 0,
+    tableSalesCount,
+    tableSalesTotal,
+    counterSalesCount,
+    counterSalesTotal,
     byPaymentMethod,
     topProducts,
   };

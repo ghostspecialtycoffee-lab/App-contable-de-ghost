@@ -15,6 +15,7 @@ const sampleSales = [
     taxAmount: 1900,
     total: 11900,
     paymentMethod: "cash" as const,
+    tableNumber: 3,
     lines: [{ name: "Latte", quantity: 1, lineTotal: 10000 }],
   },
   {
@@ -39,6 +40,10 @@ describe("buildSalesReport", () => {
     expect(report.byPaymentMethod.cash).toBe(11900);
     expect(report.byPaymentMethod.card).toBe(9520);
     expect(report.topProducts[0]?.name).toBe("Latte");
+    expect(report.tableSalesCount).toBe(1);
+    expect(report.tableSalesTotal).toBe(11900);
+    expect(report.counterSalesCount).toBe(1);
+    expect(report.counterSalesTotal).toBe(9520);
   });
 });
 

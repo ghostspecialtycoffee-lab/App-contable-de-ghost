@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
+import { openTableSessionClient } from "./table-sessions-client";
 
 function createQrToken(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -61,7 +62,7 @@ export async function createDiningTableClient(input: {
   number: number;
   label?: string;
   capacity?: number;
-}): Promise<{ tableId: string; qrToken: string }> {
+}): Promise<{ tableId: string; qrToken: string; sessionId: string }> {
   const { userId, organizationId, branchId } = await getStaffContext();
   const db = getFirestoreDb();
   const tableRef = doc(
@@ -76,7 +77,7 @@ export async function createDiningTableClient(input: {
     number: input.number,
     label: input.label?.trim() ?? "",
     qrToken,
-    status: "available",
+    status: "occupied",
     capacity: input.capacity ?? 4,
     sortOrder: input.number,
     createdAt: now,
@@ -85,7 +86,17 @@ export async function createDiningTableClient(input: {
     updatedBy: userId,
   });
 
-  return { tableId: tableRef.id, qrToken };
+  const session = await openTableSessionClient({
+    organizationId,
+    branchId,
+    tableId: tableRef.id,
+    tableNumber: input.number,
+    tableLabel: input.label,
+    guestToken: qrToken,
+    actorUserId: userId,
+  });
+
+  return { tableId: tableRef.id, qrToken, sessionId: session.sessionId };
 }
 
 export async function updateDiningTableStatusClient(input: {

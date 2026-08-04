@@ -75,7 +75,7 @@ export async function findOpenTableSessionClient(input: {
   const sessionsQuery = query(
     collection(getFirestoreDb(), firestorePaths.organizationTableSessions(input.organizationId)),
     where("tableId", "==", input.tableId),
-    where("status", "==", "open"),
+    where("status", "in", ["open", "requested_bill"]),
     limit(1),
   );
   const snapshot = await getDocs(sessionsQuery);
@@ -397,6 +397,41 @@ export async function checkoutTableSessionClient(input: {
     saleNumber,
     total: totals.total,
   };
+}
+
+export async function requestTableBillGuestClient(input: {
+  organizationId: string;
+  sessionId: string;
+  guestToken: string;
+}): Promise<void> {
+  const sessionRef = doc(
+    getFirestoreDb(),
+    firestorePaths.organizationTableSession(input.organizationId, input.sessionId),
+  );
+  const sessionSnap = await getDoc(sessionRef);
+
+  if (!sessionSnap.exists()) {
+    throw new Error("Sesión de mesa no encontrada.");
+  }
+
+  const session = sessionSnap.data();
+  if (session.guestToken !== input.guestToken) {
+    throw new Error("Token de mesa no válido.");
+  }
+
+  if (session.status !== "open") {
+    throw new Error("La cuenta ya fue solicitada o cerrada.");
+  }
+
+  await setDoc(
+    sessionRef,
+    {
+      status: "requested_bill",
+      updatedAt: serverTimestamp(),
+      updatedBy: "guest",
+    },
+    { merge: true },
+  );
 }
 
 export async function requestTableBillClient(input: {

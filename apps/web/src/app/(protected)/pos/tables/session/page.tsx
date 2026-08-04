@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
 import { useDiningTables } from "@/hooks/use-dining-tables";
@@ -27,6 +27,7 @@ import {
 import { Button, Card } from "@ghost/ui";
 
 function TableSessionContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const tableId = searchParams.get("id") ?? "";
   const { tables, loading: tablesLoading } = useDiningTables();
@@ -130,6 +131,7 @@ function TableSessionContent() {
         paymentMethod,
       });
       setSuccess(`Cobro registrado · ${result.saleNumber} · ${formatMoney(result.total)}`);
+      router.push(`/pos/tables?paid=${encodeURIComponent(result.saleNumber)}`);
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -207,7 +209,7 @@ function TableSessionContent() {
         <Card title="Cuenta de mesa">
           {!session ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">
-              {opening ? "Abriendo mesa..." : "Preparando sesión..."}
+              {opening ? "Abriendo cuenta..." : "Preparando sesión..."}
             </p>
           ) : (
             <div className="space-y-3">
