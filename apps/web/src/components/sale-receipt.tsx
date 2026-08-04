@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandLogo } from "@/components/brand-logo";
+import { useBrandAssets } from "@/hooks/use-brand-assets";
 import { useAuth } from "@/providers/auth-provider";
 import { PAYMENT_METHOD_LABELS, type Sale } from "@ghost/domain";
 import { Button } from "@ghost/ui";
@@ -13,6 +15,7 @@ interface SaleReceiptProps {
 
 export function SaleReceipt({ sale, showPrint = true }: SaleReceiptProps) {
   const { organization } = useAuth();
+  const { primaryLogo } = useBrandAssets();
 
   function handlePrint() {
     window.print();
@@ -22,6 +25,13 @@ export function SaleReceipt({ sale, showPrint = true }: SaleReceiptProps) {
     <div className="sale-receipt space-y-4">
       <div className="rounded-lg border border-[var(--ghost-border)] bg-white p-4 text-sm text-black print:border-none print:p-0">
         <div className="border-b border-dashed border-gray-300 pb-3 text-center">
+          <div className="flex justify-center pb-3">
+            <BrandLogo
+              asset={primaryLogo}
+              organizationName={organization?.name}
+              size="md"
+            />
+          </div>
           <p className="text-base font-semibold">{organization?.name ?? "Ghost Contable"}</p>
           <p className="text-xs text-gray-600">Comprobante interno</p>
           <p className="mt-2 font-mono text-xs">{sale.saleNumber}</p>

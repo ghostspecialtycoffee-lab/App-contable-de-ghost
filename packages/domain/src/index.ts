@@ -1,5 +1,6 @@
 export * from "./audit.js";
 export * from "./branch.js";
+export * from "./brand/index.js";
 export * from "./inventory/index.js";
 export * from "./member.js";
 export * from "./organization.js";
