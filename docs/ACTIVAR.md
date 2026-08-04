@@ -1,39 +1,41 @@
-# Activar Ghost ERP — solución al error de deploy
+# Activar Ghost ERP — deploy Firebase
 
-El error **「credentials_json must specify exactly one...」** significa que **falta el secret en GitHub**.
+## IMPORTANTE: qué secret usar
 
-Elige **UNA** de estas dos opciones (la A es más fácil):
+| Lo que tienes | Nombre del secret en GitHub |
+|---------------|----------------------------|
+| Archivo `.json` de Firebase (service account) | **`FIREBASE_SERVICE_ACCOUNT`** |
+| Token de `firebase login:ci` (texto largo) | **`FIREBASE_TOKEN`** |
+
+**No mezcles:** el JSON **NO** va en `FIREBASE_TOKEN`.
 
 ---
 
-## Opción A — Token Firebase (recomendada, más fácil)
+## Opción A — Service Account JSON (la que usaste)
 
-### Paso 1 — Obtener token en tu PC
+### Paso 1 — Descargar clave (si aún no la tienes)
 
-Abre PowerShell en la carpeta del proyecto y ejecuta:
+https://console.firebase.google.com/project/ghost-contable/settings/serviceaccounts/adminsdk
 
-```powershell
-cd App-contable-de-ghost
-npx firebase login:ci
-```
+→ **Generar nueva clave privada**
 
-- Se abre Chrome → elige tu cuenta Google del proyecto **ghost-contable**
-- La terminal muestra un **token largo** (empieza con algo como `1//0e...`)
-- **Copia todo el token**
+### Paso 2 — Crear secret en GitHub
 
-### Paso 2 — Pegar token en GitHub
-
-1. Abre: **https://github.com/ghostspecialtycoffee-lab/App-contable-de-ghost/settings/secrets/actions**
+1. https://github.com/ghostspecialtycoffee-lab/App-contable-de-ghost/settings/secrets/actions
 2. **New repository secret**
-3. **Name:** `FIREBASE_TOKEN`
-4. **Secret:** pega el token copiado
+3. **Name:** `FIREBASE_SERVICE_ACCOUNT`
+4. **Secret:** pega **todo** el contenido del `.json` (desde `{` hasta `}`)
 5. **Add secret**
+
+Si creaste `FIREBASE_TOKEN` con el JSON por error, **elimínalo** o déjalo vacío.
 
 ### Paso 3 — Ejecutar deploy
 
-1. Abre: **https://github.com/ghostspecialtycoffee-lab/App-contable-de-ghost/actions/workflows/deploy-firebase.yml**
-2. **Run workflow** → **Run workflow**
-3. Espera barra verde (5–15 min)
+https://github.com/ghostspecialtycoffee-lab/App-contable-de-ghost/actions/workflows/deploy-firebase.yml
+
+→ **Run workflow** → branch **main** → **Run workflow**
+
+Espera 5–15 min (barra verde).
 
 ### Paso 4 — Abrir app
 
@@ -41,48 +43,41 @@ https://ghost-contable.web.app
 
 ---
 
-## Opción B — Service Account JSON
+## Opción B — Token CI (alternativa)
 
-### Paso 1 — Descargar clave
+```powershell
+npx firebase login:ci
+```
 
-1. Abre: **https://console.firebase.google.com/project/ghost-contable/settings/serviceaccounts/adminsdk**
-2. **Generar nueva clave privada** → descarga `.json`
+Copia el token → secret **`FIREBASE_TOKEN`** (solo el token, no JSON).
 
-### Paso 2 — Pegar en GitHub
+---
 
-1. Abre: **https://github.com/ghostspecialtycoffee-lab/App-contable-de-ghost/settings/secrets/actions**
-2. **New repository secret**
-3. **Name:** `FIREBASE_SERVICE_ACCOUNT` (exacto, mayúsculas incluidas)
-4. **Secret:** abre el `.json`, selecciona **TODO** (Ctrl+A) y pega
-5. **Add secret**
+## Seguridad
 
-### Paso 3 — Ejecutar deploy
+Si compartiste la clave privada en chat o capturas:
 
-Igual que Opción A, paso 3.
+1. Firebase Console → Service accounts → **Generate new private key**
+2. Actualiza el secret `FIREBASE_SERVICE_ACCOUNT` en GitHub
+3. Elimina la clave antigua en Google Cloud IAM
 
 ---
 
 ## Errores comunes
 
-| Error | Causa | Solución |
-|-------|-------|----------|
-| `credentials_json must specify...` | No hay secret en GitHub | Opción A o B arriba |
-| Secret faltante | Nombre mal escrito | Debe ser `FIREBASE_TOKEN` o `FIREBASE_SERVICE_ACCOUNT` |
-| Functions billing | Plan Spark | Activar **Blaze**: https://console.firebase.google.com/project/ghost-contable/usage/details |
-| Auth login falla | Dominio no autorizado | Agregar `ghost-contable.web.app` en Auth settings |
+| Error | Solución |
+|-------|----------|
+| Secret mal nombrado (JSON en TOKEN) | Usar `FIREBASE_SERVICE_ACCOUNT` |
+| Sitio no encontrado | Deploy aún no terminó o falló — revisa Actions |
+| Functions billing | Activar plan Blaze |
+| Permission denied | Regenerar service account con rol Firebase Admin |
 
 ---
 
-## Verificar Firebase Console
+## Firebase Console
 
 | Qué | Link |
 |-----|------|
-| Email/Password activo | https://console.firebase.google.com/project/ghost-contable/authentication/providers |
+| Email/Password | https://console.firebase.google.com/project/ghost-contable/authentication/providers |
 | Plan Blaze | https://console.firebase.google.com/project/ghost-contable/usage/details |
 | Dominios Auth | https://console.firebase.google.com/project/ghost-contable/authentication/settings |
-
----
-
-## Flujo de prueba
-
-Registro → Onboarding → Inventario → Ítems → Bodega → Movimiento

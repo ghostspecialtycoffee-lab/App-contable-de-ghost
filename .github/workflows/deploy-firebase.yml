@@ -2,6 +2,9 @@ name: Deploy Firebase
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 concurrency:
   group: firebase-deploy
@@ -13,17 +16,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Verificar secret configurado
-        env:
-          HAS_TOKEN: ${{ secrets.FIREBASE_TOKEN != '' }}
-          HAS_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
-        run: |
-          if [ "$HAS_TOKEN" != "true" ] && [ "$HAS_SERVICE_ACCOUNT" != "true" ]; then
-            echo "::error title=Secret faltante::Agrega FIREBASE_TOKEN o FIREBASE_SERVICE_ACCOUNT en GitHub Secrets antes de ejecutar este workflow."
-            echo "Guía: docs/ACTIVAR.md"
-            exit 1
-          fi
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -45,21 +37,29 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Authenticate to Google Cloud (Service Account)
-        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' && secrets.FIREBASE_TOKEN == '' }}
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-
       - name: Deploy to Firebase
         env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
-          DEPLOY="npx firebase-tools@13 deploy --project ghost-contable --non-interactive"
-          if [ -n "$FIREBASE_TOKEN" ]; then
+          set -euo pipefail
+          DEPLOY=(npx firebase-tools@13 deploy --project ghost-contable --non-interactive)
+
+          if [ -n "${FIREBASE_SERVICE_ACCOUNT:-}" ]; then
+            echo "Deploy con FIREBASE_SERVICE_ACCOUNT (JSON)..."
+            CREDS="${RUNNER_TEMP}/firebase-sa.json"
+            printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$CREDS"
+            export GOOGLE_APPLICATION_CREDENTIALS="$CREDS"
+            "${DEPLOY[@]}"
+          elif [ -n "${FIREBASE_TOKEN:-}" ]; then
+            if printf '%s' "$FIREBASE_TOKEN" | grep -q '"type"[[:space:]]*:[[:space:]]*"service_account"'; then
+              echo "::error title=Secret mal nombrado::Pegaste el JSON en FIREBASE_TOKEN. Créalo como FIREBASE_SERVICE_ACCOUNT."
+              exit 1
+            fi
             echo "Deploy con FIREBASE_TOKEN..."
-            $DEPLOY --token "$FIREBASE_TOKEN"
+            "${DEPLOY[@]}" --token "$FIREBASE_TOKEN"
           else
-            echo "Deploy con Service Account..."
-            $DEPLOY
+            echo "::error title=Secret faltante::Agrega FIREBASE_SERVICE_ACCOUNT (JSON) o FIREBASE_TOKEN en GitHub Secrets."
+            echo "Guía: docs/ACTIVAR.md"
+            exit 1
           fi
