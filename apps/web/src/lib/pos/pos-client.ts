@@ -77,6 +77,7 @@ export async function createMenuProductClient(input: {
   station: KitchenStation;
   description?: string;
   sortOrder?: number;
+  saleTaxCategory?: string;
 }): Promise<{ productId: string }> {
   const userId = requireUserId();
   const { organizationId } = await getActiveContext();
@@ -105,6 +106,8 @@ export async function createMenuProductClient(input: {
     description: input.description?.trim() ?? "",
     status: "active",
     sortOrder: input.sortOrder ?? 0,
+    saleTaxCategory: input.saleTaxCategory ?? "IVA_19",
+    recipeCost: 0,
     createdAt: now,
     updatedAt: now,
     createdBy: userId,

@@ -21,6 +21,8 @@ const appNavItems = [
   { href: "/pos", label: "Mostrador" },
   { href: "/kds", label: "Comandas" },
   { href: "/billing", label: "Registros" },
+  { href: "/purchases", label: "Compras" },
+  { href: "/costing", label: "Costeo" },
   { href: "/inventory", label: "Inventario" },
 ];
 
