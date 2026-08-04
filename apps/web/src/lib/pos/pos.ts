@@ -3,6 +3,7 @@ import {
   createSaleClient,
   seedDefaultMenuClient,
   updateKitchenOrderStatusClient,
+  updateMenuProductClient,
   updateMenuProductImageClient,
 } from "./pos-client";
 
@@ -18,6 +19,12 @@ export async function updateMenuProductImage(
   input: Parameters<typeof updateMenuProductImageClient>[0],
 ) {
   return updateMenuProductImageClient(input);
+}
+
+export async function updateMenuProduct(
+  input: Parameters<typeof updateMenuProductClient>[0],
+) {
+  return updateMenuProductClient(input);
 }
 
 export async function seedDefaultMenu() {

@@ -447,6 +447,7 @@ export default function PosMenuPage() {
                     <th className="px-2 py-2 font-medium">Costo</th>
                     <th className="px-2 py-2 font-medium">IVA</th>
                     <th className="px-2 py-2 font-medium">Categoría</th>
+                    <th className="px-2 py-2 font-medium">Ficha</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -467,6 +468,14 @@ export default function PosMenuPage() {
                       </td>
                       <td className="px-2 py-2">
                         {MENU_CATEGORY_LABELS[product.category]}
+                      </td>
+                      <td className="px-2 py-2">
+                        <Link
+                          href={`/costing?product=${product.id}`}
+                          className="text-[var(--ghost-brand-500)] underline"
+                        >
+                          {product.recipeCost ? "Editar" : "Crear"}
+                        </Link>
                       </td>
                     </tr>
                   ))}

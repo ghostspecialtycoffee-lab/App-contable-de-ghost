@@ -1,32 +1,90 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useRecipes } from "@/hooks/use-recipes";
+import { getCallableErrorMessage } from "@/lib/auth/errors";
+import { formatMoney } from "@/lib/format";
+import { updateMenuProduct } from "@/lib/pos/pos";
+import { saveRecipe } from "@/lib/recipes/recipes";
 import {
+  BASE_UNITS,
+  BASE_UNIT_LABELS,
   CO_COST_MATRIX_DEFAULTS,
   CO_TAX_CATEGORIES,
   CO_TAX_CATEGORY_LABELS,
   calculateCostMatrix,
   calculateRecipeCost,
+  inferMenuProductTaxCategory,
+  isCoffeeBeverageName,
+  type BaseUnit,
   type CoTaxCategory,
+  type RecipeLineInput,
 } from "@ghost/domain";
-import { Card } from "@ghost/ui";
-import { formatMoney } from "@/lib/format";
+import { Button, Card } from "@ghost/ui";
+
+const emptyRecipeLine = (): RecipeLineInput => ({
+  inventoryItemId: "",
+  itemName: "",
+  quantity: 0,
+  unit: "g",
+});
 
 export default function CostingPage() {
+  const searchParams = useSearchParams();
   const { products } = useMenuProducts();
   const { recipes } = useRecipes();
   const { items: inventoryItems } = useInventoryItems();
   const [productId, setProductId] = useState("");
+  const [price, setPrice] = useState("");
+  const [saleTaxCategory, setSaleTaxCategory] = useState<CoTaxCategory>("IVA_19");
+  const [recipeLines, setRecipeLines] = useState<RecipeLineInput[]>([emptyRecipeLine()]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const selectedProduct = products.find((product) => product.id === productId) ?? products[0];
   const selectedRecipe = selectedProduct
     ? recipes.find((recipe) => recipe.menuProductId === selectedProduct.id)
     : null;
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("product");
+    if (fromUrl && products.some((product) => product.id === fromUrl)) {
+      setProductId(fromUrl);
+      return;
+    }
+    setProductId((current) => current || products[0]?.id || "");
+  }, [searchParams, products]);
+
+  useEffect(() => {
+    if (!selectedProduct) {
+      return;
+    }
+
+    setPrice(String(selectedProduct.price));
+    setSaleTaxCategory((selectedProduct.saleTaxCategory ?? "IVA_19") as CoTaxCategory);
+
+    if (selectedRecipe && selectedRecipe.lines.length > 0) {
+      setRecipeLines(
+        selectedRecipe.lines.map((line) => ({
+          inventoryItemId: line.inventoryItemId,
+          itemName: line.itemName,
+          quantity: line.quantity,
+          unit: line.unit,
+        })),
+      );
+    } else {
+      setRecipeLines([emptyRecipeLine()]);
+    }
+
+    setSubmitError(null);
+    setSaveMessage(null);
+  }, [selectedProduct?.id, selectedRecipe?.id]);
 
   const unitCosts = useMemo(() => {
     const costs: Record<string, number> = {};
@@ -36,26 +94,138 @@ export default function CostingPage() {
     return costs;
   }, [inventoryItems]);
 
-  const recipeCost = selectedRecipe
-    ? calculateRecipeCost(selectedRecipe.lines, unitCosts)
-    : selectedProduct?.recipeCost ?? 0;
+  const previewRecipeCost = useMemo(() => {
+    const validLines = recipeLines.filter(
+      (line) => line.inventoryItemId && line.quantity > 0,
+    );
+    return validLines.length > 0 ? calculateRecipeCost(validLines, unitCosts) : 0;
+  }, [recipeLines, unitCosts]);
 
-  const targetCostPct =
-    selectedProduct?.category === "beverage"
+  const suggestedTaxCategory = useMemo(() => {
+    if (!selectedProduct) {
+      return saleTaxCategory;
+    }
+
+    const containsCoffeeIngredient = recipeLines.some((line) => {
+      const item = inventoryItems.find((entry) => entry.id === line.inventoryItemId);
+      return item ? isCoffeeBeverageName(item.name) : false;
+    });
+
+    return inferMenuProductTaxCategory({
+      name: selectedProduct.name,
+      category: selectedProduct.category,
+      containsCoffeeIngredient,
+    });
+  }, [selectedProduct, recipeLines, inventoryItems, saleTaxCategory]);
+
+  const targetCostPct = selectedProduct
+    ? selectedProduct.category === "beverage"
       ? CO_COST_MATRIX_DEFAULTS.targetBeverageCostPct
-      : CO_COST_MATRIX_DEFAULTS.targetFoodCostPct;
+      : CO_COST_MATRIX_DEFAULTS.targetFoodCostPct
+    : CO_COST_MATRIX_DEFAULTS.targetFoodCostPct;
 
-  const matrix = selectedProduct
-    ? calculateCostMatrix({
-        unitCostNet: recipeCost,
-        quantity: 1,
-        purchaseTaxCategory: "IVA_19",
-        salePriceGross: selectedProduct.price,
-        saleTaxCategory: (selectedProduct.saleTaxCategory ?? "IVA_19") as CoTaxCategory,
-        recipeCost,
-        targetCostPct,
-      })
-    : null;
+  const matrix = useMemo(() => {
+    const salePrice = Number(price) || 0;
+    if (!selectedProduct || salePrice <= 0) {
+      return null;
+    }
+
+    return calculateCostMatrix({
+      unitCostNet: previewRecipeCost,
+      quantity: 1,
+      purchaseTaxCategory: "IVA_19",
+      salePriceGross: salePrice,
+      saleTaxCategory,
+      recipeCost: previewRecipeCost,
+      targetCostPct,
+    });
+  }, [selectedProduct, price, saleTaxCategory, previewRecipeCost, targetCostPct]);
+
+  function updateRecipeLine(index: number, patch: Partial<RecipeLineInput>) {
+    setRecipeLines((current) =>
+      current.map((line, lineIndex) =>
+        lineIndex === index ? { ...line, ...patch } : line,
+      ),
+    );
+  }
+
+  function linkInventoryToRecipe(index: number, itemId: string) {
+    const item = inventoryItems.find((entry) => entry.id === itemId);
+    if (!item) {
+      return;
+    }
+
+    updateRecipeLine(index, {
+      inventoryItemId: item.id,
+      itemName: item.name,
+      unit: item.baseUnit as BaseUnit,
+      quantity: lineDefaultQuantity(item.baseUnit as BaseUnit),
+    });
+  }
+
+  async function handleSave(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedProduct) {
+      return;
+    }
+
+    setSubmitError(null);
+    setSaveMessage(null);
+    setSubmitting(true);
+
+    try {
+      const salePrice = Number(price);
+      if (!Number.isFinite(salePrice) || salePrice < 0) {
+        throw new Error("Ingresa un precio de venta válido.");
+      }
+
+      const validLines = recipeLines.filter(
+        (line) => line.inventoryItemId && line.quantity > 0,
+      );
+
+      if (validLines.length === 0) {
+        throw new Error("Agrega al menos un ingrediente a la receta.");
+      }
+
+      await updateMenuProduct({
+        productId: selectedProduct.id,
+        price: salePrice,
+        saleTaxCategory,
+      });
+
+      const result = await saveRecipe({
+        menuProductId: selectedProduct.id,
+        menuProductName: selectedProduct.name,
+        lines: validLines,
+      });
+
+      setSaveMessage(
+        `Ficha guardada. Costo receta: ${formatMoney(result.recipeCost)}.`,
+      );
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const productSummaries = useMemo(() => {
+    return products.map((product) => {
+      const recipe = recipes.find((entry) => entry.menuProductId === product.id);
+      const cost =
+        recipe && recipe.lines.length > 0
+          ? calculateRecipeCost(recipe.lines, unitCosts)
+          : product.recipeCost ?? 0;
+      const foodCostPct =
+        product.price > 0 && cost > 0 ? cost / product.price : null;
+
+      return {
+        product,
+        hasRecipe: Boolean(recipe?.lines.length),
+        foodCostPct,
+      };
+    });
+  }, [products, recipes, unitCosts]);
 
   return (
     <div className="space-y-6 pb-4">
@@ -65,131 +235,253 @@ export default function CostingPage() {
             Catálogo
           </Link>
         </p>
-        <h1 className="text-2xl font-semibold">Costeo e impuestos</h1>
+        <h1 className="text-2xl font-semibold">Fichas de matriz de costos</h1>
         <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-          Matriz de costos con IVA Colombia, margen y referencias de retención.
+          Crea o edita la receta, precio e impuestos de productos ya cargados en el catálogo.
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-        <Card title="Producto">
-          <label className="block space-y-1">
-            <span className="text-sm font-medium">Seleccionar ítem del catálogo</span>
-            <select
-              value={productId || products[0]?.id || ""}
-              onChange={(event) => setProductId(event.target.value)}
-              className="ghost-input"
-            >
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          {selectedProduct ? (
-            <dl className="mt-4 space-y-2 text-sm">
-              <div className="flex justify-between gap-2">
-                <dt className="text-[var(--ghost-text-muted)]">Precio venta</dt>
-                <dd>{formatMoney(selectedProduct.price)}</dd>
-              </div>
-              <div className="flex justify-between gap-2">
-                <dt className="text-[var(--ghost-text-muted)]">IVA venta</dt>
-                <dd>
-                  {CO_TAX_CATEGORY_LABELS[
-                    (selectedProduct.saleTaxCategory ?? "IVA_19") as CoTaxCategory
-                  ]}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-2">
-                <dt className="text-[var(--ghost-text-muted)]">Costo receta</dt>
-                <dd>{formatMoney(recipeCost)}</dd>
-              </div>
-            </dl>
-          ) : (
-            <p className="mt-4 text-sm text-[var(--ghost-text-muted)]">
-              Crea productos en el catálogo para ver costeo.
+        <Card title="Productos del catálogo">
+          {products.length === 0 ? (
+            <p className="text-sm text-[var(--ghost-text-muted)]">
+              No hay productos.{" "}
+              <Link href="/pos/menu" className="underline">
+                Crea el catálogo
+              </Link>
+              .
             </p>
+          ) : (
+            <ul className="space-y-1">
+              {productSummaries.map(({ product, hasRecipe, foodCostPct }) => {
+                const active = (productId || products[0]?.id) === product.id;
+                return (
+                  <li key={product.id}>
+                    <button
+                      type="button"
+                      onClick={() => setProductId(product.id)}
+                      className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${
+                        active
+                          ? "border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-2)]"
+                          : "border-[var(--ghost-border)] hover:bg-[var(--ghost-surface-2)]"
+                      }`}
+                    >
+                      <p className="font-medium">{product.name}</p>
+                      <p className="mt-0.5 text-xs text-[var(--ghost-text-muted)]">
+                        {formatMoney(product.price)}
+                        {hasRecipe ? " · con receta" : " · sin receta"}
+                        {foodCostPct !== null
+                          ? ` · FC ${(foodCostPct * 100).toFixed(0)}%`
+                          : ""}
+                      </p>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </Card>
 
         <div className="space-y-4">
-          <Card title="Matriz Colombia (referencia operativa)">
-            {matrix ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Metric
-                  label="Food cost"
-                  value={`${(matrix.foodCostPct * 100).toFixed(1)}%`}
-                  hint={`Meta ${(targetCostPct * 100).toFixed(0)}%`}
-                />
-                <Metric
-                  label="Margen bruto"
-                  value={`${(matrix.grossMarginPct * 100).toFixed(1)}%`}
-                />
-                <Metric label="Precio neto venta" value={formatMoney(matrix.salePriceNet)} />
-                <Metric label="IVA venta" value={formatMoney(matrix.sale.taxAmount)} />
-                <Metric
-                  label="Precio sugerido"
-                  value={formatMoney(matrix.suggestedSalePriceGross)}
-                  hint="Según meta de costo"
-                />
-                <Metric
-                  label="ReteIVA ref."
-                  value={formatMoney(matrix.reteIvaReference)}
-                  hint={`${CO_COST_MATRIX_DEFAULTS.reteIvaPct * 100}% sobre IVA`}
-                />
-                <Metric
-                  label="Retefuente ref."
-                  value={formatMoney(matrix.reteFuenteReference)}
-                  hint={`${CO_COST_MATRIX_DEFAULTS.reteFuenteGoodsPct * 100}% bienes`}
-                />
-              </div>
-            ) : (
-              <p className="text-sm text-[var(--ghost-text-muted)]">Sin datos de costeo.</p>
-            )}
-          </Card>
+          {selectedProduct ? (
+            <Card title={`Ficha: ${selectedProduct.name}`}>
+              <form className="space-y-4" onSubmit={handleSave}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block space-y-1">
+                    <span className="text-sm font-medium">Precio venta (COP, con impuesto)</span>
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      step="100"
+                      value={price}
+                      onChange={(event) => setPrice(event.target.value)}
+                      className="ghost-input"
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    <span className="text-sm font-medium">Impuesto venta (incluido)</span>
+                    <select
+                      value={saleTaxCategory}
+                      onChange={(event) =>
+                        setSaleTaxCategory(event.target.value as CoTaxCategory)
+                      }
+                      className="ghost-input"
+                    >
+                      {CO_TAX_CATEGORIES.map((item) => (
+                        <option key={item} value={item}>
+                          {CO_TAX_CATEGORY_LABELS[item]}
+                        </option>
+                      ))}
+                    </select>
+                    {suggestedTaxCategory !== saleTaxCategory ? (
+                      <button
+                        type="button"
+                        className="text-xs text-[var(--ghost-brand-500)] underline"
+                        onClick={() => setSaleTaxCategory(suggestedTaxCategory)}
+                      >
+                        Sugerido: {CO_TAX_CATEGORY_LABELS[suggestedTaxCategory]}
+                      </button>
+                    ) : null}
+                  </label>
+                </div>
+
+                <div className="space-y-2 border-t border-[var(--ghost-border)] pt-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium">Receta (ingredientes)</span>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() =>
+                        setRecipeLines((current) => [...current, emptyRecipeLine()])
+                      }
+                    >
+                      + Ingrediente
+                    </Button>
+                  </div>
+                  {inventoryItems.length === 0 ? (
+                    <p className="text-sm text-[var(--ghost-text-muted)]">
+                      Carga insumos en{" "}
+                      <Link href="/inventory" className="underline">
+                        Inventario
+                      </Link>{" "}
+                      y facturas en{" "}
+                      <Link href="/purchases" className="underline">
+                        Compras
+                      </Link>
+                      .
+                    </p>
+                  ) : (
+                    recipeLines.map((line, index) => (
+                      <div
+                        key={index}
+                        className="space-y-2 rounded-lg border border-[var(--ghost-border)] p-3"
+                      >
+                        <select
+                          value={line.inventoryItemId}
+                          onChange={(event) =>
+                            linkInventoryToRecipe(index, event.target.value)
+                          }
+                          className="ghost-input"
+                        >
+                          <option value="">Seleccionar insumo</option>
+                          {inventoryItems.map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.name} · costo{" "}
+                              {formatMoney(item.averageCost || item.lastCost)}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.001"
+                            value={line.quantity || ""}
+                            onChange={(event) =>
+                              updateRecipeLine(index, {
+                                quantity: Number(event.target.value),
+                              })
+                            }
+                            className="ghost-input"
+                            placeholder="Cantidad"
+                          />
+                          <select
+                            value={line.unit}
+                            onChange={(event) =>
+                              updateRecipeLine(index, {
+                                unit: event.target.value as BaseUnit,
+                              })
+                            }
+                            className="ghost-input"
+                          >
+                            {BASE_UNITS.map((unit) => (
+                              <option key={unit} value={unit}>
+                                {BASE_UNIT_LABELS[unit]}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {matrix ? (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <Metric
+                      label="Food cost"
+                      value={`${(matrix.foodCostPct * 100).toFixed(1)}%`}
+                      hint={`Meta ${(targetCostPct * 100).toFixed(0)}%`}
+                    />
+                    <Metric
+                      label="Margen bruto"
+                      value={`${(matrix.grossMarginPct * 100).toFixed(1)}%`}
+                    />
+                    <Metric label="Costo receta" value={formatMoney(previewRecipeCost)} />
+                    <Metric label="Precio neto venta" value={formatMoney(matrix.salePriceNet)} />
+                    <Metric
+                      label={CO_TAX_CATEGORY_LABELS[saleTaxCategory]}
+                      value={formatMoney(matrix.sale.taxAmount)}
+                    />
+                    <Metric
+                      label="Precio sugerido"
+                      value={formatMoney(matrix.suggestedSalePriceGross)}
+                      hint="Según meta de costo"
+                    />
+                    <Metric
+                      label="ReteIVA ref."
+                      value={formatMoney(matrix.reteIvaReference)}
+                      hint={`${CO_COST_MATRIX_DEFAULTS.reteIvaPct * 100}% sobre IVA`}
+                    />
+                    <Metric
+                      label="Retefuente ref."
+                      value={formatMoney(matrix.reteFuenteReference)}
+                      hint={`${CO_COST_MATRIX_DEFAULTS.reteFuenteGoodsPct * 100}% bienes`}
+                    />
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--ghost-text-muted)]">
+                    Ingresa precio y receta para ver la matriz.
+                  </p>
+                )}
+
+                {submitError ? (
+                  <p className="text-sm text-[var(--ghost-danger)]">{submitError}</p>
+                ) : null}
+                {saveMessage ? (
+                  <p className="text-sm text-[var(--ghost-brand-500)]">{saveMessage}</p>
+                ) : null}
+
+                <Button type="submit" fullWidth disabled={submitting}>
+                  {submitting ? "Guardando ficha..." : "Guardar ficha de costos"}
+                </Button>
+              </form>
+            </Card>
+          ) : (
+            <Card title="Ficha de costos">
+              <p className="text-sm text-[var(--ghost-text-muted)]">
+                Selecciona un producto del catálogo para crear o editar su ficha.
+              </p>
+            </Card>
+          )}
 
           <Card title="Parámetros base Colombia">
             <ul className="space-y-2 text-sm text-[var(--ghost-text-muted)]">
-              <li>Meta food cost: {(CO_COST_MATRIX_DEFAULTS.targetFoodCostPct * 100).toFixed(0)}%</li>
+              <li>
+                Meta food cost: {(CO_COST_MATRIX_DEFAULTS.targetFoodCostPct * 100).toFixed(0)}%
+              </li>
               <li>
                 Meta bebidas: {(CO_COST_MATRIX_DEFAULTS.targetBeverageCostPct * 100).toFixed(0)}%
               </li>
               <li>
                 Categorías IVA:{" "}
-                {CO_TAX_CATEGORIES.map((category) => CO_TAX_CATEGORY_LABELS[category]).join(" · ")}
+                {CO_TAX_CATEGORIES.map((category) => CO_TAX_CATEGORY_LABELS[category]).join(
+                  " · ",
+                )}
               </li>
             </ul>
           </Card>
-
-          {selectedRecipe ? (
-            <Card title="Receta">
-              <ul className="space-y-1 text-sm">
-                {selectedRecipe.lines.map((line, index) => (
-                  <li key={index} className="flex justify-between gap-2">
-                    <span>
-                      {line.itemName} · {line.quantity} {line.unit}
-                    </span>
-                    <span>
-                      {formatMoney(
-                        Math.round(line.quantity * (unitCosts[line.inventoryItemId] ?? 0)),
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ) : selectedProduct ? (
-            <Card title="Receta">
-              <p className="text-sm text-[var(--ghost-text-muted)]">
-                Este producto no tiene receta. Agrégala al crear el ítem en{" "}
-                <Link href="/pos/menu" className="underline">
-                  Catálogo
-                </Link>
-                .
-              </p>
-            </Card>
-          ) : null}
         </div>
       </div>
     </div>
@@ -212,4 +504,14 @@ function Metric({
       {hint ? <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">{hint}</p> : null}
     </div>
   );
+}
+
+function lineDefaultQuantity(unit: BaseUnit): number {
+  if (unit === "g" || unit === "ml") {
+    return 100;
+  }
+  if (unit === "kg" || unit === "l") {
+    return 0.1;
+  }
+  return 1;
 }
