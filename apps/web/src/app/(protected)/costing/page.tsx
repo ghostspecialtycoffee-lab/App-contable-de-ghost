@@ -241,6 +241,20 @@ export default function CostingPage() {
         </p>
       </div>
 
+      <Card title="Flujo recomendado">
+        <ol className="space-y-2 text-sm text-[var(--ghost-text-muted)]">
+          <li>
+            1.{" "}
+            <Link href="/purchases" className="font-medium text-[var(--ghost-brand-500)] underline">
+              Registrar compras
+            </Link>{" "}
+            (factura + confirmar → costo de insumos)
+          </li>
+          <li>2. Armar la receta del producto con esos insumos</li>
+          <li>3. Guardar la ficha y revisar food cost / margen</li>
+        </ol>
+      </Card>
+
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         <Card title="Productos del catálogo">
           {products.length === 0 ? (

@@ -74,6 +74,7 @@ export const DEFAULT_ROLE_DEFINITIONS: Record<SystemRole, RoleDefinition> = {
       ...fullAccess("kds"),
       ...fullAccess("cash"),
       ...fullAccess("inventory"),
+      ...fullAccess("costing"),
       ...fullAccess("reports"),
       ...fullAccess("analytics"),
       { module: "hr", action: "read" },

@@ -9,10 +9,12 @@ import { useWarehouses } from "@/hooks/use-warehouses";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatDate, formatMoney, todayIsoDate } from "@/lib/format";
 import { compressImageFile } from "@/lib/image/compress-image";
+import { createInventoryItem, createWarehouse } from "@/lib/inventory/inventory";
 import {
   confirmPurchaseInvoice,
   createPurchaseInvoice,
 } from "@/lib/purchases/purchases";
+import { useActiveMembership } from "@/providers/auth-provider";
 import {
   BASE_UNITS,
   BASE_UNIT_LABELS,
@@ -35,6 +37,7 @@ const emptyLine = (): PurchaseInvoiceLineInput => ({
 });
 
 export default function PurchasesPage() {
+  const membership = useActiveMembership();
   const { items: inventoryItems } = useInventoryItems();
   const { warehouses } = useWarehouses();
   const { invoices, loading, error } = usePurchaseInvoices();
@@ -50,6 +53,12 @@ export default function PurchasesPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [creatingWarehouse, setCreatingWarehouse] = useState(false);
+  const [creatingItemIndex, setCreatingItemIndex] = useState<number | null>(null);
+
+  const branchId = membership?.branchIds[0] ?? "";
+  const selectedWarehouseId = warehouseId || warehouses[0]?.id || "";
+  const canSubmitPurchase = Boolean(selectedWarehouseId);
 
   const preview = useMemo(() => {
     const built = buildPurchaseInvoiceLines(lines.filter((line) => line.description.trim()));
@@ -75,6 +84,66 @@ export default function PurchasesPage() {
       description: item.name,
       unit: item.baseUnit as BaseUnit,
     });
+  }
+
+  async function handleCreateDefaultWarehouse() {
+    if (!branchId) {
+      setSubmitError("No hay sucursal activa.");
+      return;
+    }
+
+    setSubmitError(null);
+    setCreatingWarehouse(true);
+
+    try {
+      const result = await createWarehouse({
+        branchId,
+        name: "Bodega principal",
+        code: "MAIN",
+        isDefault: true,
+      });
+      setWarehouseId(result.warehouseId);
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setCreatingWarehouse(false);
+    }
+  }
+
+  async function handleCreateInventoryItem(index: number) {
+    const line = lines[index];
+    if (!line) {
+      return;
+    }
+
+    const name = line.description.trim();
+
+    if (!name || name.length < 2) {
+      setSubmitError("Escribe la descripción del insumo antes de crearlo.");
+      return;
+    }
+
+    setSubmitError(null);
+    setCreatingItemIndex(index);
+
+    try {
+      const sku = buildQuickSku(name);
+      const result = await createInventoryItem({
+        sku,
+        name,
+        type: "raw_material",
+        baseUnit: (line.unit as BaseUnit) ?? "kg",
+      });
+
+      updateLine(index, {
+        inventoryItemId: result.itemId,
+        description: name,
+      });
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setCreatingItemIndex(null);
+    }
   }
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -116,11 +185,15 @@ export default function PurchasesPage() {
     setSubmitting(true);
 
     try {
+      if (!canSubmitPurchase) {
+        throw new Error("Crea una bodega antes de registrar la compra.");
+      }
+
       await createPurchaseInvoice({
         supplierName,
         invoiceNumber,
         invoiceDate,
-        warehouseId: warehouseId || warehouses[0]?.id || "",
+        warehouseId: selectedWarehouseId,
         lines: lines.filter((line) => line.description.trim()),
         attachmentDataUrl: attachmentDataUrl || undefined,
         attachmentName: attachmentName || undefined,
@@ -166,9 +239,36 @@ export default function PurchasesPage() {
         <h1 className="text-2xl font-semibold">Compras</h1>
         <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
           Registra facturas de compra con precio, cantidad, unidad e IVA Colombia. Al confirmar,
-          entra inventario con costo promedio.
+          entra inventario con costo promedio para las{" "}
+          <Link href="/costing" className="underline">
+            fichas de costeo
+          </Link>
+          .
         </p>
       </div>
+
+      {warehouses.length === 0 ? (
+        <Card title="Configura tu bodega">
+          <p className="text-sm text-[var(--ghost-text-muted)]">
+            Necesitas al menos una bodega para registrar compras y actualizar costos de insumos.
+          </p>
+          <Button
+            className="mt-4"
+            onClick={handleCreateDefaultWarehouse}
+            disabled={creatingWarehouse || !branchId}
+            fullWidth
+          >
+            {creatingWarehouse ? "Creando..." : "Crear bodega principal"}
+          </Button>
+          <p className="mt-2 text-xs text-[var(--ghost-text-muted)]">
+            También puedes gestionar bodegas en{" "}
+            <Link href="/inventory/warehouses" className="underline">
+              Inventario → Bodegas
+            </Link>
+            .
+          </p>
+        </Card>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
         <Card title="Nueva factura de compra">
@@ -207,9 +307,10 @@ export default function PurchasesPage() {
               <span className="text-sm font-medium">Bodega destino</span>
               <select
                 required
-                value={warehouseId || warehouses[0]?.id || ""}
+                value={selectedWarehouseId}
                 onChange={(event) => setWarehouseId(event.target.value)}
                 className="ghost-input"
+                disabled={warehouses.length === 0}
               >
                 {warehouses.map((warehouse) => (
                   <option key={warehouse.id} value={warehouse.id}>
@@ -252,8 +353,25 @@ export default function PurchasesPage() {
                     value={line.description}
                     onChange={(event) => updateLine(index, { description: event.target.value })}
                     className="ghost-input"
-                    placeholder="Descripción"
+                    placeholder="Descripción del insumo"
                   />
+                  {!line.inventoryItemId ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      fullWidth
+                      disabled={creatingItemIndex === index}
+                      onClick={() => handleCreateInventoryItem(index)}
+                    >
+                      {creatingItemIndex === index
+                        ? "Creando insumo..."
+                        : "Crear insumo en inventario"}
+                    </Button>
+                  ) : (
+                    <p className="text-xs text-[var(--ghost-brand-500)]">
+                      Vinculado a inventario · al confirmar actualiza el costo
+                    </p>
+                  )}
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       required
@@ -344,7 +462,7 @@ export default function PurchasesPage() {
             {submitError ? (
               <p className="text-sm text-[var(--ghost-danger)]">{submitError}</p>
             ) : null}
-            <Button type="submit" fullWidth disabled={submitting}>
+            <Button type="submit" fullWidth disabled={submitting || !canSubmitPurchase}>
               {submitting ? "Guardando..." : "Guardar borrador"}
             </Button>
           </form>
@@ -421,4 +539,17 @@ function readFileAsDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
     reader.readAsDataURL(file);
   });
+}
+
+function buildQuickSku(name: string): string {
+  const prefix = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toUpperCase()
+    .slice(0, 12);
+
+  const suffix = Date.now().toString(36).toUpperCase().slice(-6);
+  return `${prefix || "INS"}-${suffix}`;
 }

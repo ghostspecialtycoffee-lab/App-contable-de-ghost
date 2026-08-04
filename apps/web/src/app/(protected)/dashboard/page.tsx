@@ -155,7 +155,7 @@ export default function DashboardPage() {
         )}
       </Card>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <Link href="/pos">
           <Button fullWidth size="lg">
             Mostrador
@@ -179,6 +179,16 @@ export default function DashboardPage() {
         <Link href="/inventory">
           <Button fullWidth variant="secondary">
             Inventario
+          </Button>
+        </Link>
+        <Link href="/purchases">
+          <Button fullWidth variant="secondary">
+            Compras
+          </Button>
+        </Link>
+        <Link href="/costing">
+          <Button fullWidth variant="secondary">
+            Costeo
           </Button>
         </Link>
       </div>
