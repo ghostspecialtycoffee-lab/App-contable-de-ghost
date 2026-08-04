@@ -83,10 +83,11 @@ Si compartiste la clave privada en chat o capturas:
 
 | Error | Solución |
 |-------|----------|
+| **Cancelled / operación cancelada** | Lanzaste 2 deploys a la vez — espera o Run workflow **una sola vez** |
+| **must be on the Blaze plan** | Activa Blaze: https://console.firebase.google.com/project/ghost-contable/usage/details |
 | Secret mal nombrado (JSON en TOKEN) | Usar `FIREBASE_SERVICE_ACCOUNT` |
-| Sitio no encontrado | Deploy aún no terminó o falló — revisa Actions |
-| Functions billing | Activar plan Blaze |
-| Permission denied | Regenerar service account con rol Firebase Admin |
+| Sitio no encontrado | Deploy aún no terminó — revisa Actions |
+| Permission denied | Rol **Firebase Admin** al service account |
 
 ---
 
