@@ -1,0 +1,41 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOrgMember(orgId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid));
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /organizations/{organizationId} {
+      allow read: if isOrgMember(organizationId);
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+
+      match /members/{memberId} {
+        allow read: if isSignedIn() && request.auth.uid == memberId;
+        allow write: if false;
+      }
+
+      match /branches/{branchId} {
+        allow read: if isOrgMember(organizationId);
+        allow write: if false;
+      }
+
+      match /auditLogs/{logId} {
+        allow read: if isOrgMember(organizationId);
+        allow create: if isOrgMember(organizationId);
+        allow update, delete: if false;
+      }
+    }
+  }
+}
