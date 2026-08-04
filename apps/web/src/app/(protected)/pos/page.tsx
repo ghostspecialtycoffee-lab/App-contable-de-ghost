@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { SalesAccessButtons } from "@/components/sales-access-buttons";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
@@ -142,28 +143,7 @@ export default function PosPage() {
           <p className="text-sm text-[var(--ghost-text-muted)]">Mostrador</p>
           <h1 className="text-2xl font-semibold">Mostrador</h1>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/pos/menu">
-            <Button variant="secondary" size="sm">
-              Catálogo
-            </Button>
-          </Link>
-          <Link href="/pos/tables">
-            <Button variant="secondary" size="sm">
-              Mesas
-            </Button>
-          </Link>
-          <Link href="/billing">
-            <Button variant="secondary" size="sm">
-              Registros
-            </Button>
-          </Link>
-          <Link href="/kds">
-            <Button variant="secondary" size="sm">
-              Comandas
-            </Button>
-          </Link>
-        </div>
+        <SalesAccessButtons compact title="Ventas" />
       </div>
 
       {loading ? (

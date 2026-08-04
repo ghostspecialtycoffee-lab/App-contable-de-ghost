@@ -9,6 +9,7 @@ import { useTableSessions } from "@/hooks/use-table-sessions";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { buildTableQrUrl, createDiningTable } from "@/lib/tables/tables";
 import { TableServiceProcessLine } from "@/components/table-service-process";
+import { SalesAccessButtons } from "@/components/sales-access-buttons";
 import {
   activeSessionLines,
   DINING_TABLE_STATUS_LABELS,
@@ -73,6 +74,8 @@ function PosTablesContent() {
           </div>
         </div>
       </div>
+
+      <SalesAccessButtons compact />
 
       {paidSaleNumber ? (
         <div className="space-y-3">
