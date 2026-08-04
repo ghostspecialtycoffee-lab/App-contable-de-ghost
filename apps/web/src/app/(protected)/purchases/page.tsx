@@ -21,9 +21,12 @@ import {
   CO_TAX_CATEGORIES,
   CO_TAX_CATEGORY_LABELS,
   buildPurchaseInvoiceLines,
+  formatPresentationLabel,
+  resolvePurchaseInventoryEntry,
   summarizePurchaseInvoice,
   type BaseUnit,
   type CoTaxCategory,
+  type InventoryItem,
   type PurchaseInvoiceLineInput,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
@@ -82,7 +85,7 @@ export default function PurchasesPage() {
     updateLine(index, {
       inventoryItemId: item.id,
       description: item.name,
-      unit: item.baseUnit as BaseUnit,
+      unit: (item.purchaseUnit ?? item.baseUnit) as BaseUnit,
     });
   }
 
@@ -128,11 +131,24 @@ export default function PurchasesPage() {
 
     try {
       const sku = buildQuickSku(name);
+      const baseUnit =
+        line.unit === "kg" ? "g" : line.unit === "l" ? "ml" : (line.unit as BaseUnit);
+      const purchaseUnit = line.unit;
+      const presentationQuantity =
+        line.unit === "kg" || line.unit === "l" ? 1000 : 1;
+
       const result = await createInventoryItem({
         sku,
         name,
         type: "raw_material",
-        baseUnit: (line.unit as BaseUnit) ?? "kg",
+        baseUnit,
+        purchaseUnit,
+        presentationQuantity,
+        presentationLabel: formatPresentationLabel({
+          purchaseUnit,
+          presentationQuantity,
+          baseUnit,
+        }),
       });
 
       updateLine(index, {
@@ -426,6 +442,12 @@ export default function PurchasesPage() {
                       ))}
                     </select>
                   </div>
+                  {line.inventoryItemId && line.quantity > 0 && line.unitPriceNet > 0 ? (
+                    <PurchaseInventoryPreview
+                      line={line}
+                      item={inventoryItems.find((entry) => entry.id === line.inventoryItemId)}
+                    />
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -529,6 +551,45 @@ export default function PurchasesPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function PurchaseInventoryPreview({
+  line,
+  item,
+}: {
+  line: PurchaseInvoiceLineInput;
+  item?: InventoryItem;
+}) {
+  if (!item) {
+    return null;
+  }
+
+  const [builtLine] = buildPurchaseInvoiceLines([line]);
+  if (!builtLine) {
+    return null;
+  }
+
+  const entry = resolvePurchaseInventoryEntry({
+    line: builtLine,
+    baseUnit: item.baseUnit,
+    purchaseUnit: item.purchaseUnit,
+    presentationQuantity: item.presentationQuantity,
+  });
+
+  return (
+    <p className="text-xs text-[var(--ghost-text-muted)]">
+      Entrada inventario: {entry.quantityInBase.toLocaleString("es-CO")} {item.baseUnit} · costo
+      neto {formatMoney(entry.unitCostNetPerBase)}/{item.baseUnit}
+      {item.presentationLabel || item.purchaseUnit
+        ? ` · ${formatPresentationLabel({
+            presentationLabel: item.presentationLabel,
+            purchaseUnit: item.purchaseUnit,
+            presentationQuantity: item.presentationQuantity,
+            baseUnit: item.baseUnit,
+          })}`
+        : ""}
+    </p>
   );
 }
 

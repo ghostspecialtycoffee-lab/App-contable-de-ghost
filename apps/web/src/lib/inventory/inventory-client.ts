@@ -57,6 +57,9 @@ export async function createInventoryItemClient(input: {
   minStock?: number;
   maxStock?: number;
   trackLot?: boolean;
+  purchaseUnit?: string;
+  presentationQuantity?: number;
+  presentationLabel?: string;
 }): Promise<{ itemId: string }> {
   const userId = requireUserId();
   const organizationId = await getOrganizationIdFromProfile();
@@ -101,6 +104,9 @@ export async function createInventoryItemClient(input: {
     averageCost: 0,
     lastCost: 0,
     trackLot: input.trackLot ?? false,
+    purchaseUnit: input.purchaseUnit ?? input.baseUnit,
+    presentationQuantity: input.presentationQuantity ?? 1,
+    presentationLabel: input.presentationLabel?.trim() ?? "",
     createdAt: now,
     updatedAt: now,
     createdBy: userId,

@@ -1,5 +1,8 @@
-import type { BaseUnit, RecipeLineInput } from "@ghost/domain";
-import { calculateRecipeCost } from "@ghost/domain";
+import type { BaseUnit, InventoryCostProfile, RecipeLineInput } from "@ghost/domain";
+import {
+  calculateRecipeCost,
+  type InventoryItem,
+} from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import {
   collection,
@@ -58,7 +61,7 @@ export async function saveRecipeClient(input: {
   }
 
   const db = getFirestoreDb();
-  const unitCosts: Record<string, number> = {};
+  const itemProfiles: Record<string, InventoryCostProfile> = {};
 
   for (const line of lines) {
     const itemRef = doc(
@@ -66,12 +69,24 @@ export async function saveRecipeClient(input: {
       firestorePaths.organizationInventoryItem(organizationId, line.inventoryItemId),
     );
     const itemSnap = await getDoc(itemRef);
-    unitCosts[line.inventoryItemId] = itemSnap.exists()
-      ? Number(itemSnap.data()?.averageCost ?? itemSnap.data()?.lastCost ?? 0)
-      : 0;
+    if (!itemSnap.exists()) {
+      itemProfiles[line.inventoryItemId] = {
+        baseUnit: line.unit as BaseUnit,
+        averageCost: 0,
+      };
+      continue;
+    }
+
+    const data = itemSnap.data() as InventoryItem;
+    itemProfiles[line.inventoryItemId] = {
+      baseUnit: data.baseUnit,
+      averageCost: Number(data.averageCost ?? data.lastCost ?? 0),
+      purchaseUnit: data.purchaseUnit,
+      presentationQuantity: data.presentationQuantity,
+    };
   }
 
-  const recipeCost = calculateRecipeCost(lines, unitCosts);
+  const recipeCost = calculateRecipeCost(lines, itemProfiles);
   const existingQuery = query(
     collection(db, firestorePaths.organizationRecipes(organizationId)),
     where("menuProductId", "==", input.menuProductId),

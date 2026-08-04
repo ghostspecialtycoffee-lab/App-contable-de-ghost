@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
+import { buildInventoryCostProfiles } from "@/lib/costing/recipe-costing";
 import { formatMoney } from "@/lib/format";
 import { createMenuProduct, seedDefaultMenu, updateMenuProductImage } from "@/lib/pos/pos";
 import { compressImageFile } from "@/lib/image/compress-image";
@@ -59,20 +60,17 @@ export default function PosMenuPage() {
     mimeType: string;
   } | null>(null);
 
-  const unitCosts = useMemo(() => {
-    const costs: Record<string, number> = {};
-    for (const item of inventoryItems) {
-      costs[item.id] = item.averageCost || item.lastCost || 0;
-    }
-    return costs;
-  }, [inventoryItems]);
+  const itemProfiles = useMemo(
+    () => buildInventoryCostProfiles(inventoryItems),
+    [inventoryItems],
+  );
 
   const previewRecipeCost = useMemo(() => {
     const validLines = recipeLines.filter(
       (line) => line.inventoryItemId && line.quantity > 0,
     );
-    return validLines.length > 0 ? calculateRecipeCost(validLines, unitCosts) : 0;
-  }, [recipeLines, unitCosts]);
+    return validLines.length > 0 ? calculateRecipeCost(validLines, itemProfiles) : 0;
+  }, [recipeLines, itemProfiles]);
 
   const suggestedTaxCategory = useMemo(() => {
     const containsCoffeeIngredient = recipeLines.some((line) => {
@@ -414,7 +412,8 @@ export default function PosMenuPage() {
                 </p>
                 <p>Costo receta: {formatMoney(previewRecipeCost)}</p>
                 <p>Food cost: {(previewMatrix.foodCostPct * 100).toFixed(1)}%</p>
-                <p>Margen: {(previewMatrix.grossMarginPct * 100).toFixed(1)}%</p>
+                <p>Utilidad bruta: {formatMoney(previewMatrix.grossProfitAmount)}</p>
+                <p>Margen neto: {(previewMatrix.grossMarginPct * 100).toFixed(1)}%</p>
                 <p>Precio sugerido: {formatMoney(previewMatrix.suggestedSalePriceGross)}</p>
               </div>
             ) : null}

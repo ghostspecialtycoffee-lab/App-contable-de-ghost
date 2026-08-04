@@ -1,4 +1,6 @@
 import { calculateTaxLine, type CoTaxCategory } from "../../fiscal/colombia-tax.js";
+import { convertToBaseUnit } from "../../inventory/unit-conversion.js";
+import type { BaseUnit } from "../../inventory/units.js";
 import type { PurchaseInvoiceLine, PurchaseInvoiceLineInput } from "../invoice.js";
 
 export function buildPurchaseInvoiceLines(
@@ -51,4 +53,34 @@ export function unitCostWithTaxFromLine(line: PurchaseInvoiceLine): number {
 
 export function defaultPurchaseTaxCategory(): CoTaxCategory {
   return "IVA_19";
+}
+
+export function resolvePurchaseInventoryEntry(input: {
+  line: PurchaseInvoiceLine;
+  baseUnit: BaseUnit;
+  purchaseUnit?: BaseUnit;
+  presentationQuantity?: number;
+}): {
+  quantityInBase: number;
+  unitCostNetPerBase: number;
+} {
+  const quantityInBase = convertToBaseUnit(
+    input.line.quantity,
+    input.line.unit,
+    input.baseUnit,
+    {
+      purchaseUnit: input.purchaseUnit,
+      presentationQuantity: input.presentationQuantity,
+    },
+  );
+
+  const unitCostNetPerBase =
+    quantityInBase > 0
+      ? Math.round(input.line.lineSubtotal / quantityInBase)
+      : 0;
+
+  return {
+    quantityInBase,
+    unitCostNetPerBase,
+  };
 }

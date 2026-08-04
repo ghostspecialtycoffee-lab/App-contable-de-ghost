@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildPurchaseInvoiceLines,
+  resolvePurchaseInventoryEntry,
   summarizePurchaseInvoice,
   unitCostWithTaxFromLine,
 } from "./invoice.js";
@@ -46,5 +47,29 @@ describe("summarizePurchaseInvoice", () => {
     const summary = summarizePurchaseInvoice(lines);
     expect(summary.subtotal).toBe(20000);
     expect(summary.total).toBe(summary.subtotal + summary.taxAmount);
+  });
+});
+
+describe("resolvePurchaseInventoryEntry", () => {
+  it("convierte compra en kg a costo neto por gramo", () => {
+    const [line] = buildPurchaseInvoiceLines([
+      {
+        description: "Café verde",
+        quantity: 2,
+        unit: "kg",
+        unitPriceNet: 80000,
+        taxCategory: "IVA_19",
+      },
+    ]);
+
+    const entry = resolvePurchaseInventoryEntry({
+      line: line!,
+      baseUnit: "g",
+      purchaseUnit: "kg",
+      presentationQuantity: 1000,
+    });
+
+    expect(entry.quantityInBase).toBe(2000);
+    expect(entry.unitCostNetPerBase).toBe(80);
   });
 });

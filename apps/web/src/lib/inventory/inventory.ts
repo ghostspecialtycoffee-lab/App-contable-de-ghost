@@ -21,6 +21,9 @@ export interface CreateInventoryItemInput {
   minStock?: number;
   maxStock?: number;
   trackLot?: boolean;
+  purchaseUnit?: BaseUnit;
+  presentationQuantity?: number;
+  presentationLabel?: string;
 }
 
 type CreateWarehouseInput = Parameters<typeof createWarehouseClient>[0];

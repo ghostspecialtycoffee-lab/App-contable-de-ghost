@@ -1,30 +1,54 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
+import { formatMoney } from "@/lib/format";
 import { createInventoryItem } from "@/lib/inventory/inventory";
 import {
   BASE_UNITS,
   BASE_UNIT_LABELS,
   INVENTORY_ITEM_TYPES,
   INVENTORY_ITEM_TYPE_LABELS,
+  formatPresentationLabel,
   type BaseUnit,
   type InventoryItemType,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
+
+function suggestPresentation(baseUnit: BaseUnit): {
+  purchaseUnit: BaseUnit;
+  presentationQuantity: number;
+} {
+  if (baseUnit === "g") {
+    return { purchaseUnit: "kg", presentationQuantity: 1000 };
+  }
+  if (baseUnit === "ml") {
+    return { purchaseUnit: "l", presentationQuantity: 1000 };
+  }
+  return { purchaseUnit: baseUnit, presentationQuantity: 1 };
+}
 
 export default function InventoryItemsPage() {
   const { items, loading, error } = useInventoryItems();
   const [sku, setSku] = useState("");
   const [name, setName] = useState("");
   const [type, setType] = useState<InventoryItemType>("raw_material");
-  const [baseUnit, setBaseUnit] = useState<BaseUnit>("kg");
+  const [baseUnit, setBaseUnit] = useState<BaseUnit>("g");
+  const [purchaseUnit, setPurchaseUnit] = useState<BaseUnit>("kg");
+  const [presentationQuantity, setPresentationQuantity] = useState("1000");
+  const [presentationLabel, setPresentationLabel] = useState("");
   const [minStock, setMinStock] = useState("0");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const suggestion = suggestPresentation(baseUnit);
+    setPurchaseUnit(suggestion.purchaseUnit);
+    setPresentationQuantity(String(suggestion.presentationQuantity));
+  }, [baseUnit]);
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,10 +61,14 @@ export default function InventoryItemsPage() {
         name,
         type,
         baseUnit,
+        purchaseUnit,
+        presentationQuantity: Number(presentationQuantity) || 1,
+        presentationLabel,
         minStock: Number(minStock),
       });
       setSku("");
       setName("");
+      setPresentationLabel("");
       setMinStock("0");
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
@@ -49,6 +77,13 @@ export default function InventoryItemsPage() {
     }
   }
 
+  const previewPresentation = formatPresentationLabel({
+    presentationLabel,
+    purchaseUnit,
+    presentationQuantity: Number(presentationQuantity) || 1,
+    baseUnit,
+  });
+
   return (
     <div className="space-y-6 pb-4">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -56,14 +91,22 @@ export default function InventoryItemsPage() {
           <p className="text-sm text-[var(--ghost-text-muted)]">
             <Link href="/inventory" className="underline">
               Inventario
+            </Link>{" "}
+            ·{" "}
+            <Link href="/purchases" className="underline">
+              Compras
             </Link>
           </p>
-          <h1 className="text-2xl font-bold">Ítems</h1>
+          <h1 className="text-2xl font-bold">Materias primas e insumos</h1>
+          <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
+            Define unidad de costeo y presentación de compra. El costo promedio se guarda por
+            unidad base (g, ml, unidad).
+          </p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-        <Card title="Nuevo ítem" description="Materias primas, insumos y productos.">
+      <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+        <Card title="Nuevo ítem">
           <form className="space-y-3" onSubmit={handleCreate}>
             <label className="block space-y-1">
               <span className="text-sm font-medium">SKU</span>
@@ -100,7 +143,7 @@ export default function InventoryItemsPage() {
               </select>
             </label>
             <label className="block space-y-1">
-              <span className="text-sm font-medium">Unidad base</span>
+              <span className="text-sm font-medium">Unidad de costeo (base)</span>
               <select
                 value={baseUnit}
                 onChange={(event) => setBaseUnit(event.target.value as BaseUnit)}
@@ -114,7 +157,50 @@ export default function InventoryItemsPage() {
               </select>
             </label>
             <label className="block space-y-1">
-              <span className="text-sm font-medium">Stock mínimo</span>
+              <span className="text-sm font-medium">Unidad de compra</span>
+              <select
+                value={purchaseUnit}
+                onChange={(event) => setPurchaseUnit(event.target.value as BaseUnit)}
+                className="ghost-input"
+              >
+                {BASE_UNITS.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {BASE_UNIT_LABELS[unit]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block space-y-1">
+              <span className="text-sm font-medium">Cantidad base por compra</span>
+              <input
+                required
+                type="number"
+                min="0.001"
+                step="0.001"
+                value={presentationQuantity}
+                onChange={(event) => setPresentationQuantity(event.target.value)}
+                className="ghost-input"
+              />
+              <span className="text-xs text-[var(--ghost-text-muted)]">
+                Ej: 1 kg = 1000 g → unidad compra kg, cantidad 1000, base g
+              </span>
+            </label>
+            <label className="block space-y-1">
+              <span className="text-sm font-medium">Presentación (opcional)</span>
+              <input
+                value={presentationLabel}
+                onChange={(event) => setPresentationLabel(event.target.value)}
+                className="ghost-input"
+                placeholder="Saco 1 kg, Caja x100"
+              />
+            </label>
+            {previewPresentation ? (
+              <p className="rounded-lg bg-[var(--ghost-surface-2)] p-2 text-xs text-[var(--ghost-text-muted)]">
+                Presentación: {previewPresentation}
+              </p>
+            ) : null}
+            <label className="block space-y-1">
+              <span className="text-sm font-medium">Stock mínimo (unidad base)</span>
               <input
                 type="number"
                 min="0"
@@ -133,14 +219,15 @@ export default function InventoryItemsPage() {
           </form>
         </Card>
 
-        <Card title="Catálogo" description="Listado en tiempo real desde Firestore.">
+        <Card title="Catálogo de insumos">
           {loading ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">Cargando ítems...</p>
           ) : error ? (
             <p className="text-sm text-[var(--ghost-danger)]">{error}</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">
-              Aún no hay ítems. Crea el primero con el formulario.
+              Crea materias primas aquí y luego regístralas en compras para obtener costos
+              reales.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -149,9 +236,9 @@ export default function InventoryItemsPage() {
                   <tr>
                     <th className="px-2 py-2 font-medium">SKU</th>
                     <th className="px-2 py-2 font-medium">Nombre</th>
-                    <th className="px-2 py-2 font-medium">Tipo</th>
-                    <th className="px-2 py-2 font-medium">Unidad</th>
-                    <th className="px-2 py-2 font-medium">Costo prom.</th>
+                    <th className="px-2 py-2 font-medium">Costeo</th>
+                    <th className="px-2 py-2 font-medium">Presentación</th>
+                    <th className="px-2 py-2 font-medium">Costo / base</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -162,16 +249,17 @@ export default function InventoryItemsPage() {
                     >
                       <td className="px-2 py-2 font-mono text-xs">{item.sku}</td>
                       <td className="px-2 py-2">{item.name}</td>
-                      <td className="px-2 py-2">
-                        {INVENTORY_ITEM_TYPE_LABELS[item.type]}
-                      </td>
                       <td className="px-2 py-2">{item.baseUnit}</td>
-                      <td className="px-2 py-2">
-                        {item.averageCost.toLocaleString("es-CO", {
-                          style: "currency",
-                          currency: "COP",
-                          maximumFractionDigits: 0,
+                      <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
+                        {formatPresentationLabel({
+                          presentationLabel: item.presentationLabel,
+                          purchaseUnit: item.purchaseUnit,
+                          presentationQuantity: item.presentationQuantity,
+                          baseUnit: item.baseUnit,
                         })}
+                      </td>
+                      <td className="px-2 py-2">
+                        {formatMoney(item.averageCost || item.lastCost)}/{item.baseUnit}
                       </td>
                     </tr>
                   ))}

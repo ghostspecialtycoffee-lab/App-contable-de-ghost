@@ -78,6 +78,8 @@ export interface CostMatrixResult {
   recipeCost: number;
   foodCostPct: number;
   grossMarginPct: number;
+  grossProfitAmount: number;
+  netProfitAfterSaleTax: number;
   suggestedSalePriceGross: number;
   reteIvaReference: number;
   reteFuenteReference: number;
@@ -99,10 +101,10 @@ export function calculateCostMatrix(input: CostMatrixInput): CostMatrixResult {
   const recipeCost = input.recipeCost ?? purchase.total;
   const foodCostPct =
     input.salePriceGross > 0 ? recipeCost / input.salePriceGross : 0;
+  const grossProfitAmount = salePriceNet - recipeCost;
   const grossMarginPct =
-    input.salePriceGross > 0
-      ? (input.salePriceGross - recipeCost) / input.salePriceGross
-      : 0;
+    salePriceNet > 0 ? grossProfitAmount / salePriceNet : 0;
+  const netProfitAfterSaleTax = grossProfitAmount - sale.taxAmount;
 
   const targetPct = input.targetCostPct ?? CO_COST_MATRIX_DEFAULTS.targetFoodCostPct;
   const suggestedNet =
@@ -117,6 +119,8 @@ export function calculateCostMatrix(input: CostMatrixInput): CostMatrixResult {
     recipeCost,
     foodCostPct,
     grossMarginPct,
+    grossProfitAmount,
+    netProfitAfterSaleTax,
     suggestedSalePriceGross,
     reteIvaReference: Math.round(sale.taxAmount * CO_COST_MATRIX_DEFAULTS.reteIvaPct),
     reteFuenteReference: Math.round(

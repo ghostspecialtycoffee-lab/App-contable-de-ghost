@@ -9,6 +9,7 @@ import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useRecipes } from "@/hooks/use-recipes";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
+import { buildInventoryCostProfiles } from "@/lib/costing/recipe-costing";
 import { updateMenuProduct } from "@/lib/pos/pos";
 import { saveRecipe } from "@/lib/recipes/recipes";
 import {
@@ -19,6 +20,8 @@ import {
   CO_TAX_CATEGORY_LABELS,
   calculateCostMatrix,
   calculateRecipeCost,
+  calculateRecipeCostBreakdown,
+  calculateRecipeLineCost,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
   type BaseUnit,
@@ -86,20 +89,25 @@ export default function CostingPage() {
     setSaveMessage(null);
   }, [selectedProduct?.id, selectedRecipe?.id]);
 
-  const unitCosts = useMemo(() => {
-    const costs: Record<string, number> = {};
-    for (const item of inventoryItems) {
-      costs[item.id] = item.averageCost || item.lastCost || 0;
-    }
-    return costs;
-  }, [inventoryItems]);
+  const itemProfiles = useMemo(
+    () => buildInventoryCostProfiles(inventoryItems),
+    [inventoryItems],
+  );
 
-  const previewRecipeCost = useMemo(() => {
-    const validLines = recipeLines.filter(
-      (line) => line.inventoryItemId && line.quantity > 0,
-    );
-    return validLines.length > 0 ? calculateRecipeCost(validLines, unitCosts) : 0;
-  }, [recipeLines, unitCosts]);
+  const validRecipeLines = useMemo(
+    () => recipeLines.filter((line) => line.inventoryItemId && line.quantity > 0),
+    [recipeLines],
+  );
+
+  const recipeBreakdown = useMemo(
+    () => calculateRecipeCostBreakdown(validRecipeLines, itemProfiles),
+    [validRecipeLines, itemProfiles],
+  );
+
+  const previewRecipeCost = useMemo(
+    () => recipeBreakdown.reduce((total, line) => total + line.lineCost, 0),
+    [recipeBreakdown],
+  );
 
   const suggestedTaxCategory = useMemo(() => {
     if (!selectedProduct) {
@@ -214,7 +222,7 @@ export default function CostingPage() {
       const recipe = recipes.find((entry) => entry.menuProductId === product.id);
       const cost =
         recipe && recipe.lines.length > 0
-          ? calculateRecipeCost(recipe.lines, unitCosts)
+          ? calculateRecipeCost(recipe.lines, itemProfiles)
           : product.recipeCost ?? 0;
       const foodCostPct =
         product.price > 0 && cost > 0 ? cost / product.price : null;
@@ -225,7 +233,7 @@ export default function CostingPage() {
         foodCostPct,
       };
     });
-  }, [products, recipes, unitCosts]);
+  }, [products, recipes, itemProfiles]);
 
   return (
     <div className="space-y-6 pb-4">
@@ -244,14 +252,21 @@ export default function CostingPage() {
       <Card title="Flujo recomendado">
         <ol className="space-y-2 text-sm text-[var(--ghost-text-muted)]">
           <li>
-            1.{" "}
+            1. Registrar{" "}
+            <Link href="/inventory/items" className="underline">
+              materias primas
+            </Link>{" "}
+            con unidad de costeo y presentación de compra
+          </li>
+          <li>
+            2.{" "}
             <Link href="/purchases" className="font-medium text-[var(--ghost-brand-500)] underline">
               Registrar compras
             </Link>{" "}
-            (factura + confirmar → costo de insumos)
+            y confirmar (costo neto por unidad base)
           </li>
-          <li>2. Armar la receta del producto con esos insumos</li>
-          <li>3. Guardar la ficha y revisar food cost / margen</li>
+          <li>3. Armar receta del producto en cantidades de consumo</li>
+          <li>4. Guardar ficha y revisar utilidad bruta / food cost</li>
         </ol>
       </Card>
 
@@ -381,8 +396,8 @@ export default function CostingPage() {
                           <option value="">Seleccionar insumo</option>
                           {inventoryItems.map((item) => (
                             <option key={item.id} value={item.id}>
-                              {item.name} · costo{" "}
-                              {formatMoney(item.averageCost || item.lastCost)}
+                              {item.name} · {formatMoney(item.averageCost || item.lastCost)}/
+                              {item.baseUnit}
                             </option>
                           ))}
                         </select>
@@ -416,6 +431,20 @@ export default function CostingPage() {
                             ))}
                           </select>
                         </div>
+                        {line.inventoryItemId && line.quantity > 0 ? (
+                          <p className="text-xs text-[var(--ghost-text-muted)]">
+                            {(() => {
+                              const breakdown = calculateRecipeLineCost(
+                                line,
+                                itemProfiles[line.inventoryItemId] ?? {
+                                  baseUnit: line.unit,
+                                  averageCost: 0,
+                                },
+                              );
+                              return `${breakdown.quantityInBase.toLocaleString("es-CO")} ${breakdown.baseUnit} × ${formatMoney(breakdown.unitCostPerBase)} = ${formatMoney(breakdown.lineCost)}`;
+                            })()}
+                          </p>
+                        ) : null}
                       </div>
                     ))
                   )}
@@ -429,10 +458,16 @@ export default function CostingPage() {
                       hint={`Meta ${(targetCostPct * 100).toFixed(0)}%`}
                     />
                     <Metric
-                      label="Margen bruto"
-                      value={`${(matrix.grossMarginPct * 100).toFixed(1)}%`}
+                      label="Utilidad bruta"
+                      value={formatMoney(matrix.grossProfitAmount)}
+                      hint={`${(matrix.grossMarginPct * 100).toFixed(1)}% sobre neto`}
                     />
-                    <Metric label="Costo receta" value={formatMoney(previewRecipeCost)} />
+                    <Metric
+                      label="Margen después imp. venta"
+                      value={formatMoney(matrix.netProfitAfterSaleTax)}
+                      hint="Referencia operativa"
+                    />
+                    <Metric label="Costo receta (COGS)" value={formatMoney(previewRecipeCost)} />
                     <Metric label="Precio neto venta" value={formatMoney(matrix.salePriceNet)} />
                     <Metric
                       label={CO_TAX_CATEGORY_LABELS[saleTaxCategory]}
