@@ -17,6 +17,7 @@ Sistema ERP y POS para cafeterías, restaurantes, panaderías y negocios gastron
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Flujo de contribución y branches |
 | [CHANGELOG.md](CHANGELOG.md) | Historial de cambios |
 | [FIREBASE_SETUP.md](FIREBASE_SETUP.md) | **Configurar Google/Firebase (NO Code.gs)** |
+| [docs/ACCESO.md](docs/ACCESO.md) | **URLs PC + celular + pruebas** |
 
 Documentación por módulo: [docs/](docs/) (AUTH, INVENTARIO, ADRs).
 
