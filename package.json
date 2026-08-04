@@ -13,7 +13,7 @@
     "deploy:setup": "pnpm install && pnpm test && pnpm build",
     "firebase:deploy": "firebase deploy",
     "firebase:deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes,storage,functions",
-    "firebase:deploy:hosting": "firebase deploy --only hosting"
+    "firebase:deploy:hosting": "pnpm --filter @ghost/web build && firebase deploy --only hosting"
   },
   "devDependencies": {
     "firebase-tools": "13",
