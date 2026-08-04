@@ -22,8 +22,11 @@ const appNavItems = [
   { href: "/pos/tables", label: "Mesas" },
   { href: "/kds", label: "Comandas" },
   { href: "/billing", label: "Registros" },
+  { href: "/settings/fiscal", label: "Facturación" },
+  { href: "/expenses", label: "Gastos fijos" },
   { href: "/purchases", label: "Compras" },
   { href: "/costing", label: "Costeo" },
+  { href: "/settings/costing", label: "Matriz costos" },
   { href: "/inventory", label: "Inventario" },
 ];
 

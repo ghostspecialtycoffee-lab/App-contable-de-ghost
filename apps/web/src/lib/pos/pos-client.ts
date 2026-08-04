@@ -110,6 +110,39 @@ export async function createMenuProductClient(input: {
   return { productId: productRef.id };
 }
 
+export async function updateMenuProductClient(input: {
+  productId: string;
+  price?: number;
+  saleTaxCategory?: CoTaxCategory;
+}): Promise<void> {
+  const userId = requireUserId();
+  const { organizationId } = await getActiveContext();
+
+  if (input.price !== undefined && input.price < 0) {
+    throw new Error("El precio no puede ser negativo.");
+  }
+
+  const patch: Record<string, unknown> = {
+    updatedAt: serverTimestamp(),
+    updatedBy: userId,
+  };
+
+  if (input.price !== undefined) {
+    patch.price = Math.round(input.price);
+  }
+
+  if (input.saleTaxCategory !== undefined) {
+    patch.saleTaxCategory = input.saleTaxCategory;
+  }
+
+  const productRef = doc(
+    getFirestoreDb(),
+    firestorePaths.organizationMenuProduct(organizationId, input.productId),
+  );
+
+  await setDoc(productRef, patch, { merge: true });
+}
+
 export async function updateMenuProductImageClient(input: {
   productId: string;
   imageDataUrl: string;

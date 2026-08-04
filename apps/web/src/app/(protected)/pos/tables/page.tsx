@@ -1,16 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
 
 import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useTableSessions } from "@/hooks/use-table-sessions";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { buildTableQrUrl, createDiningTable } from "@/lib/tables/tables";
-import { DINING_TABLE_STATUS_LABELS } from "@ghost/domain";
+import { TableServiceProcessLine } from "@/components/table-service-process";
+import {
+  activeSessionLines,
+  DINING_TABLE_STATUS_LABELS,
+  TABLE_SESSION_STATUS_LABELS,
+} from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
-export default function PosTablesPage() {
+function PosTablesContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const paidSaleNumber = searchParams.get("paid");
   const { tables, loading, error } = useDiningTables();
   const { sessions } = useTableSessions({ openOnly: true });
   const [tableNumber, setTableNumber] = useState("");
@@ -32,12 +41,13 @@ export default function PosTablesPage() {
     setSubmitting(true);
 
     try {
-      await createDiningTable({
+      const result = await createDiningTable({
         number: Number(tableNumber),
         label: tableLabel.trim() || undefined,
       });
       setTableNumber("");
       setTableLabel("");
+      router.push(`/pos/tables/session?id=${result.tableId}`);
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -56,10 +66,26 @@ export default function PosTablesPage() {
           </p>
           <h1 className="text-2xl font-semibold">Mesas</h1>
           <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            Enumera mesas, imprime QR y gestiona pedidos por mesa con comandas.
+            Mesa → Cuenta → Pedido (QR o staff) → Comanda → Cobro → Registros
           </p>
+          <div className="mt-3">
+            <TableServiceProcessLine currentStep="mesa" />
+          </div>
         </div>
       </div>
+
+      {paidSaleNumber ? (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-1)] px-4 py-3 text-sm">
+            Cuenta cobrada · comprobante{" "}
+            <span className="font-mono font-medium">{paidSaleNumber}</span> registrado en{" "}
+            <Link href="/billing" className="underline">
+              Registros
+            </Link>
+          </div>
+          <TableServiceProcessLine currentStep="registro" compact />
+        </div>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[340px_1fr]">
         <Card title="Nueva mesa">
@@ -89,12 +115,12 @@ export default function PosTablesPage() {
               <p className="text-sm text-[var(--ghost-danger)]">{submitError}</p>
             ) : null}
             <Button type="submit" fullWidth disabled={submitting}>
-              {submitting ? "Creando..." : "Crear mesa + QR"}
+              {submitting ? "Creando..." : "Crear mesa y abrir cuenta"}
             </Button>
           </form>
         </Card>
 
-        <Card title="Mesas activas">
+        <Card title="Mesas">
           {loading ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">Cargando...</p>
           ) : error ? (
@@ -127,10 +153,12 @@ export default function PosTablesPage() {
 
                     {session ? (
                       <p className="mt-2 text-sm text-[var(--ghost-brand-500)]">
-                        Pedido abierto · {session.lines.length} ítems
-                        {session.status === "requested_bill" ? " · Cuenta pedida" : ""}
+                        {TABLE_SESSION_STATUS_LABELS[session.status]} ·{" "}
+                        {activeSessionLines(session.lines).length} ítem(s)
                       </p>
-                    ) : null}
+                    ) : (
+                      <p className="mt-2 text-sm text-[var(--ghost-text-muted)]">Sin cuenta abierta</p>
+                    )}
 
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrUrl)}`}
@@ -142,7 +170,7 @@ export default function PosTablesPage() {
 
                     <Link href={`/pos/tables/session?id=${table.id}`} className="mt-3 block">
                       <Button fullWidth variant={session ? "primary" : "secondary"}>
-                        {session ? "Ver pedido" : "Abrir mesa"}
+                        {session ? "Ver cuenta" : "Abrir cuenta"}
                       </Button>
                     </Link>
                   </div>
@@ -153,5 +181,13 @@ export default function PosTablesPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function PosTablesPage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-[var(--ghost-text-muted)]">Cargando...</p>}>
+      <PosTablesContent />
+    </Suspense>
   );
 }

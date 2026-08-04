@@ -16,6 +16,19 @@ export const TABLE_SESSION_LINE_STATUSES = ["pending", "sent", "cancelled"] as c
 
 export type TableSessionLineStatus = (typeof TABLE_SESSION_LINE_STATUSES)[number];
 
+export const TABLE_SESSION_STATUS_LABELS: Record<TableSessionStatus, string> = {
+  open: "Cuenta abierta",
+  requested_bill: "Cuenta solicitada",
+  closed: "Cuenta cerrada",
+  cancelled: "Cuenta cancelada",
+};
+
+export const TABLE_SESSION_LINE_STATUS_LABELS: Record<TableSessionLineStatus, string> = {
+  pending: "Pendiente de comanda",
+  sent: "En comanda",
+  cancelled: "Cancelado",
+};
+
 export type TableSessionLineSource = "staff" | "customer";
 
 export interface TableSessionLine {

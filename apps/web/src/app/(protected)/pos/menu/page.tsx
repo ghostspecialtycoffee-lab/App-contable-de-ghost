@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
+import { buildInventoryCostProfiles } from "@/lib/costing/recipe-costing";
 import { formatMoney } from "@/lib/format";
 import { createMenuProduct, seedDefaultMenu, updateMenuProductImage } from "@/lib/pos/pos";
 import { compressImageFile } from "@/lib/image/compress-image";
@@ -13,7 +15,6 @@ import { saveRecipe } from "@/lib/recipes/recipes";
 import {
   BASE_UNITS,
   BASE_UNIT_LABELS,
-  CO_COST_MATRIX_DEFAULTS,
   CO_TAX_CATEGORIES,
   CO_TAX_CATEGORY_LABELS,
   KITCHEN_STATIONS,
@@ -22,6 +23,7 @@ import {
   MENU_CATEGORY_LABELS,
   calculateCostMatrix,
   calculateRecipeCost,
+  getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
   type BaseUnit,
@@ -41,6 +43,7 @@ const emptyRecipeLine = (): RecipeLineInput => ({
 
 export default function PosMenuPage() {
   const { products, loading, error } = useMenuProducts();
+  const costMatrixSettings = useCostMatrixSettings();
   const { items: inventoryItems } = useInventoryItems();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -59,20 +62,17 @@ export default function PosMenuPage() {
     mimeType: string;
   } | null>(null);
 
-  const unitCosts = useMemo(() => {
-    const costs: Record<string, number> = {};
-    for (const item of inventoryItems) {
-      costs[item.id] = item.averageCost || item.lastCost || 0;
-    }
-    return costs;
-  }, [inventoryItems]);
+  const itemProfiles = useMemo(
+    () => buildInventoryCostProfiles(inventoryItems),
+    [inventoryItems],
+  );
 
   const previewRecipeCost = useMemo(() => {
     const validLines = recipeLines.filter(
       (line) => line.inventoryItemId && line.quantity > 0,
     );
-    return validLines.length > 0 ? calculateRecipeCost(validLines, unitCosts) : 0;
-  }, [recipeLines, unitCosts]);
+    return validLines.length > 0 ? calculateRecipeCost(validLines, itemProfiles) : 0;
+  }, [recipeLines, itemProfiles]);
 
   const suggestedTaxCategory = useMemo(() => {
     const containsCoffeeIngredient = recipeLines.some((line) => {
@@ -97,10 +97,7 @@ export default function PosMenuPage() {
       return null;
     }
 
-    const targetCostPct =
-      category === "beverage"
-        ? CO_COST_MATRIX_DEFAULTS.targetBeverageCostPct
-        : CO_COST_MATRIX_DEFAULTS.targetFoodCostPct;
+    const targetCostPct = getTargetCostPctForCategory(category, costMatrixSettings);
 
     return calculateCostMatrix({
       unitCostNet: previewRecipeCost,
@@ -110,8 +107,9 @@ export default function PosMenuPage() {
       saleTaxCategory,
       recipeCost: previewRecipeCost,
       targetCostPct,
+      matrixSettings: costMatrixSettings,
     });
-  }, [price, category, saleTaxCategory, previewRecipeCost]);
+  }, [price, category, saleTaxCategory, previewRecipeCost, costMatrixSettings]);
 
   function updateRecipeLine(index: number, patch: Partial<RecipeLineInput>) {
     setRecipeLines((current) =>
@@ -210,6 +208,10 @@ export default function PosMenuPage() {
             Producto, receta, costos e IVA Colombia.{" "}
             <Link href="/costing" className="underline">
               Ver matriz de costeo
+            </Link>
+            {" · "}
+            <Link href="/settings/costing" className="underline">
+              Parámetros
             </Link>
           </p>
         </div>
@@ -414,7 +416,8 @@ export default function PosMenuPage() {
                 </p>
                 <p>Costo receta: {formatMoney(previewRecipeCost)}</p>
                 <p>Food cost: {(previewMatrix.foodCostPct * 100).toFixed(1)}%</p>
-                <p>Margen: {(previewMatrix.grossMarginPct * 100).toFixed(1)}%</p>
+                <p>Utilidad bruta: {formatMoney(previewMatrix.grossProfitAmount)}</p>
+                <p>Margen neto: {(previewMatrix.grossMarginPct * 100).toFixed(1)}%</p>
                 <p>Precio sugerido: {formatMoney(previewMatrix.suggestedSalePriceGross)}</p>
               </div>
             ) : null}
@@ -447,6 +450,7 @@ export default function PosMenuPage() {
                     <th className="px-2 py-2 font-medium">Costo</th>
                     <th className="px-2 py-2 font-medium">IVA</th>
                     <th className="px-2 py-2 font-medium">Categoría</th>
+                    <th className="px-2 py-2 font-medium">Ficha</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -467,6 +471,14 @@ export default function PosMenuPage() {
                       </td>
                       <td className="px-2 py-2">
                         {MENU_CATEGORY_LABELS[product.category]}
+                      </td>
+                      <td className="px-2 py-2">
+                        <Link
+                          href={`/costing?product=${product.id}`}
+                          className="text-[var(--ghost-brand-500)] underline"
+                        >
+                          {product.recipeCost ? "Editar" : "Crear"}
+                        </Link>
                       </td>
                     </tr>
                   ))}

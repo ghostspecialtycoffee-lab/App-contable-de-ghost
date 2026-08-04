@@ -8,6 +8,7 @@ import { useAuth } from "@/providers/auth-provider";
 const tabs = [
   { href: "/dashboard", label: "Panel" },
   { href: "/pos", label: "Mostrador" },
+  { href: "/pos/tables", label: "Mesas" },
   { href: "/kds", label: "Comandas" },
   { href: "/billing", label: "Registros" },
 ];
@@ -31,7 +32,7 @@ export function MobileBottomNav() {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--ghost-border)] bg-[var(--ghost-surface-1)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       aria-label="Navegación principal"
     >
-      <ul className="mx-auto grid max-w-lg grid-cols-4">
+      <ul className="mx-auto grid max-w-lg grid-cols-5">
         {tabs.map((tab) => {
           const active =
             tab.href === "/dashboard"

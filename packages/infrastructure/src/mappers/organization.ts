@@ -28,6 +28,8 @@ export function mapOrganization(
     slug: data.slug,
     status: data.status,
     settings: data.settings,
+    fiscalProfile: data.fiscalProfile,
+    costMatrixSettings: data.costMatrixSettings,
     createdAt: serializeTimestamp(data.createdAt),
     updatedAt: serializeTimestamp(data.updatedAt),
     createdBy: data.createdBy,

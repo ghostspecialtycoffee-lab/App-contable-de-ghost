@@ -93,7 +93,14 @@ service cloud.firestore {
         && request.resource.data.status == 'trial'
         && request.resource.data.name is string
         && request.resource.data.slug is string;
-      allow update, delete: if false;
+      allow update: if canAccessOrg(organizationId)
+        && request.resource.data.name == resource.data.name
+        && request.resource.data.slug == resource.data.slug
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.settings == resource.data.settings
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
 
       match /members/{memberId} {
         allow read: if isSignedIn() && request.auth.uid == memberId;
@@ -232,6 +239,18 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /fixedExpenses/{expenseId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.amount > 0
+          && request.resource.data.monthlyEquivalent > 0;
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
       match /diningTables/{tableId} {
         allow read: if canAccessOrg(organizationId)
           || resource.data.status != 'closed';
@@ -246,7 +265,8 @@ service cloud.firestore {
 
       match /tableSessions/{sessionId} {
         allow read: if canAccessOrg(organizationId)
-          || (resource.data.status == 'open' && resource.data.guestToken is string);
+          || (resource.data.guestToken is string
+            && (resource.data.status == 'open' || resource.data.status == 'requested_bill'));
         allow create: if (canAccessOrg(organizationId)
           && request.resource.data.organizationId == organizationId
           && request.resource.data.createdBy == request.auth.uid)

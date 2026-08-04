@@ -140,7 +140,7 @@ export default function PosPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm text-[var(--ghost-text-muted)]">Mostrador</p>
-          <h1 className="text-2xl font-semibold">Registro de operaciones</h1>
+          <h1 className="text-2xl font-semibold">Mostrador</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link href="/pos/menu">
@@ -229,7 +229,7 @@ export default function PosPage() {
             </div>
           </div>
 
-          <Card title="Operación actual" description="Selecciona ítems y confirma el registro.">
+          <Card title="Operación actual" description="Selecciona ítems y confirma el cobro.">
             {cart.length === 0 ? (
               <p className="text-sm text-[var(--ghost-text-muted)]">
                 Selecciona un ítem del catálogo.
@@ -343,7 +343,7 @@ export default function PosPage() {
                   disabled={submitting}
                   onClick={handleCheckout}
                 >
-                  {submitting ? "Guardando..." : "Confirmar registro"}
+                  {submitting ? "Guardando..." : "Confirmar cobro"}
                 </Button>
               </div>
             )}

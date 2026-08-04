@@ -38,6 +38,7 @@ export default function BillingPage() {
         taxAmount: sale.taxAmount,
         total: sale.total,
         paymentMethod: sale.paymentMethod,
+        tableNumber: sale.tableNumber,
         lines: sale.lines,
       })),
     [sales],
@@ -68,12 +69,20 @@ export default function BillingPage() {
           <p className="text-sm text-[var(--ghost-text-muted)]">Registros</p>
           <h1 className="text-2xl font-semibold">Comprobantes y reportes</h1>
           <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            {organization?.name ?? "Operación interna"} · consulta histórica y resúmenes
+            {organization?.name ?? "Operación interna"} · consulta histórica y resúmenes ·{" "}
+            <Link href="/settings/fiscal" className="underline">
+              Datos de factura
+            </Link>
           </p>
         </div>
-        <Link href="/pos">
-          <Button>Nuevo registro</Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/pos">
+            <Button>Mostrador</Button>
+          </Link>
+          <Link href="/pos/tables">
+            <Button variant="secondary">Nueva cuenta de mesa</Button>
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -146,6 +155,39 @@ export default function BillingPage() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
+            <Card title="Por canal de venta">
+              {report.invoiceCount === 0 ? (
+                <p className="text-sm text-[var(--ghost-text-muted)]">
+                  Sin registros en este periodo.
+                </p>
+              ) : (
+                <ul className="space-y-2 text-sm">
+                  <li className="flex justify-between">
+                    <span>
+                      Mesas
+                      <span className="ml-2 text-[var(--ghost-text-muted)]">
+                        ({report.tableSalesCount})
+                      </span>
+                    </span>
+                    <span className="font-medium">
+                      {formatMoney(report.tableSalesTotal)}
+                    </span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>
+                      Mostrador
+                      <span className="ml-2 text-[var(--ghost-text-muted)]">
+                        ({report.counterSalesCount})
+                      </span>
+                    </span>
+                    <span className="font-medium">
+                      {formatMoney(report.counterSalesTotal)}
+                    </span>
+                  </li>
+                </ul>
+              )}
+            </Card>
+
             <Card title="Por medio de pago">
               {report.invoiceCount === 0 ? (
                 <p className="text-sm text-[var(--ghost-text-muted)]">
@@ -210,6 +252,7 @@ export default function BillingPage() {
                 <thead className="border-b border-[var(--ghost-border)] text-[var(--ghost-text-muted)]">
                   <tr>
                     <th className="px-2 py-2 font-medium">Número</th>
+                    <th className="px-2 py-2 font-medium">Origen</th>
                     <th className="px-2 py-2 font-medium">Fecha</th>
                     <th className="px-2 py-2 font-medium">Total</th>
                     <th className="px-2 py-2 font-medium">Pago</th>
@@ -223,6 +266,11 @@ export default function BillingPage() {
                       className="border-b border-[var(--ghost-border)] last:border-0"
                     >
                       <td className="px-2 py-2 font-mono text-xs">{sale.saleNumber}</td>
+                      <td className="px-2 py-2">
+                        {sale.tableNumber !== undefined
+                          ? `Mesa ${sale.tableNumber}`
+                          : "Mostrador"}
+                      </td>
                       <td className="px-2 py-2">
                         {formatDateTime(sale.soldAt ?? sale.createdAt)}
                       </td>

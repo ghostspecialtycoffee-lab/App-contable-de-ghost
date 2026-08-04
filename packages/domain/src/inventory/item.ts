@@ -18,6 +18,12 @@ export interface InventoryItem extends AuditMetadata {
   averageCost: number;
   lastCost: number;
   trackLot: boolean;
+  /** Unidad en la que se compra normalmente (ej. kg, caja). */
+  purchaseUnit?: BaseUnit;
+  /** Cuántas unidades base hay en 1 unidad de compra (ej. 1 kg = 1000 g). */
+  presentationQuantity?: number;
+  /** Etiqueta operativa: "Saco 70 kg", "Caja x100". */
+  presentationLabel?: string;
 }
 
 export interface CreateInventoryItemInput {
@@ -30,6 +36,9 @@ export interface CreateInventoryItemInput {
   minStock?: number;
   maxStock?: number;
   trackLot?: boolean;
+  purchaseUnit?: BaseUnit;
+  presentationQuantity?: number;
+  presentationLabel?: string;
   actorUserId: EntityId;
 }
 

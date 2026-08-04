@@ -7,15 +7,14 @@ import {
   doc,
   onSnapshot,
   query,
-  serverTimestamp,
-  setDoc,
 } from "firebase/firestore";
 
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
 import { getFirestoreDb } from "@/lib/firebase/client";
-import { addTableSessionLines, openTableSession } from "@/lib/tables/table-sessions";
+import { addTableSessionLines, openTableSession, requestTableBillGuest } from "@/lib/tables/table-sessions";
 import { findDiningTableByTokenClient } from "@/lib/tables/tables";
+import { GuestTableProcessLine, type GuestTableStepId } from "@/components/guest-table-process";
 import {
   activeSessionLines,
   calculateSaleTotals,
@@ -206,7 +205,7 @@ function GuestTableContent() {
         lines: orderLines,
       });
       setCartQty({});
-      setMessage("Pedido enviado. Te atenderemos pronto.");
+      setMessage("Ítems agregados a tu cuenta. El staff enviará la comanda a cocina.");
     } catch (cause) {
       setError(getFirestoreErrorMessage(cause));
     } finally {
@@ -223,19 +222,11 @@ function GuestTableContent() {
     setError(null);
 
     try {
-      const sessionRef = doc(
-        getFirestoreDb(),
-        firestorePaths.organizationTableSession(organizationId, sessionId),
-      );
-      await setDoc(
-        sessionRef,
-        {
-          status: "requested_bill",
-          updatedAt: serverTimestamp(),
-          updatedBy: "guest",
-        },
-        { merge: true },
-      );
+      await requestTableBillGuest({
+        organizationId,
+        sessionId,
+        guestToken: qrToken,
+      });
       setMessage("Cuenta solicitada. Un mesero te atenderá.");
     } catch (cause) {
       setError(getFirestoreErrorMessage(cause));
@@ -260,10 +251,29 @@ function GuestTableContent() {
     );
   }
 
+  if (sessionStatus === "closed") {
+    return (
+      <div className="mx-auto max-w-lg space-y-3 p-6 text-center">
+        <h1 className="text-xl font-semibold">Cuenta cerrada</h1>
+        <p className="text-sm text-[var(--ghost-text-muted)]">
+          Gracias por tu visita. Esta mesa ya fue cobrada.
+        </p>
+      </div>
+    );
+  }
+
+  const canOrder = sessionStatus === "open";
+  const guestStep: GuestTableStepId =
+    sessionStatus === "requested_bill"
+      ? "cuenta"
+      : activeSessionLines(lines as never).length > 0
+        ? "pedido"
+        : "menu";
+
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4 pb-24">
       <div className="text-center">
-        <p className="text-sm text-[var(--ghost-text-muted)]">Pedido en mesa</p>
+        <p className="text-sm text-[var(--ghost-text-muted)]">Menú de mesa</p>
         <h1 className="text-2xl font-semibold">
           Mesa {table?.number}
           {table?.label ? ` · ${table.label}` : ""}
@@ -271,6 +281,9 @@ function GuestTableContent() {
         {sessionStatus === "requested_bill" ? (
           <p className="mt-1 text-sm text-[var(--ghost-brand-500)]">Cuenta solicitada</p>
         ) : null}
+        <div className="mt-3 flex justify-center">
+          <GuestTableProcessLine currentStep={guestStep} />
+        </div>
       </div>
 
       <Card title="Menú">
@@ -319,7 +332,7 @@ function GuestTableContent() {
       </Card>
 
       {lines.length > 0 ? (
-        <Card title="Tu pedido">
+        <Card title="Tu cuenta">
           <ul className="space-y-2 text-sm">
             {activeSessionLines(lines as never).map((line) => (
               <li key={line.id} className="flex justify-between gap-2">
@@ -337,8 +350,8 @@ function GuestTableContent() {
       ) : null}
 
       <div className="space-y-2">
-        <Button fullWidth size="lg" disabled={submitting} onClick={handleSubmitOrder}>
-          {submitting ? "Enviando..." : "Enviar pedido"}
+        <Button fullWidth size="lg" disabled={submitting || !canOrder} onClick={handleSubmitOrder}>
+          {submitting ? "Enviando..." : canOrder ? "Agregar a la cuenta" : "Cuenta solicitada"}
         </Button>
         <Button
           fullWidth

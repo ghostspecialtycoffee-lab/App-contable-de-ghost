@@ -4,6 +4,7 @@ import {
   findOpenTableSessionClient,
   openTableSessionClient,
   requestTableBillClient,
+  requestTableBillGuestClient,
   sendTableSessionToKitchenClient,
 } from "./table-sessions-client";
 
@@ -27,6 +28,12 @@ export async function checkoutTableSession(input: Parameters<typeof checkoutTabl
 
 export async function requestTableBill(input: Parameters<typeof requestTableBillClient>[0]) {
   return requestTableBillClient(input);
+}
+
+export async function requestTableBillGuest(
+  input: Parameters<typeof requestTableBillGuestClient>[0],
+) {
+  return requestTableBillGuestClient(input);
 }
 
 export { findOpenTableSessionClient };

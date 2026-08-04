@@ -1,6 +1,8 @@
 import {
   buildPurchaseInvoiceLines,
+  resolvePurchaseInventoryEntry,
   summarizePurchaseInvoice,
+  type PurchaseInvoiceLine,
   type PurchaseInvoiceLineInput,
 } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -131,12 +133,7 @@ export async function confirmPurchaseInvoiceClient(input: {
 
   const warehouseId = invoice.warehouseId as string;
   const branchId = invoice.branchId as string;
-  const lines = (invoice.lines ?? []) as Array<{
-    inventoryItemId?: string;
-    description: string;
-    quantity: number;
-    lineTotal: number;
-  }>;
+  const lines = (invoice.lines ?? []) as PurchaseInvoiceLine[];
 
   if (!warehouseId) {
     throw new Error("Selecciona una bodega antes de confirmar.");
@@ -156,16 +153,35 @@ export async function confirmPurchaseInvoiceClient(input: {
       continue;
     }
 
-    const unitCost =
-      line.quantity > 0 ? Math.round(line.lineTotal / line.quantity) : 0;
+    const itemRef = doc(
+      db,
+      firestorePaths.organizationInventoryItem(organizationId, line.inventoryItemId),
+    );
+    const itemSnap = await getDoc(itemRef);
+
+    if (!itemSnap.exists()) {
+      continue;
+    }
+
+    const itemData = itemSnap.data();
+    const entry = resolvePurchaseInventoryEntry({
+      line,
+      baseUnit: itemData.baseUnit,
+      purchaseUnit: itemData.purchaseUnit,
+      presentationQuantity: itemData.presentationQuantity,
+    });
+
+    if (entry.quantityInBase <= 0) {
+      continue;
+    }
 
     await registerInventoryMovementClient({
       branchId,
       warehouseId,
       itemId: line.inventoryItemId,
       type: "entry",
-      quantity: line.quantity,
-      unitCost,
+      quantity: entry.quantityInBase,
+      unitCost: entry.unitCostNetPerBase,
       reference: invoice.invoiceNumber as string,
       notes: line.description,
     });

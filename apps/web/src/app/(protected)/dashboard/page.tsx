@@ -35,6 +35,7 @@ export default function DashboardPage() {
         taxAmount: sale.taxAmount,
         total: sale.total,
         paymentMethod: sale.paymentMethod,
+        tableNumber: sale.tableNumber,
         lines: sale.lines,
       })),
       todayPeriod.from,
@@ -78,6 +79,17 @@ export default function DashboardPage() {
               </p>
               <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
                 {todayReport.invoiceCount} comprobante(s)
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-[var(--ghost-text-muted)]">
+                Mesas hoy
+              </p>
+              <p className="mt-2 text-2xl font-semibold">
+                {salesLoading ? "—" : formatMoney(todayReport.tableSalesTotal)}
+              </p>
+              <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
+                {todayReport.tableSalesCount} comprobante(s) de mesa
               </p>
             </div>
             <div>
@@ -155,7 +167,7 @@ export default function DashboardPage() {
         )}
       </Card>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <Link href="/pos">
           <Button fullWidth size="lg">
             Mostrador
@@ -164,6 +176,16 @@ export default function DashboardPage() {
         <Link href="/pos/menu">
           <Button fullWidth variant="secondary">
             Catálogo
+          </Button>
+        </Link>
+        <Link href="/pos/tables">
+          <Button fullWidth variant="secondary">
+            Mesas
+          </Button>
+        </Link>
+        <Link href="/kds">
+          <Button fullWidth variant="secondary">
+            Comandas
           </Button>
         </Link>
         <Link href="/billing">
@@ -176,9 +198,24 @@ export default function DashboardPage() {
             Identidad
           </Button>
         </Link>
+        <Link href="/expenses">
+          <Button fullWidth variant="secondary">
+            Gastos fijos
+          </Button>
+        </Link>
         <Link href="/inventory">
           <Button fullWidth variant="secondary">
             Inventario
+          </Button>
+        </Link>
+        <Link href="/purchases">
+          <Button fullWidth variant="secondary">
+            Compras
+          </Button>
+        </Link>
+        <Link href="/costing">
+          <Button fullWidth variant="secondary">
+            Costeo
           </Button>
         </Link>
       </div>
