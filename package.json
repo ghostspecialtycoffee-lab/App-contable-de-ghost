@@ -9,9 +9,13 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "firebase:deploy": "firebase deploy",
+    "firebase:deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes,storage,functions",
+    "firebase:deploy:hosting": "firebase deploy --only hosting"
   },
   "devDependencies": {
+    "firebase-tools": "13",
     "turbo": "^2.5.0",
     "typescript": "^5.8.2"
   },
