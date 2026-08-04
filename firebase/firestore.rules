@@ -164,6 +164,19 @@ service cloud.firestore {
           && resource.data.organizationId == organizationId;
         allow delete: if false;
       }
+
+      match /brandAssets/{assetId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.status == 'active'
+          && request.resource.data.dataUrl is string
+          && request.resource.data.dataUrl.size() <= 500000;
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
     }
   }
 }

@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { BrandLogo } from "@/components/brand-logo";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useBrandAssets } from "@/hooks/use-brand-assets";
 import { useAuth } from "@/providers/auth-provider";
 
 const publicNavItems = [
@@ -25,6 +27,7 @@ const appNavItems = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { firebaseUser, profile, organization } = useAuth();
+  const { primaryLogo } = useBrandAssets();
 
   const navItems = firebaseUser ? appNavItems : publicNavItems;
 
@@ -33,9 +36,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-20 border-b border-[var(--ghost-border)] bg-[var(--ghost-surface-1)]/90 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:h-16 sm:px-6">
           <Link href={firebaseUser ? "/dashboard" : "/"} className="flex min-w-0 items-center gap-2">
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--ghost-brand-500)] text-sm font-bold text-[var(--ghost-brand-fg)]">
-              G
-            </span>
+            {firebaseUser ? (
+              <BrandLogo
+                asset={primaryLogo}
+                organizationName={organization?.name}
+                size="sm"
+              />
+            ) : (
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-2)] text-sm font-bold">
+                G
+              </span>
+            )}
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">Ghost Contable</p>
               <p className="truncate text-xs text-[var(--ghost-text-muted)]">
