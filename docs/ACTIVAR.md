@@ -1,79 +1,85 @@
-# Activar Ghost ERP en 2 pasos (sin terminal)
+# Activar Ghost ERP — solución al error de deploy
 
-Solo necesitas **2 clics en el navegador**. Yo (el agente) ya preparé el código y el deploy automático.
+El error **「credentials_json must specify exactly one...」** significa que **falta el secret en GitHub**.
 
----
-
-## Paso 1 — Descargar clave de Firebase
-
-1. Abre este link (inicia sesión con tu Google si pide):
-
-   **https://console.firebase.google.com/project/ghost-contable/settings/serviceaccounts/adminsdk**
-
-2. Pulsa el botón **「Generar nueva clave privada」** / **「Generate new private key」**
-
-3. Se descarga un archivo `.json` (guárdalo, lo usarás en el Paso 2)
+Elige **UNA** de estas dos opciones (la A es más fácil):
 
 ---
 
-## Paso 2 — Pegar la clave en GitHub
+## Opción A — Token Firebase (recomendada, más fácil)
 
-1. Abre este link:
+### Paso 1 — Obtener token en tu PC
 
-   **https://github.com/ghostspecialtycoffee-lab/App-contable-de-ghost/settings/secrets/actions**
-
-2. Pulsa **「New repository secret」**
-
-3. Completa:
-   - **Name:** `FIREBASE_SERVICE_ACCOUNT`
-   - **Secret:** abre el archivo `.json` descargado, **copia TODO el contenido** y pégalo aquí
-
-4. Pulsa **「Add secret」**
-
----
-
-## Paso 3 — Lanzar el deploy (automático)
-
-1. Abre:
-
-   **https://github.com/ghostspecialtycoffee-lab/App-contable-de-ghost/actions/workflows/deploy-firebase.yml**
-
-2. Pulsa **「Run workflow」** → **「Run workflow」**
-
-3. Espera **5–15 minutos** (barra verde = listo)
-
----
-
-## Paso 4 — Abrir la app
-
-Cuando termine el deploy, abre:
-
-| Nombre | Link |
-|--------|------|
-| **App Ghost ERP** | https://ghost-contable.web.app |
-| **Registro** | https://ghost-contable.web.app/register |
-| **Login** | https://ghost-contable.web.app/login |
-
----
-
-## Si prefieres usar tu PC con terminal
+Abre PowerShell en la carpeta del proyecto y ejecuta:
 
 ```powershell
 cd App-contable-de-ghost
-git pull
-git checkout cursor/mobile-web-firebase-setup-1740
-.\scripts\deploy-windows.ps1
+npx firebase login:ci
 ```
+
+- Se abre Chrome → elige tu cuenta Google del proyecto **ghost-contable**
+- La terminal muestra un **token largo** (empieza con algo como `1//0e...`)
+- **Copia todo el token**
+
+### Paso 2 — Pegar token en GitHub
+
+1. Abre: **https://github.com/ghostspecialtycoffee-lab/App-contable-de-ghost/settings/secrets/actions**
+2. **New repository secret**
+3. **Name:** `FIREBASE_TOKEN`
+4. **Secret:** pega el token copiado
+5. **Add secret**
+
+### Paso 3 — Ejecutar deploy
+
+1. Abre: **https://github.com/ghostspecialtycoffee-lab/App-contable-de-ghost/actions/workflows/deploy-firebase.yml**
+2. **Run workflow** → **Run workflow**
+3. Espera barra verde (5–15 min)
+
+### Paso 4 — Abrir app
+
+https://ghost-contable.web.app
 
 ---
 
-## Verificar Firebase Console (solo una vez)
+## Opción B — Service Account JSON
 
-| Qué | Link | Debe estar |
-|-----|------|------------|
-| Email/Password | https://console.firebase.google.com/project/ghost-contable/authentication/providers | **Enabled** |
-| Plan Blaze | https://console.firebase.google.com/project/ghost-contable/usage/details | Activo |
-| Dominios Auth | https://console.firebase.google.com/project/ghost-contable/authentication/settings | `localhost`, `ghost-contable.web.app` |
+### Paso 1 — Descargar clave
+
+1. Abre: **https://console.firebase.google.com/project/ghost-contable/settings/serviceaccounts/adminsdk**
+2. **Generar nueva clave privada** → descarga `.json`
+
+### Paso 2 — Pegar en GitHub
+
+1. Abre: **https://github.com/ghostspecialtycoffee-lab/App-contable-de-ghost/settings/secrets/actions**
+2. **New repository secret**
+3. **Name:** `FIREBASE_SERVICE_ACCOUNT` (exacto, mayúsculas incluidas)
+4. **Secret:** abre el `.json`, selecciona **TODO** (Ctrl+A) y pega
+5. **Add secret**
+
+### Paso 3 — Ejecutar deploy
+
+Igual que Opción A, paso 3.
+
+---
+
+## Errores comunes
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `credentials_json must specify...` | No hay secret en GitHub | Opción A o B arriba |
+| Secret faltante | Nombre mal escrito | Debe ser `FIREBASE_TOKEN` o `FIREBASE_SERVICE_ACCOUNT` |
+| Functions billing | Plan Spark | Activar **Blaze**: https://console.firebase.google.com/project/ghost-contable/usage/details |
+| Auth login falla | Dominio no autorizado | Agregar `ghost-contable.web.app` en Auth settings |
+
+---
+
+## Verificar Firebase Console
+
+| Qué | Link |
+|-----|------|
+| Email/Password activo | https://console.firebase.google.com/project/ghost-contable/authentication/providers |
+| Plan Blaze | https://console.firebase.google.com/project/ghost-contable/usage/details |
+| Dominios Auth | https://console.firebase.google.com/project/ghost-contable/authentication/settings |
 
 ---
 
