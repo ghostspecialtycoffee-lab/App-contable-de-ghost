@@ -1,6 +1,7 @@
 import {
   createMenuProductClient,
   createSaleClient,
+  seedDefaultMenuClient,
   updateKitchenOrderStatusClient,
 } from "./pos-client";
 
@@ -10,6 +11,10 @@ export async function createMenuProduct(
   input: Parameters<typeof createMenuProductClient>[0],
 ) {
   return createMenuProductClient(input);
+}
+
+export async function seedDefaultMenu() {
+  return seedDefaultMenuClient();
 }
 
 export async function createSale(input: Parameters<typeof createSaleClient>[0]) {

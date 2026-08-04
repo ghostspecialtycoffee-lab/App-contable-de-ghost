@@ -5,7 +5,8 @@ import { useState } from "react";
 
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
-import { createMenuProduct } from "@/lib/pos/pos";
+import { formatMoney } from "@/lib/format";
+import { createMenuProduct, seedDefaultMenu } from "@/lib/pos/pos";
 import {
   KITCHEN_STATIONS,
   KITCHEN_STATION_LABELS,
@@ -16,14 +17,6 @@ import {
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
-function formatMoney(value: number) {
-  return value.toLocaleString("es-CO", {
-    style: "currency",
-    currency: "COP",
-    maximumFractionDigits: 0,
-  });
-}
-
 export default function PosMenuPage() {
   const { products, loading, error } = useMenuProducts();
   const [name, setName] = useState("");
@@ -32,6 +25,8 @@ export default function PosMenuPage() {
   const [station, setStation] = useState<KitchenStation>("counter");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedMessage, setSeedMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,6 +49,21 @@ export default function PosMenuPage() {
     }
   }
 
+  async function handleSeedMenu() {
+    setSeedMessage(null);
+    setSubmitError(null);
+    setSeeding(true);
+
+    try {
+      const result = await seedDefaultMenu();
+      setSeedMessage(`${result.created} productos de ejemplo creados.`);
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   return (
     <div className="space-y-6 pb-4">
       <div>
@@ -62,14 +72,33 @@ export default function PosMenuPage() {
             POS
           </Link>
         </p>
-        <h1 className="text-2xl font-bold">Menú de venta</h1>
+        <h1 className="text-2xl font-bold">Productos</h1>
         <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-          Productos que aparecen en el POS. Asigna estación para comandas de barra o cocina.
+          Registra lo que vendes. En 1 minuto puedes cargar un menú de cafetería de ejemplo.
         </p>
       </div>
 
+      {products.length === 0 ? (
+        <Card title="Inicio rápido">
+          <p className="text-sm text-[var(--ghost-text-muted)]">
+            Carga bebidas y comida típica de cafetería para empezar a vender de inmediato.
+          </p>
+          <Button
+            className="mt-4"
+            onClick={handleSeedMenu}
+            disabled={seeding}
+            fullWidth
+          >
+            {seeding ? "Creando menú..." : "Cargar menú de ejemplo"}
+          </Button>
+          {seedMessage ? (
+            <p className="mt-2 text-sm text-[var(--ghost-brand-500)]">{seedMessage}</p>
+          ) : null}
+        </Card>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-        <Card title="Nuevo producto">
+        <Card title="Agregar producto">
           <form className="space-y-3" onSubmit={handleSubmit}>
             <label className="block space-y-1">
               <span className="text-sm font-medium">Nombre</span>
@@ -108,7 +137,7 @@ export default function PosMenuPage() {
               </select>
             </label>
             <label className="block space-y-1">
-              <span className="text-sm font-medium">Estación / comanda</span>
+              <span className="text-sm font-medium">Comanda</span>
               <select
                 value={station}
                 onChange={(event) => setStation(event.target.value as KitchenStation)}
@@ -125,19 +154,19 @@ export default function PosMenuPage() {
               <p className="text-sm text-[var(--ghost-danger)]">{submitError}</p>
             ) : null}
             <Button type="submit" fullWidth disabled={submitting}>
-              {submitting ? "Guardando..." : "Agregar producto"}
+              {submitting ? "Guardando..." : "Guardar producto"}
             </Button>
           </form>
         </Card>
 
-        <Card title="Catálogo POS">
+        <Card title="Catálogo">
           {loading ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">Cargando...</p>
           ) : error ? (
             <p className="text-sm text-[var(--ghost-danger)]">{error}</p>
           ) : products.length === 0 ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">
-              Crea el primer producto para empezar a vender.
+              Agrega productos manualmente o usa el menú de ejemplo.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -147,7 +176,7 @@ export default function PosMenuPage() {
                     <th className="px-2 py-2 font-medium">Producto</th>
                     <th className="px-2 py-2 font-medium">Precio</th>
                     <th className="px-2 py-2 font-medium">Categoría</th>
-                    <th className="px-2 py-2 font-medium">Estación</th>
+                    <th className="px-2 py-2 font-medium">Comanda</th>
                   </tr>
                 </thead>
                 <tbody>

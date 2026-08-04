@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  collection,
-  onSnapshot,
-  orderBy,
-  query,
-  where,
-} from "firebase/firestore";
+import { collection, limit, onSnapshot, query } from "firebase/firestore";
 
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { getFirestoreDb } from "@/lib/firebase/client";
@@ -33,15 +27,14 @@ export function useMenuProducts() {
         getFirestoreDb(),
         firestorePaths.organizationMenuProducts(membership.organizationId),
       ),
-      where("status", "==", "active"),
-      orderBy("sortOrder"),
+      limit(200),
     );
 
     const unsubscribe = onSnapshot(
       productsQuery,
       (snapshot) => {
-        setProducts(
-          snapshot.docs.map((document) => {
+        const nextProducts = snapshot.docs
+          .map((document) => {
             const data = document.data();
             return {
               id: document.id,
@@ -58,8 +51,11 @@ export function useMenuProducts() {
               createdBy: data.createdBy ?? "",
               updatedBy: data.updatedBy ?? "",
             } satisfies MenuProduct;
-          }),
-        );
+          })
+          .filter((product) => product.status === "active")
+          .sort((left, right) => left.sortOrder - right.sortOrder);
+
+        setProducts(nextProducts);
         setLoading(false);
         setError(null);
       },
