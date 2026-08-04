@@ -6,48 +6,39 @@ const modules = [
   {
     href: "/inventory/items",
     title: "Ítems",
-    description: "Materias primas, insumos, productos terminados y empaques.",
-  },
-  {
-    href: "/inventory/movements",
-    title: "Movimientos",
-    description: "Entradas, salidas, ajustes y kardex auditado.",
-    soon: true,
+    description: "Materias primas, insumos y productos.",
   },
   {
     href: "/inventory/warehouses",
     title: "Bodegas",
-    description: "Bodegas por sucursal con stock desnormalizado.",
-    soon: true,
+    description: "Bodegas por sucursal.",
+  },
+  {
+    href: "/inventory/movements",
+    title: "Movimientos",
+    description: "Entradas, salidas y kardex.",
   },
 ];
 
 export default function InventoryPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-4">
       <div>
         <h1 className="text-2xl font-bold">Inventario</h1>
-        <p className="mt-1 text-[var(--ghost-text-muted)]">
-          Control de stock con kardex auditado, costo promedio ponderado y alertas
-          de mínimos.
+        <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
+          Optimizado para uso en celular y tablet.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {modules.map((module) => (
           <Card key={module.href} title={module.title} description={module.description}>
-            {module.soon ? (
-              <p className="text-xs uppercase tracking-wide text-[var(--ghost-text-muted)]">
-                Próximamente
-              </p>
-            ) : (
-              <Link
-                href={module.href}
-                className="inline-flex text-sm font-medium text-[var(--ghost-brand-500)] underline"
-              >
-                Abrir módulo
-              </Link>
-            )}
+            <Link
+              href={module.href}
+              className="inline-flex min-h-[48px] items-center text-sm font-medium text-[var(--ghost-brand-500)] underline"
+            >
+              Abrir
+            </Link>
           </Card>
         ))}
       </div>

@@ -9,9 +9,14 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "deploy:setup": "pnpm install && pnpm test && pnpm build",
+    "firebase:deploy": "firebase deploy",
+    "firebase:deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes,storage,functions",
+    "firebase:deploy:hosting": "pnpm --filter @ghost/web build && firebase deploy --only hosting"
   },
   "devDependencies": {
+    "firebase-tools": "13",
     "turbo": "^2.5.0",
     "typescript": "^5.8.2"
   },

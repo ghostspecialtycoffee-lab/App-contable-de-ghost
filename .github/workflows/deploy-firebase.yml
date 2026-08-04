@@ -1,0 +1,65 @@
+name: Deploy Firebase
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verificar secret configurado
+        env:
+          HAS_TOKEN: ${{ secrets.FIREBASE_TOKEN != '' }}
+          HAS_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+        run: |
+          if [ "$HAS_TOKEN" != "true" ] && [ "$HAS_SERVICE_ACCOUNT" != "true" ]; then
+            echo "::error title=Secret faltante::Agrega FIREBASE_TOKEN o FIREBASE_SERVICE_ACCOUNT en GitHub Secrets antes de ejecutar este workflow."
+            echo "Guía: docs/ACTIVAR.md"
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Authenticate to Google Cloud (Service Account)
+        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' && secrets.FIREBASE_TOKEN == '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Deploy to Firebase
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          DEPLOY="npx firebase-tools@13 deploy --project ghost-contable --non-interactive"
+          if [ -n "$FIREBASE_TOKEN" ]; then
+            echo "Deploy con FIREBASE_TOKEN..."
+            $DEPLOY --token "$FIREBASE_TOKEN"
+          else
+            echo "Deploy con Service Account..."
+            $DEPLOY
+          fi
