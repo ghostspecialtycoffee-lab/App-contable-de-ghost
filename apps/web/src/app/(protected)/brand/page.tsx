@@ -94,7 +94,10 @@ export default function BrandPage() {
           </p>
           <h1 className="text-2xl font-semibold">Identidad visual</h1>
           <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            Logos, íconos y piezas gráficas internas de {organization?.name ?? "la organización"}
+            Logos para facturas y operación interna.{" "}
+            <Link href="/settings/fiscal" className="underline">
+              Configurar datos de facturación
+            </Link>
           </p>
         </div>
       </div>

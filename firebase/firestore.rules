@@ -93,7 +93,14 @@ service cloud.firestore {
         && request.resource.data.status == 'trial'
         && request.resource.data.name is string
         && request.resource.data.slug is string;
-      allow update, delete: if false;
+      allow update: if canAccessOrg(organizationId)
+        && request.resource.data.name == resource.data.name
+        && request.resource.data.slug == resource.data.slug
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.settings == resource.data.settings
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
 
       match /members/{memberId} {
         allow read: if isSignedIn() && request.auth.uid == memberId;

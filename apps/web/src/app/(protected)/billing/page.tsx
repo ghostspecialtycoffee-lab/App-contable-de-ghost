@@ -68,7 +68,10 @@ export default function BillingPage() {
           <p className="text-sm text-[var(--ghost-text-muted)]">Registros</p>
           <h1 className="text-2xl font-semibold">Comprobantes y reportes</h1>
           <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            {organization?.name ?? "Operación interna"} · consulta histórica y resúmenes
+            {organization?.name ?? "Operación interna"} · consulta histórica y resúmenes ·{" "}
+            <Link href="/settings/fiscal" className="underline">
+              Datos de factura
+            </Link>
           </p>
         </div>
         <Link href="/pos">
