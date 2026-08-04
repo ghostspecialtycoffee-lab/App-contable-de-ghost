@@ -15,10 +15,10 @@ const publicNavItems = [
 ];
 
 const appNavItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/pos", label: "POS" },
+  { href: "/dashboard", label: "Panel" },
+  { href: "/pos", label: "Mostrador" },
   { href: "/kds", label: "Comandas" },
-  { href: "/billing", label: "Facturación" },
+  { href: "/billing", label: "Registros" },
   { href: "/inventory", label: "Inventario" },
 ];
 
@@ -33,13 +33,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-20 border-b border-[var(--ghost-border)] bg-[var(--ghost-surface-1)]/90 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:h-16 sm:px-6">
           <Link href={firebaseUser ? "/dashboard" : "/"} className="flex min-w-0 items-center gap-2">
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--ghost-brand-500)] text-sm font-bold text-white">
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--ghost-brand-500)] text-sm font-bold text-[var(--ghost-brand-fg)]">
               G
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">Ghost ERP</p>
+              <p className="truncate text-sm font-semibold">Ghost Contable</p>
               <p className="truncate text-xs text-[var(--ghost-text-muted)]">
-                {organization?.name ?? "Specialty Coffee Lab"}
+                {organization?.name ?? "Operación interna"}
               </p>
             </div>
           </Link>

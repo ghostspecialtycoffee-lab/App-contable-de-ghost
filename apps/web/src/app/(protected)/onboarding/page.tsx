@@ -45,12 +45,12 @@ export default function OnboardingPage() {
   return (
     <div className="mx-auto max-w-xl">
       <Card
-        title="Configura tu negocio"
-        description="Crea tu organización y sucursal principal. Este paso activa tu tenant en Ghost ERP."
+        title="Alta de organización"
+        description="Registro interno de la organización y sucursal principal."
       >
         <form className="space-y-4" onSubmit={handleSubmit}>
           <label className="block space-y-1">
-            <span className="text-sm font-medium">Nombre del negocio</span>
+            <span className="text-sm font-medium">Nombre de la organización</span>
             <input
               type="text"
               required

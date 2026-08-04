@@ -112,10 +112,10 @@ export default function PosPage() {
       setCustomerName("");
       setLastSaleNumber(result.saleNumber);
       setSuccess(
-        `Venta ${result.saleNumber} registrada por ${formatMoney(result.total)}` +
+        `Registro ${result.saleNumber} guardado · ${formatMoney(result.total)}` +
           (result.kitchenOrderIds.length > 0
-            ? `. ${result.kitchenOrderIds.length} comanda(s) enviadas.`
-            : "."),
+            ? ` · ${result.kitchenOrderIds.length} comanda(s) generadas`
+            : ""),
       );
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
@@ -128,18 +128,18 @@ export default function PosPage() {
     <div className="space-y-4 pb-24 md:pb-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm text-[var(--ghost-text-muted)]">Punto de venta</p>
-          <h1 className="text-2xl font-bold">POS</h1>
+          <p className="text-sm text-[var(--ghost-text-muted)]">Mostrador</p>
+          <h1 className="text-2xl font-semibold">Registro de operaciones</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link href="/pos/menu">
             <Button variant="secondary" size="sm">
-              Menú
+              Catálogo
             </Button>
           </Link>
           <Link href="/billing">
             <Button variant="secondary" size="sm">
-              Informes
+              Registros
             </Button>
           </Link>
           <Link href="/kds">
@@ -155,12 +155,12 @@ export default function PosPage() {
       ) : error ? (
         <p className="text-sm text-[var(--ghost-danger)]">{error}</p>
       ) : products.length === 0 ? (
-        <Card title="Configura el menú">
+        <Card title="Sin catálogo">
           <p className="text-sm text-[var(--ghost-text-muted)]">
-            Aún no hay productos para vender. Crea bebidas, comida y repostería.
+            Agrega ítems al catálogo antes de registrar operaciones en mostrador.
           </p>
           <Link href="/pos/menu" className="mt-4 inline-block">
-            <Button>Crear productos</Button>
+            <Button>Ir al catálogo</Button>
           </Link>
         </Card>
       ) : (
@@ -173,7 +173,7 @@ export default function PosPage() {
                 className={[
                   "rounded-full px-3 py-1 text-sm",
                   category === "all"
-                    ? "bg-[var(--ghost-brand-500)] text-white"
+                    ? "bg-[var(--ghost-brand-500)] text-[var(--ghost-brand-fg)]"
                     : "bg-[var(--ghost-surface-2)]",
                 ].join(" ")}
               >
@@ -187,7 +187,7 @@ export default function PosPage() {
                   className={[
                     "rounded-full px-3 py-1 text-sm",
                     category === item
-                      ? "bg-[var(--ghost-brand-500)] text-white"
+                      ? "bg-[var(--ghost-brand-500)] text-[var(--ghost-brand-fg)]"
                       : "bg-[var(--ghost-surface-2)]",
                   ].join(" ")}
                 >
@@ -213,10 +213,10 @@ export default function PosPage() {
             </div>
           </div>
 
-          <Card title="Carrito" description="Cobro rápido desde mostrador o móvil.">
+          <Card title="Operación actual" description="Selecciona ítems y confirma el registro.">
             {cart.length === 0 ? (
               <p className="text-sm text-[var(--ghost-text-muted)]">
-                Toca un producto para agregarlo.
+                Selecciona un ítem del catálogo.
               </p>
             ) : (
               <div className="space-y-3">
@@ -271,17 +271,17 @@ export default function PosPage() {
                 </div>
 
                 <label className="block space-y-1">
-                  <span className="text-sm font-medium">Cliente (opcional)</span>
+                  <span className="text-sm font-medium">Referencia (opcional)</span>
                   <input
                     value={customerName}
                     onChange={(event) => setCustomerName(event.target.value)}
                     className="ghost-input"
-                    placeholder="Nombre del cliente"
+                    placeholder="Nombre o nota interna"
                   />
                 </label>
 
                 <label className="block space-y-1">
-                  <span className="text-sm font-medium">Forma de pago</span>
+                  <span className="text-sm font-medium">Medio de pago</span>
                   <select
                     value={paymentMethod}
                     onChange={(event) =>
@@ -306,7 +306,7 @@ export default function PosPage() {
                     {lastSaleNumber ? (
                       <Link href="/billing">
                         <Button variant="secondary" fullWidth size="sm">
-                          Ver comprobante e informes
+                          Ver en registros
                         </Button>
                       </Link>
                     ) : null}
@@ -319,7 +319,7 @@ export default function PosPage() {
                   disabled={submitting}
                   onClick={handleCheckout}
                 >
-                  {submitting ? "Cobrando..." : "Cobrar"}
+                  {submitting ? "Guardando..." : "Confirmar registro"}
                 </Button>
               </div>
             )}

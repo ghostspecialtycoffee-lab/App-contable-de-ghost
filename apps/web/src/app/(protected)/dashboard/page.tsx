@@ -42,39 +42,39 @@ export default function DashboardPage() {
   const setupSteps = [
     {
       done: products.length > 0,
-      title: "1. Crear productos",
+      title: "1. Catálogo",
       href: "/pos/menu",
-      label: products.length > 0 ? "Editar menú" : "Cargar menú",
+      label: products.length > 0 ? "Ver catálogo" : "Cargar catálogo",
     },
     {
       done: todayReport.invoiceCount > 0,
-      title: "2. Registrar venta",
+      title: "2. Mostrador",
       href: "/pos",
-      label: "Abrir POS",
+      label: "Abrir mostrador",
     },
     {
       done: todayReport.invoiceCount > 0,
-      title: "3. Ver informes",
+      title: "3. Registros",
       href: "/billing",
-      label: "Ver facturación",
+      label: "Ver reportes",
     },
   ];
 
   return (
     <div className="space-y-6 pb-4">
       <div>
-        <h1 className="text-2xl font-bold">Inicio</h1>
+        <h1 className="text-2xl font-semibold">Panel</h1>
         <p className="mt-1 text-[var(--ghost-text-muted)]">
           {organization
             ? `${organization.name} · ${membership?.roles.join(", ") ?? "—"}`
-            : "Panel operativo"}
+            : "Resumen operativo interno"}
         </p>
       </div>
 
       {!productsLoading && products.length === 0 ? (
         <Card
-          title="Configura tu negocio en 3 pasos"
-          description="Empieza rápido: productos, venta e informes."
+          title="Configuración inicial"
+          description="Tres pasos para dejar el sistema listo."
         >
           <ol className="space-y-3">
             {setupSteps.map((step) => (
@@ -95,37 +95,37 @@ export default function DashboardPage() {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card title="Ventas de hoy">
+        <Card title="Registros de hoy">
           <p className="text-3xl font-semibold">
             {salesLoading ? "—" : formatMoney(todayReport.totalSales)}
           </p>
           <p className="mt-2 text-sm text-[var(--ghost-text-muted)]">
             {salesLoading
               ? "Calculando..."
-              : `${todayReport.invoiceCount} venta(s) · IVA ${formatMoney(todayReport.taxAmount)}`}
+              : `${todayReport.invoiceCount} comprobante(s) · IVA ${formatMoney(todayReport.taxAmount)}`}
           </p>
         </Card>
-        <Card title="Ticket promedio">
+        <Card title="Promedio por registro">
           <p className="text-3xl font-semibold">
             {salesLoading ? "—" : formatMoney(todayReport.averageTicket)}
           </p>
         </Card>
-        <Card title="Productos activos">
+        <Card title="Ítems en catálogo">
           <p className="text-3xl font-semibold">
             {productsLoading ? "—" : products.length}
           </p>
           <Link href="/pos/menu" className="mt-2 inline-block text-sm underline">
-            Gestionar menú
+            Administrar catálogo
           </Link>
         </Card>
-        <Card title="Top del día">
+        <Card title="Más registrado hoy">
           <p className="text-lg font-semibold">
             {todayReport.topProducts[0]?.name ?? "—"}
           </p>
           <p className="mt-2 text-sm text-[var(--ghost-text-muted)]">
             {todayReport.topProducts[0]
               ? `${todayReport.topProducts[0].quantity} unidades`
-              : "Sin ventas aún"}
+              : "Sin movimientos hoy"}
           </p>
         </Card>
       </div>
@@ -133,17 +133,17 @@ export default function DashboardPage() {
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <Link href="/pos">
           <Button fullWidth size="lg">
-            Cobrar venta
+            Mostrador
           </Button>
         </Link>
         <Link href="/pos/menu">
           <Button fullWidth variant="secondary">
-            Productos
+            Catálogo
           </Button>
         </Link>
         <Link href="/billing">
           <Button fullWidth variant="secondary">
-            Informes
+            Registros
           </Button>
         </Link>
         <Link href="/inventory">

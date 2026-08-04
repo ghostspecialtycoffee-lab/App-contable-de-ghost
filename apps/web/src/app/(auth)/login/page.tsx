@@ -38,7 +38,7 @@ function LoginForm() {
     <div className="mx-auto max-w-md">
       <Card
         title="Acceso"
-        description="Inicia sesión con tu cuenta Ghost ERP."
+        description="Acceso interno con credenciales autorizadas."
       >
         <form className="space-y-4" onSubmit={handleSubmit}>
           <label className="block space-y-1">

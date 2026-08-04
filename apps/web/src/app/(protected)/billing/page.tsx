@@ -65,14 +65,14 @@ export default function BillingPage() {
     <div className="space-y-4 pb-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm text-[var(--ghost-text-muted)]">Facturación</p>
-          <h1 className="text-2xl font-bold">Ventas e informes</h1>
+          <p className="text-sm text-[var(--ghost-text-muted)]">Registros</p>
+          <h1 className="text-2xl font-semibold">Comprobantes y reportes</h1>
           <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            {organization?.name ?? "Tu negocio"} · registra ventas y consulta informes al instante
+            {organization?.name ?? "Operación interna"} · consulta histórica y resúmenes
           </p>
         </div>
         <Link href="/pos">
-          <Button>Nueva venta</Button>
+          <Button>Nuevo registro</Button>
         </Link>
       </div>
 
@@ -83,7 +83,7 @@ export default function BillingPage() {
           className={[
             "rounded-lg px-4 py-2 text-sm font-medium",
             tab === "reports"
-              ? "bg-[var(--ghost-brand-500)] text-white"
+              ? "bg-[var(--ghost-brand-500)] text-[var(--ghost-brand-fg)]"
               : "bg-[var(--ghost-surface-2)]",
           ].join(" ")}
         >
@@ -95,7 +95,7 @@ export default function BillingPage() {
           className={[
             "rounded-lg px-4 py-2 text-sm font-medium",
             tab === "invoices"
-              ? "bg-[var(--ghost-brand-500)] text-white"
+              ? "bg-[var(--ghost-brand-500)] text-[var(--ghost-brand-fg)]"
               : "bg-[var(--ghost-surface-2)]",
           ].join(" ")}
         >
@@ -112,7 +112,7 @@ export default function BillingPage() {
             className={[
               "rounded-full px-3 py-1 text-sm",
               preset === item
-                ? "bg-[var(--ghost-brand-500)] text-white"
+                ? "bg-[var(--ghost-brand-500)] text-[var(--ghost-brand-fg)]"
                 : "bg-[var(--ghost-surface-2)]",
             ].join(" ")}
           >
@@ -122,22 +122,22 @@ export default function BillingPage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-[var(--ghost-text-muted)]">Cargando ventas...</p>
+        <p className="text-sm text-[var(--ghost-text-muted)]">Cargando registros...</p>
       ) : error ? (
         <p className="text-sm text-[var(--ghost-danger)]">{error}</p>
       ) : tab === "reports" ? (
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Card title="Total vendido">
+            <Card title="Total registrado">
               <p className="text-2xl font-bold">{formatMoney(report.totalSales)}</p>
               <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-                {report.invoiceCount} venta(s)
+                {report.invoiceCount} comprobante(s)
               </p>
             </Card>
-            <Card title="Ticket promedio">
+            <Card title="Promedio por registro">
               <p className="text-2xl font-bold">{formatMoney(report.averageTicket)}</p>
             </Card>
-            <Card title="IVA recaudado">
+            <Card title="IVA del periodo">
               <p className="text-2xl font-bold">{formatMoney(report.taxAmount)}</p>
             </Card>
             <Card title="Subtotal neto">
@@ -146,10 +146,10 @@ export default function BillingPage() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <Card title="Ventas por forma de pago">
+            <Card title="Por medio de pago">
               {report.invoiceCount === 0 ? (
                 <p className="text-sm text-[var(--ghost-text-muted)]">
-                  Sin ventas en este periodo.
+                  Sin registros en este periodo.
                 </p>
               ) : (
                 <ul className="space-y-2 text-sm">
@@ -165,10 +165,10 @@ export default function BillingPage() {
               )}
             </Card>
 
-            <Card title="Productos más vendidos">
+            <Card title="Ítems con más movimiento">
               {report.topProducts.length === 0 ? (
                 <p className="text-sm text-[var(--ghost-text-muted)]">
-                  Registra ventas para ver el ranking.
+                  Aún no hay datos para este periodo.
                 </p>
               ) : (
                 <ul className="space-y-2 text-sm">
@@ -196,10 +196,10 @@ export default function BillingPage() {
       ) : invoicesInPeriod.length === 0 ? (
         <Card title="Sin comprobantes">
           <p className="text-sm text-[var(--ghost-text-muted)]">
-            No hay ventas en {period.label.toLowerCase()}. Registra una desde el POS.
+            No hay comprobantes en {period.label.toLowerCase()}. Crea uno desde mostrador.
           </p>
           <Link href="/pos" className="mt-4 inline-block">
-            <Button>Ir al POS</Button>
+            <Button>Ir al mostrador</Button>
           </Link>
         </Card>
       ) : (

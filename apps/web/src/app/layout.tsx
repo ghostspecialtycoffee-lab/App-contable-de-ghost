@@ -7,14 +7,13 @@ import { AuthProvider } from "@/providers/auth-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Ghost ERP",
-  description:
-    "Sistema ERP y POS para cafeterías, restaurantes y negocios gastronómicos.",
-  applicationName: "Ghost ERP",
+  title: "Ghost Contable",
+  description: "Herramienta interna de operación, registros e inventario.",
+  applicationName: "Ghost Contable",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Ghost ERP",
+    title: "Ghost Contable",
   },
   formatDetection: {
     telephone: false,
@@ -29,8 +28,8 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#2b579f" },
-    { media: "(prefers-color-scheme: dark)", color: "#111827" },
+    { media: "(prefers-color-scheme: light)", color: "#18181b" },
+    { media: "(prefers-color-scheme: dark)", color: "#111111" },
   ],
 };
 
