@@ -81,3 +81,21 @@ a {
     }
   }
 }
+
+@media print {
+  header,
+  nav,
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  .ghost-shell-main {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}

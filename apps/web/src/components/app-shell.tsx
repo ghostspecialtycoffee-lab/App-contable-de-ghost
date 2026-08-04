@@ -18,7 +18,7 @@ const appNavItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/pos", label: "POS" },
   { href: "/kds", label: "Comandas" },
-  { href: "/billing", label: "Ventas" },
+  { href: "/billing", label: "Facturación" },
   { href: "/inventory", label: "Inventario" },
 ];
 

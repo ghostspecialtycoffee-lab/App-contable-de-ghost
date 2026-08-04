@@ -1,86 +1,202 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
+import { SaleReceipt } from "@/components/sale-receipt";
 import { useSales } from "@/hooks/use-sales";
-import { PAYMENT_METHOD_LABELS, type Sale } from "@ghost/domain";
+import { formatDateTime, formatMoney } from "@/lib/format";
+import { useAuth } from "@/providers/auth-provider";
+import {
+  PAYMENT_METHOD_LABELS,
+  PAYMENT_METHODS,
+  buildSalesReport,
+  filterSalesByPeriod,
+  getReportPeriod,
+} from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
-function formatMoney(value: number) {
-  return value.toLocaleString("es-CO", {
-    style: "currency",
-    currency: "COP",
-    maximumFractionDigits: 0,
-  });
-}
-
-function SaleReceipt({ sale }: { sale: Sale }) {
-  return (
-    <div className="rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] p-4 text-sm">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <p className="font-semibold">Comprobante {sale.saleNumber}</p>
-          <p className="text-xs text-[var(--ghost-text-muted)]">
-            Pago: {PAYMENT_METHOD_LABELS[sale.paymentMethod]}
-          </p>
-        </div>
-        <p className="text-base font-bold">{formatMoney(sale.total)}</p>
-      </div>
-      <ul className="space-y-1 border-t border-[var(--ghost-border)] pt-3">
-        {sale.lines.map((line, index) => (
-          <li key={`${sale.id}-${index}`} className="flex justify-between gap-2">
-            <span>
-              {line.quantity}x {line.name}
-            </span>
-            <span>{formatMoney(line.lineTotal)}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-3 space-y-1 border-t border-[var(--ghost-border)] pt-3 text-xs text-[var(--ghost-text-muted)]">
-        <div className="flex justify-between">
-          <span>Subtotal</span>
-          <span>{formatMoney(sale.subtotal)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>IVA</span>
-          <span>{formatMoney(sale.taxAmount)}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
+type BillingTab = "invoices" | "reports";
+type ReportPreset = "today" | "week" | "month";
 
 export default function BillingPage() {
+  const { organization } = useAuth();
   const { sales, loading, error } = useSales();
+  const [tab, setTab] = useState<BillingTab>("reports");
+  const [preset, setPreset] = useState<ReportPreset>("today");
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
-  const selectedSale = sales.find((sale) => sale.id === selectedSaleId) ?? sales[0];
+
+  const period = useMemo(() => getReportPeriod(preset), [preset]);
+
+  const salesForReport = useMemo(
+    () =>
+      sales.map((sale) => ({
+        soldAt: sale.soldAt ?? sale.createdAt,
+        soldOn: sale.soldOn ?? (sale.soldAt ?? sale.createdAt).slice(0, 10),
+        status: sale.status,
+        subtotal: sale.subtotal,
+        taxAmount: sale.taxAmount,
+        total: sale.total,
+        paymentMethod: sale.paymentMethod,
+        lines: sale.lines,
+      })),
+    [sales],
+  );
+
+  const periodSales = useMemo(
+    () => filterSalesByPeriod(salesForReport, period.from, period.to),
+    [period.from, period.to, salesForReport],
+  );
+
+  const report = useMemo(() => buildSalesReport(periodSales), [periodSales]);
+
+  const invoicesInPeriod = useMemo(() => {
+    return sales.filter((sale) => {
+      const soldAt = sale.soldAt ?? sale.createdAt;
+      const time = new Date(soldAt).getTime();
+      return time >= period.from.getTime() && time <= period.to.getTime();
+    });
+  }, [period.from, period.to, sales]);
+
+  const activeSale =
+    sales.find((sale) => sale.id === selectedSaleId) ?? invoicesInPeriod[0];
 
   return (
     <div className="space-y-4 pb-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm text-[var(--ghost-text-muted)]">Facturación básica</p>
-          <h1 className="text-2xl font-bold">Ventas y comprobantes</h1>
+          <p className="text-sm text-[var(--ghost-text-muted)]">Facturación</p>
+          <h1 className="text-2xl font-bold">Ventas e informes</h1>
           <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            Comprobante de venta con IVA. Factura electrónica DIAN en fase posterior.
+            {organization?.name ?? "Tu negocio"} · registra ventas y consulta informes al instante
           </p>
         </div>
         <Link href="/pos">
-          <Button variant="secondary" size="sm">
-            Nueva venta
-          </Button>
+          <Button>Nueva venta</Button>
         </Link>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setTab("reports")}
+          className={[
+            "rounded-lg px-4 py-2 text-sm font-medium",
+            tab === "reports"
+              ? "bg-[var(--ghost-brand-500)] text-white"
+              : "bg-[var(--ghost-surface-2)]",
+          ].join(" ")}
+        >
+          Informes
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("invoices")}
+          className={[
+            "rounded-lg px-4 py-2 text-sm font-medium",
+            tab === "invoices"
+              ? "bg-[var(--ghost-brand-500)] text-white"
+              : "bg-[var(--ghost-surface-2)]",
+          ].join(" ")}
+        >
+          Comprobantes
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {(["today", "week", "month"] as const).map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => setPreset(item)}
+            className={[
+              "rounded-full px-3 py-1 text-sm",
+              preset === item
+                ? "bg-[var(--ghost-brand-500)] text-white"
+                : "bg-[var(--ghost-surface-2)]",
+            ].join(" ")}
+          >
+            {getReportPeriod(item).label}
+          </button>
+        ))}
       </div>
 
       {loading ? (
         <p className="text-sm text-[var(--ghost-text-muted)]">Cargando ventas...</p>
       ) : error ? (
         <p className="text-sm text-[var(--ghost-danger)]">{error}</p>
-      ) : sales.length === 0 ? (
-        <Card title="Sin ventas">
+      ) : tab === "reports" ? (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Card title="Total vendido">
+              <p className="text-2xl font-bold">{formatMoney(report.totalSales)}</p>
+              <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
+                {report.invoiceCount} venta(s)
+              </p>
+            </Card>
+            <Card title="Ticket promedio">
+              <p className="text-2xl font-bold">{formatMoney(report.averageTicket)}</p>
+            </Card>
+            <Card title="IVA recaudado">
+              <p className="text-2xl font-bold">{formatMoney(report.taxAmount)}</p>
+            </Card>
+            <Card title="Subtotal neto">
+              <p className="text-2xl font-bold">{formatMoney(report.subtotal)}</p>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card title="Ventas por forma de pago">
+              {report.invoiceCount === 0 ? (
+                <p className="text-sm text-[var(--ghost-text-muted)]">
+                  Sin ventas en este periodo.
+                </p>
+              ) : (
+                <ul className="space-y-2 text-sm">
+                  {PAYMENT_METHODS.map((method) => (
+                    <li key={method} className="flex justify-between">
+                      <span>{PAYMENT_METHOD_LABELS[method]}</span>
+                      <span className="font-medium">
+                        {formatMoney(report.byPaymentMethod[method])}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+
+            <Card title="Productos más vendidos">
+              {report.topProducts.length === 0 ? (
+                <p className="text-sm text-[var(--ghost-text-muted)]">
+                  Registra ventas para ver el ranking.
+                </p>
+              ) : (
+                <ul className="space-y-2 text-sm">
+                  {report.topProducts.map((product) => (
+                    <li
+                      key={product.name}
+                      className="flex items-center justify-between gap-3"
+                    >
+                      <span>
+                        {product.name}
+                        <span className="ml-2 text-[var(--ghost-text-muted)]">
+                          x{product.quantity}
+                        </span>
+                      </span>
+                      <span className="font-medium">
+                        {formatMoney(product.revenue)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          </div>
+        </div>
+      ) : invoicesInPeriod.length === 0 ? (
+        <Card title="Sin comprobantes">
           <p className="text-sm text-[var(--ghost-text-muted)]">
-            Registra la primera venta desde el POS.
+            No hay ventas en {period.label.toLowerCase()}. Registra una desde el POS.
           </p>
           <Link href="/pos" className="mt-4 inline-block">
             <Button>Ir al POS</Button>
@@ -88,24 +204,28 @@ export default function BillingPage() {
         </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-          <Card title="Historial de ventas">
+          <Card title={`Comprobantes — ${period.label}`}>
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead className="border-b border-[var(--ghost-border)] text-[var(--ghost-text-muted)]">
                   <tr>
                     <th className="px-2 py-2 font-medium">Número</th>
+                    <th className="px-2 py-2 font-medium">Fecha</th>
                     <th className="px-2 py-2 font-medium">Total</th>
                     <th className="px-2 py-2 font-medium">Pago</th>
                     <th className="px-2 py-2 font-medium" />
                   </tr>
                 </thead>
                 <tbody>
-                  {sales.map((sale) => (
+                  {invoicesInPeriod.map((sale) => (
                     <tr
                       key={sale.id}
                       className="border-b border-[var(--ghost-border)] last:border-0"
                     >
                       <td className="px-2 py-2 font-mono text-xs">{sale.saleNumber}</td>
+                      <td className="px-2 py-2">
+                        {formatDateTime(sale.soldAt ?? sale.createdAt)}
+                      </td>
                       <td className="px-2 py-2">{formatMoney(sale.total)}</td>
                       <td className="px-2 py-2">
                         {PAYMENT_METHOD_LABELS[sale.paymentMethod]}
@@ -126,9 +246,9 @@ export default function BillingPage() {
             </div>
           </Card>
 
-          {selectedSale ? (
-            <Card title="Comprobante">
-              <SaleReceipt sale={selectedSale} />
+          {activeSale ? (
+            <Card title="Detalle">
+              <SaleReceipt sale={activeSale} />
             </Card>
           ) : null}
         </div>

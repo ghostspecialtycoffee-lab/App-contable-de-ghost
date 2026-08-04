@@ -9,7 +9,7 @@ const tabs = [
   { href: "/dashboard", label: "Inicio" },
   { href: "/pos", label: "POS" },
   { href: "/kds", label: "Comandas" },
-  { href: "/billing", label: "Ventas" },
+  { href: "/billing", label: "Informes" },
 ];
 
 const hiddenPrefixes = ["/login", "/register", "/onboarding"];

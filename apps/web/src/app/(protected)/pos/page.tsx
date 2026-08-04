@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
+import { formatMoney } from "@/lib/format";
 import { createSale } from "@/lib/pos/pos";
 import { useAuth } from "@/providers/auth-provider";
 import {
@@ -25,22 +26,16 @@ interface CartLine {
   station: string;
 }
 
-function formatMoney(value: number) {
-  return value.toLocaleString("es-CO", {
-    style: "currency",
-    currency: "COP",
-    maximumFractionDigits: 0,
-  });
-}
-
 export default function PosPage() {
   const { organization } = useAuth();
   const { products, loading, error } = useMenuProducts();
   const [category, setCategory] = useState<MenuCategory | "all">("all");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
+  const [customerName, setCustomerName] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [lastSaleNumber, setLastSaleNumber] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const filteredProducts = useMemo(() => {
@@ -111,8 +106,11 @@ export default function PosPage() {
       const result = await createSale({
         lines: cart,
         paymentMethod,
+        customerName: customerName.trim() || undefined,
       });
       setCart([]);
+      setCustomerName("");
+      setLastSaleNumber(result.saleNumber);
       setSuccess(
         `Venta ${result.saleNumber} registrada por ${formatMoney(result.total)}` +
           (result.kitchenOrderIds.length > 0
@@ -141,7 +139,7 @@ export default function PosPage() {
           </Link>
           <Link href="/billing">
             <Button variant="secondary" size="sm">
-              Ventas
+              Informes
             </Button>
           </Link>
           <Link href="/kds">
@@ -273,7 +271,17 @@ export default function PosPage() {
                 </div>
 
                 <label className="block space-y-1">
-                  <span className="text-sm font-medium">Pago</span>
+                  <span className="text-sm font-medium">Cliente (opcional)</span>
+                  <input
+                    value={customerName}
+                    onChange={(event) => setCustomerName(event.target.value)}
+                    className="ghost-input"
+                    placeholder="Nombre del cliente"
+                  />
+                </label>
+
+                <label className="block space-y-1">
+                  <span className="text-sm font-medium">Forma de pago</span>
                   <select
                     value={paymentMethod}
                     onChange={(event) =>
@@ -293,7 +301,16 @@ export default function PosPage() {
                   <p className="text-sm text-[var(--ghost-danger)]">{submitError}</p>
                 ) : null}
                 {success ? (
-                  <p className="text-sm text-[var(--ghost-brand-500)]">{success}</p>
+                  <div className="space-y-2">
+                    <p className="text-sm text-[var(--ghost-brand-500)]">{success}</p>
+                    {lastSaleNumber ? (
+                      <Link href="/billing">
+                        <Button variant="secondary" fullWidth size="sm">
+                          Ver comprobante e informes
+                        </Button>
+                      </Link>
+                    ) : null}
+                  </div>
                 ) : null}
 
                 <Button

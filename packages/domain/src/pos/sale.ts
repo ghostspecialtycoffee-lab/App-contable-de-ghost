@@ -39,6 +39,8 @@ export interface Sale extends AuditMetadata {
   cashierUserId: EntityId;
   customerName?: string;
   notes?: string;
+  soldAt?: string;
+  soldOn?: string;
 }
 
 export interface CreateSaleLineInput {

@@ -141,6 +141,8 @@ export async function createSaleClient(input: {
 
   const totals = calculateSaleTotals(linesResult.value, taxRate);
   const saleNumber = buildSaleNumber();
+  const soldAt = new Date().toISOString();
+  const soldOn = soldAt.slice(0, 10);
   const db = getFirestoreDb();
   const saleRef = doc(
     collection(db, firestorePaths.organizationSales(organizationId)),
@@ -164,6 +166,8 @@ export async function createSaleClient(input: {
       cashierUserId: userId,
       customerName: input.customerName?.trim() ?? "",
       notes: input.notes?.trim() ?? "",
+      soldAt,
+      soldOn,
       createdAt: now,
       updatedAt: now,
       createdBy: userId,
@@ -229,4 +233,31 @@ export async function updateKitchenOrderStatusClient(input: {
     },
     { merge: true },
   );
+}
+
+const DEFAULT_MENU_TEMPLATES: Array<{
+  name: string;
+  price: number;
+  category: MenuCategory;
+  station: KitchenStation;
+}> = [
+  { name: "Americano", price: 6000, category: "beverage", station: "bar" },
+  { name: "Latte", price: 8000, category: "beverage", station: "bar" },
+  { name: "Cappuccino", price: 8000, category: "beverage", station: "bar" },
+  { name: "Croissant", price: 5000, category: "pastry", station: "counter" },
+  { name: "Sandwich", price: 12000, category: "food", station: "kitchen" },
+];
+
+export async function seedDefaultMenuClient(): Promise<{ created: number }> {
+  let created = 0;
+
+  for (const [index, template] of DEFAULT_MENU_TEMPLATES.entries()) {
+    await createMenuProductClient({
+      ...template,
+      sortOrder: index,
+    });
+    created += 1;
+  }
+
+  return { created };
 }

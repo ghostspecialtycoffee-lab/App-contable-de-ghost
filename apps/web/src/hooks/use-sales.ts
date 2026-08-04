@@ -1,20 +1,45 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  collection,
-  limit,
-  onSnapshot,
-  orderBy,
-  query,
-  where,
-} from "firebase/firestore";
+import { collection, limit, onSnapshot, query } from "firebase/firestore";
 
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
+import { parseFirestoreDate } from "@/lib/format";
 import { getFirestoreDb } from "@/lib/firebase/client";
 import { useActiveMembership } from "@/providers/auth-provider";
 import type { Sale } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
+
+function mapSale(documentId: string, data: Record<string, unknown>): Sale {
+  const soldAt =
+    (typeof data.soldAt === "string" && data.soldAt) ||
+    parseFirestoreDate(data.createdAt);
+
+  return {
+    id: documentId,
+    organizationId: String(data.organizationId ?? ""),
+    branchId: String(data.branchId ?? ""),
+    saleNumber: String(data.saleNumber ?? ""),
+    status: (data.status as Sale["status"]) ?? "paid",
+    lines: (data.lines as Sale["lines"]) ?? [],
+    subtotal: Number(data.subtotal ?? 0),
+    taxRate: Number(data.taxRate ?? 0),
+    taxAmount: Number(data.taxAmount ?? 0),
+    total: Number(data.total ?? 0),
+    paymentMethod: (data.paymentMethod as Sale["paymentMethod"]) ?? "cash",
+    cashierUserId: String(data.cashierUserId ?? ""),
+    customerName: String(data.customerName ?? ""),
+    notes: String(data.notes ?? ""),
+    soldAt,
+    soldOn:
+      (typeof data.soldOn === "string" && data.soldOn) ||
+      soldAt.slice(0, 10),
+    createdAt: soldAt,
+    updatedAt: parseFirestoreDate(data.updatedAt) || soldAt,
+    createdBy: String(data.createdBy ?? ""),
+    updatedBy: String(data.updatedBy ?? ""),
+  };
+}
 
 export function useSales() {
   const membership = useActiveMembership();
@@ -34,39 +59,22 @@ export function useSales() {
         getFirestoreDb(),
         firestorePaths.organizationSales(membership.organizationId),
       ),
-      where("status", "==", "paid"),
-      orderBy("createdAt", "desc"),
-      limit(100),
+      limit(500),
     );
 
     const unsubscribe = onSnapshot(
       salesQuery,
       (snapshot) => {
-        setSales(
-          snapshot.docs.map((document) => {
-            const data = document.data();
-            return {
-              id: document.id,
-              organizationId: data.organizationId,
-              branchId: data.branchId,
-              saleNumber: data.saleNumber,
-              status: data.status,
-              lines: data.lines ?? [],
-              subtotal: data.subtotal ?? 0,
-              taxRate: data.taxRate ?? 0,
-              taxAmount: data.taxAmount ?? 0,
-              total: data.total ?? 0,
-              paymentMethod: data.paymentMethod,
-              cashierUserId: data.cashierUserId,
-              customerName: data.customerName ?? "",
-              notes: data.notes ?? "",
-              createdAt: "",
-              updatedAt: "",
-              createdBy: data.createdBy ?? "",
-              updatedBy: data.updatedBy ?? "",
-            } satisfies Sale;
-          }),
-        );
+        const nextSales = snapshot.docs
+          .map((document) => mapSale(document.id, document.data()))
+          .filter((sale) => sale.status === "paid")
+          .sort((left, right) => {
+            const leftTime = new Date(left.soldAt ?? left.createdAt).getTime();
+            const rightTime = new Date(right.soldAt ?? right.createdAt).getTime();
+            return rightTime - leftTime;
+          });
+
+        setSales(nextSales);
         setLoading(false);
         setError(null);
       },

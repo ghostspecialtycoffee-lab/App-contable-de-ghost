@@ -1,16 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  collection,
-  limit,
-  onSnapshot,
-  orderBy,
-  query,
-  where,
-} from "firebase/firestore";
+import { collection, limit, onSnapshot, query } from "firebase/firestore";
 
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
+import { parseFirestoreDate } from "@/lib/format";
 import { getFirestoreDb } from "@/lib/firebase/client";
 import { useActiveMembership } from "@/providers/auth-provider";
 import type { KitchenOrder, KitchenOrderStatus } from "@ghost/domain";
@@ -40,9 +34,7 @@ export function useKitchenOrders(options?: { station?: "bar" | "kitchen" }) {
         getFirestoreDb(),
         firestorePaths.organizationKitchenOrders(membership.organizationId),
       ),
-      where("status", "in", ACTIVE_STATUSES),
-      orderBy("createdAt", "desc"),
-      limit(50),
+      limit(100),
     );
 
     const unsubscribe = onSnapshot(
@@ -51,6 +43,7 @@ export function useKitchenOrders(options?: { station?: "bar" | "kitchen" }) {
         const nextOrders = snapshot.docs
           .map((document) => {
             const data = document.data();
+            const createdAt = parseFirestoreDate(data.createdAt);
             return {
               id: document.id,
               organizationId: data.organizationId,
@@ -61,15 +54,21 @@ export function useKitchenOrders(options?: { station?: "bar" | "kitchen" }) {
               status: data.status,
               ticketNumber: data.ticketNumber ?? 0,
               lines: data.lines ?? [],
-              createdAt: "",
-              updatedAt: "",
+              createdAt,
+              updatedAt: parseFirestoreDate(data.updatedAt) || createdAt,
               createdBy: data.createdBy ?? "",
               updatedBy: data.updatedBy ?? "",
             } satisfies KitchenOrder;
           })
+          .filter((order) => ACTIVE_STATUSES.includes(order.status))
           .filter((order) =>
             options?.station ? order.station === options.station : true,
-          );
+          )
+          .sort((left, right) => {
+            const leftTime = new Date(left.createdAt).getTime();
+            const rightTime = new Date(right.createdAt).getTime();
+            return rightTime - leftTime;
+          });
 
         setOrders(nextOrders);
         setLoading(false);
