@@ -69,7 +69,12 @@ jobs:
           setup_auth
 
           echo "=== 0/4 Firestore rules (funciona en plan Spark) ==="
-          "${FB[@]}" --only firestore:rules,firestore:indexes
+          if ! "${FB[@]}" --only firestore:rules; then
+            echo "::error::No se pudieron publicar reglas Firestore. Crea Firestore en Firebase Console."
+            exit 1
+          fi
+          echo "=== 0b/4 Firestore indexes (opcional) ==="
+          "${FB[@]}" --only firestore:indexes || echo "::warning::Índices omitidos — crea Firestore si falta"
 
           echo "=== 1/4 Hosting (app web) ==="
           if "${FB[@]}" --only hosting; then
