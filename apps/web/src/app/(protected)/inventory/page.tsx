@@ -18,6 +18,16 @@ const modules = [
     title: "Movimientos",
     description: "Entradas, salidas y kardex.",
   },
+  {
+    href: "/purchases",
+    title: "Compras",
+    description: "Facturas de compra con IVA e ingreso a inventario.",
+  },
+  {
+    href: "/costing",
+    title: "Costeo",
+    description: "Matriz de costos, márgenes e impuestos Colombia.",
+  },
 ];
 
 export default function InventoryPage() {

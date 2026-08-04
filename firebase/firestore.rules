@@ -177,6 +177,28 @@ service cloud.firestore {
           && resource.data.organizationId == organizationId;
         allow delete: if false;
       }
+
+      match /recipes/{recipeId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
+      match /purchaseInvoices/{invoiceId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.status == 'draft';
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId
+          && resource.data.status == 'draft';
+        allow delete: if false;
+      }
     }
   }
 }

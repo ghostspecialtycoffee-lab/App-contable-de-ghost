@@ -1,5 +1,10 @@
 import { err, ok, type Result } from "@ghost/shared";
 
+import {
+  extractTaxFromGrossPrice,
+  summarizeTaxBreakdown,
+  type CoTaxCategory,
+} from "../../fiscal/colombia-tax.js";
 import type { CreateSaleLineInput } from "../sale.js";
 
 export interface SaleTotals {
@@ -10,11 +15,19 @@ export interface SaleTotals {
     quantity: number;
     lineTotal: number;
     station: string;
+    saleTaxCategory: CoTaxCategory;
+    lineNet: number;
+    lineTax: number;
   }>;
   subtotal: number;
   taxRate: number;
   taxAmount: number;
   total: number;
+  taxBreakdown: Array<{
+    category: CoTaxCategory;
+    label: string;
+    amount: number;
+  }>;
 }
 
 export function validateSaleLines(
@@ -41,35 +54,43 @@ export function validateSaleLines(
   return ok(lines);
 }
 
-export function calculateSaleTotals(
-  lines: CreateSaleLineInput[],
-  taxRate: number,
-): SaleTotals {
+/** El precio unitario ya incluye impuesto (precio final al cliente). */
+export function calculateSaleTotals(lines: CreateSaleLineInput[]): SaleTotals {
+  let subtotal = 0;
+  let taxAmount = 0;
+  let total = 0;
+  const taxLines: Array<{ category: CoTaxCategory; amount: number }> = [];
+
   const normalizedLines = lines.map((line) => {
-    const lineTotal = Math.round(line.unitPrice * line.quantity);
+    const saleTaxCategory = line.saleTaxCategory ?? "IVA_19";
+    const grossLineTotal = Math.round(line.unitPrice * line.quantity);
+    const extracted = extractTaxFromGrossPrice(grossLineTotal, saleTaxCategory);
+
+    subtotal += extracted.net;
+    taxAmount += extracted.taxAmount;
+    total += extracted.gross;
+    taxLines.push({ category: saleTaxCategory, amount: extracted.taxAmount });
+
     return {
       productId: line.productId,
       name: line.name.trim(),
       unitPrice: line.unitPrice,
       quantity: line.quantity,
-      lineTotal,
+      lineTotal: grossLineTotal,
       station: line.station,
+      saleTaxCategory,
+      lineNet: extracted.net,
+      lineTax: extracted.taxAmount,
     };
   });
-
-  const subtotal = normalizedLines.reduce(
-    (accumulator, line) => accumulator + line.lineTotal,
-    0,
-  );
-  const taxAmount = Math.round(subtotal * taxRate);
-  const total = subtotal + taxAmount;
 
   return {
     lines: normalizedLines,
     subtotal,
-    taxRate,
+    taxRate: subtotal > 0 ? taxAmount / subtotal : 0,
     taxAmount,
     total,
+    taxBreakdown: summarizeTaxBreakdown(taxLines),
   };
 }
 

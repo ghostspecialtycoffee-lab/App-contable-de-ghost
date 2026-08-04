@@ -1,32 +1,132 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
 import { createMenuProduct, seedDefaultMenu } from "@/lib/pos/pos";
+import { saveRecipe } from "@/lib/recipes/recipes";
 import {
+  BASE_UNITS,
+  BASE_UNIT_LABELS,
+  CO_COST_MATRIX_DEFAULTS,
+  CO_TAX_CATEGORIES,
+  CO_TAX_CATEGORY_LABELS,
   KITCHEN_STATIONS,
   KITCHEN_STATION_LABELS,
   MENU_CATEGORIES,
   MENU_CATEGORY_LABELS,
+  calculateCostMatrix,
+  calculateRecipeCost,
+  inferMenuProductTaxCategory,
+  isCoffeeBeverageName,
+  type BaseUnit,
+  type CoTaxCategory,
   type KitchenStation,
   type MenuCategory,
+  type RecipeLineInput,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
+const emptyRecipeLine = (): RecipeLineInput => ({
+  inventoryItemId: "",
+  itemName: "",
+  quantity: 0,
+  unit: "g",
+});
+
 export default function PosMenuPage() {
   const { products, loading, error } = useMenuProducts();
+  const { items: inventoryItems } = useInventoryItems();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState<MenuCategory>("beverage");
   const [station, setStation] = useState<KitchenStation>("counter");
+  const [saleTaxCategory, setSaleTaxCategory] = useState<CoTaxCategory>("INC_8");
+  const [recipeLines, setRecipeLines] = useState<RecipeLineInput[]>([emptyRecipeLine()]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [seedMessage, setSeedMessage] = useState<string | null>(null);
+
+  const unitCosts = useMemo(() => {
+    const costs: Record<string, number> = {};
+    for (const item of inventoryItems) {
+      costs[item.id] = item.averageCost || item.lastCost || 0;
+    }
+    return costs;
+  }, [inventoryItems]);
+
+  const previewRecipeCost = useMemo(() => {
+    const validLines = recipeLines.filter(
+      (line) => line.inventoryItemId && line.quantity > 0,
+    );
+    return validLines.length > 0 ? calculateRecipeCost(validLines, unitCosts) : 0;
+  }, [recipeLines, unitCosts]);
+
+  const suggestedTaxCategory = useMemo(() => {
+    const containsCoffeeIngredient = recipeLines.some((line) => {
+      const item = inventoryItems.find((entry) => entry.id === line.inventoryItemId);
+      return item ? isCoffeeBeverageName(item.name) : false;
+    });
+
+    return inferMenuProductTaxCategory({
+      name,
+      category,
+      containsCoffeeIngredient,
+    });
+  }, [name, category, recipeLines, inventoryItems]);
+
+  useEffect(() => {
+    setSaleTaxCategory(suggestedTaxCategory);
+  }, [suggestedTaxCategory]);
+
+  const previewMatrix = useMemo(() => {
+    const salePrice = Number(price) || 0;
+    if (salePrice <= 0) {
+      return null;
+    }
+
+    const targetCostPct =
+      category === "beverage"
+        ? CO_COST_MATRIX_DEFAULTS.targetBeverageCostPct
+        : CO_COST_MATRIX_DEFAULTS.targetFoodCostPct;
+
+    return calculateCostMatrix({
+      unitCostNet: previewRecipeCost,
+      quantity: 1,
+      purchaseTaxCategory: "IVA_19",
+      salePriceGross: salePrice,
+      saleTaxCategory,
+      recipeCost: previewRecipeCost,
+      targetCostPct,
+    });
+  }, [price, category, saleTaxCategory, previewRecipeCost]);
+
+  function updateRecipeLine(index: number, patch: Partial<RecipeLineInput>) {
+    setRecipeLines((current) =>
+      current.map((line, lineIndex) =>
+        lineIndex === index ? { ...line, ...patch } : line,
+      ),
+    );
+  }
+
+  function linkInventoryToRecipe(index: number, itemId: string) {
+    const item = inventoryItems.find((entry) => entry.id === itemId);
+    if (!item) {
+      return;
+    }
+
+    updateRecipeLine(index, {
+      inventoryItemId: item.id,
+      itemName: item.name,
+      unit: item.baseUnit as BaseUnit,
+      quantity: lineDefaultQuantity(item.baseUnit as BaseUnit),
+    });
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,14 +134,29 @@ export default function PosMenuPage() {
     setSubmitting(true);
 
     try {
-      await createMenuProduct({
+      const result = await createMenuProduct({
         name: name.trim(),
         price: Number(price),
         category,
         station,
+        saleTaxCategory,
       });
+
+      const validLines = recipeLines.filter(
+        (line) => line.inventoryItemId && line.quantity > 0,
+      );
+
+      if (validLines.length > 0) {
+        await saveRecipe({
+          menuProductId: result.productId,
+          menuProductName: name.trim(),
+          lines: validLines,
+        });
+      }
+
       setName("");
       setPrice("");
+      setRecipeLines([emptyRecipeLine()]);
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -66,16 +181,27 @@ export default function PosMenuPage() {
 
   return (
     <div className="space-y-6 pb-4">
-      <div>
-        <p className="text-sm text-[var(--ghost-text-muted)]">
-          <Link href="/pos" className="underline">
-            Mostrador
-          </Link>
-        </p>
-        <h1 className="text-2xl font-semibold">Catálogo</h1>
-        <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-          Ítems disponibles en mostrador. Asigna estación para comandas de barra o cocina.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm text-[var(--ghost-text-muted)]">
+            <Link href="/pos" className="underline">
+              Mostrador
+            </Link>
+          </p>
+          <h1 className="text-2xl font-semibold">Catálogo</h1>
+          <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
+            Producto, receta, costos e IVA Colombia.{" "}
+            <Link href="/costing" className="underline">
+              Ver matriz de costeo
+            </Link>
+          </p>
+        </div>
+        <Link
+          href="/purchases"
+          className="text-sm font-medium text-[var(--ghost-brand-500)] underline"
+        >
+          Facturas de compra
+        </Link>
       </div>
 
       {products.length === 0 ? (
@@ -83,12 +209,7 @@ export default function PosMenuPage() {
           <p className="text-sm text-[var(--ghost-text-muted)]">
             Carga un set inicial de ítems para pruebas internas.
           </p>
-          <Button
-            className="mt-4"
-            onClick={handleSeedMenu}
-            disabled={seeding}
-            fullWidth
-          >
+          <Button className="mt-4" onClick={handleSeedMenu} disabled={seeding} fullWidth>
             {seeding ? "Cargando..." : "Cargar catálogo base"}
           </Button>
           {seedMessage ? (
@@ -97,8 +218,8 @@ export default function PosMenuPage() {
         </Card>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-        <Card title="Agregar ítem">
+      <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+        <Card title="Agregar ítem con receta">
           <form className="space-y-3" onSubmit={handleSubmit}>
             <label className="block space-y-1">
               <span className="text-sm font-medium">Nombre</span>
@@ -111,7 +232,7 @@ export default function PosMenuPage() {
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-sm font-medium">Precio (COP)</span>
+              <span className="text-sm font-medium">Precio venta (COP, con IVA)</span>
               <input
                 required
                 type="number"
@@ -121,6 +242,22 @@ export default function PosMenuPage() {
                 onChange={(event) => setPrice(event.target.value)}
                 className="ghost-input"
               />
+            </label>
+            <label className="block space-y-1">
+              <span className="text-sm font-medium">Impuesto venta (incluido en precio)</span>
+              <select
+                value={saleTaxCategory}
+                onChange={(event) =>
+                  setSaleTaxCategory(event.target.value as CoTaxCategory)
+                }
+                className="ghost-input"
+              >
+                {CO_TAX_CATEGORIES.map((item) => (
+                  <option key={item} value={item}>
+                    {CO_TAX_CATEGORY_LABELS[item]}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="block space-y-1">
               <span className="text-sm font-medium">Categoría</span>
@@ -150,11 +287,85 @@ export default function PosMenuPage() {
                 ))}
               </select>
             </label>
+
+            <div className="space-y-2 border-t border-[var(--ghost-border)] pt-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium">Receta (ingredientes)</span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setRecipeLines((current) => [...current, emptyRecipeLine()])}
+                >
+                  + Ingrediente
+                </Button>
+              </div>
+              {recipeLines.map((line, index) => (
+                <div
+                  key={index}
+                  className="space-y-2 rounded-lg border border-[var(--ghost-border)] p-3"
+                >
+                  <select
+                    value={line.inventoryItemId}
+                    onChange={(event) => linkInventoryToRecipe(index, event.target.value)}
+                    className="ghost-input"
+                  >
+                    <option value="">Seleccionar insumo</option>
+                    {inventoryItems.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} · costo {formatMoney(item.averageCost || item.lastCost)}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      value={line.quantity || ""}
+                      onChange={(event) =>
+                        updateRecipeLine(index, { quantity: Number(event.target.value) })
+                      }
+                      className="ghost-input"
+                      placeholder="Cantidad"
+                    />
+                    <select
+                      value={line.unit}
+                      onChange={(event) =>
+                        updateRecipeLine(index, { unit: event.target.value as BaseUnit })
+                      }
+                      className="ghost-input"
+                    >
+                      {BASE_UNITS.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {BASE_UNIT_LABELS[unit]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {previewMatrix ? (
+              <div className="rounded-lg bg-[var(--ghost-surface-2)] p-3 text-sm">
+                <p>Precio final: {formatMoney(Number(price) || 0)}</p>
+                <p>Base gravable: {formatMoney(previewMatrix.salePriceNet)}</p>
+                <p>
+                  {CO_TAX_CATEGORY_LABELS[saleTaxCategory]} incluido:{" "}
+                  {formatMoney(previewMatrix.sale.taxAmount)}
+                </p>
+                <p>Costo receta: {formatMoney(previewRecipeCost)}</p>
+                <p>Food cost: {(previewMatrix.foodCostPct * 100).toFixed(1)}%</p>
+                <p>Margen: {(previewMatrix.grossMarginPct * 100).toFixed(1)}%</p>
+                <p>Precio sugerido: {formatMoney(previewMatrix.suggestedSalePriceGross)}</p>
+              </div>
+            ) : null}
+
             {submitError ? (
               <p className="text-sm text-[var(--ghost-danger)]">{submitError}</p>
             ) : null}
             <Button type="submit" fullWidth disabled={submitting}>
-              {submitting ? "Guardando..." : "Guardar ítem"}
+              {submitting ? "Guardando..." : "Guardar producto y receta"}
             </Button>
           </form>
         </Card>
@@ -175,8 +386,9 @@ export default function PosMenuPage() {
                   <tr>
                     <th className="px-2 py-2 font-medium">Producto</th>
                     <th className="px-2 py-2 font-medium">Precio</th>
+                    <th className="px-2 py-2 font-medium">Costo</th>
+                    <th className="px-2 py-2 font-medium">IVA</th>
                     <th className="px-2 py-2 font-medium">Categoría</th>
-                    <th className="px-2 py-2 font-medium">Comanda</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -188,10 +400,15 @@ export default function PosMenuPage() {
                       <td className="px-2 py-2">{product.name}</td>
                       <td className="px-2 py-2">{formatMoney(product.price)}</td>
                       <td className="px-2 py-2">
-                        {MENU_CATEGORY_LABELS[product.category]}
+                        {product.recipeCost ? formatMoney(product.recipeCost) : "—"}
                       </td>
                       <td className="px-2 py-2">
-                        {KITCHEN_STATION_LABELS[product.station]}
+                        {CO_TAX_CATEGORY_LABELS[
+                          (product.saleTaxCategory ?? "IVA_19") as CoTaxCategory
+                        ]}
+                      </td>
+                      <td className="px-2 py-2">
+                        {MENU_CATEGORY_LABELS[product.category]}
                       </td>
                     </tr>
                   ))}
@@ -203,4 +420,14 @@ export default function PosMenuPage() {
       </div>
     </div>
   );
+}
+
+function lineDefaultQuantity(unit: BaseUnit): number {
+  if (unit === "g" || unit === "ml") {
+    return 100;
+  }
+  if (unit === "kg" || unit === "l") {
+    return 0.1;
+  }
+  return 1;
 }

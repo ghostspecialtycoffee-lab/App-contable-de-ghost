@@ -1,5 +1,7 @@
 import type { AuditMetadata, EntityId } from "@ghost/shared";
 
+import type { CoTaxCategory } from "../fiscal/colombia-tax.js";
+
 export const MENU_CATEGORIES = [
   "beverage",
   "food",
@@ -38,6 +40,8 @@ export interface MenuProduct extends AuditMetadata {
   status: MenuProductStatus;
   sortOrder: number;
   description?: string;
+  saleTaxCategory?: CoTaxCategory;
+  recipeCost?: number;
 }
 
 export interface CreateMenuProductInput {

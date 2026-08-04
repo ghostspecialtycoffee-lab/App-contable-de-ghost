@@ -5,62 +5,62 @@ import { collection, limit, onSnapshot, query } from "firebase/firestore";
 
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { getFirestoreDb } from "@/lib/firebase/client";
+import { parseFirestoreDate } from "@/lib/format";
 import { useActiveMembership } from "@/providers/auth-provider";
-import { inferMenuProductTaxCategory, type MenuProduct } from "@ghost/domain";
+import type { PurchaseInvoice } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 
-export function useMenuProducts() {
+export function usePurchaseInvoices() {
   const membership = useActiveMembership();
-  const [products, setProducts] = useState<MenuProduct[]>([]);
+  const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!membership?.organizationId) {
-      setProducts([]);
+      setInvoices([]);
       setLoading(false);
       return;
     }
 
-    const productsQuery = query(
+    const invoicesQuery = query(
       collection(
         getFirestoreDb(),
-        firestorePaths.organizationMenuProducts(membership.organizationId),
+        firestorePaths.organizationPurchaseInvoices(membership.organizationId),
       ),
-      limit(200),
+      limit(100),
     );
 
     const unsubscribe = onSnapshot(
-      productsQuery,
+      invoicesQuery,
       (snapshot) => {
-        const nextProducts = snapshot.docs
+        const nextInvoices = snapshot.docs
           .map((document) => {
             const data = document.data();
             return {
               id: document.id,
               organizationId: data.organizationId,
-              name: data.name,
-              price: data.price ?? 0,
-              category: data.category,
-              station: data.station,
+              branchId: data.branchId,
+              supplierName: data.supplierName,
+              invoiceNumber: data.invoiceNumber,
+              invoiceDate: data.invoiceDate,
               status: data.status,
-              sortOrder: data.sortOrder ?? 0,
-              description: data.description ?? "",
-              saleTaxCategory: data.saleTaxCategory ?? inferMenuProductTaxCategory({
-                name: data.name,
-                category: data.category,
-              }),
-              recipeCost: data.recipeCost ?? 0,
-              createdAt: "",
-              updatedAt: "",
+              lines: data.lines ?? [],
+              subtotal: data.subtotal ?? 0,
+              taxAmount: data.taxAmount ?? 0,
+              total: data.total ?? 0,
+              warehouseId: data.warehouseId,
+              attachmentDataUrl: data.attachmentDataUrl,
+              attachmentName: data.attachmentName,
+              createdAt: parseFirestoreDate(data.createdAt),
+              updatedAt: parseFirestoreDate(data.updatedAt),
               createdBy: data.createdBy ?? "",
               updatedBy: data.updatedBy ?? "",
-            } satisfies MenuProduct;
+            } satisfies PurchaseInvoice;
           })
-          .filter((product) => product.status === "active")
-          .sort((left, right) => left.sortOrder - right.sortOrder);
+          .sort((left, right) => right.invoiceDate.localeCompare(left.invoiceDate));
 
-        setProducts(nextProducts);
+        setInvoices(nextInvoices);
         setLoading(false);
         setError(null);
       },
@@ -73,5 +73,5 @@ export function useMenuProducts() {
     return unsubscribe;
   }, [membership?.organizationId]);
 
-  return { products, loading, error };
+  return { invoices, loading, error };
 }

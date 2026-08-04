@@ -1,0 +1,50 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  buildPurchaseInvoiceLines,
+  summarizePurchaseInvoice,
+  unitCostWithTaxFromLine,
+} from "./invoice.js";
+
+describe("buildPurchaseInvoiceLines", () => {
+  it("calcula subtotal, IVA y total por línea", () => {
+    const lines = buildPurchaseInvoiceLines([
+      {
+        description: "Leche",
+        quantity: 10,
+        unit: "l",
+        unitPriceNet: 4000,
+        taxCategory: "IVA_19",
+      },
+    ]);
+
+    expect(lines[0]?.lineSubtotal).toBe(40000);
+    expect(lines[0]?.lineTax).toBe(7600);
+    expect(lines[0]?.lineTotal).toBe(47600);
+    expect(unitCostWithTaxFromLine(lines[0]!)).toBe(4760);
+  });
+});
+
+describe("summarizePurchaseInvoice", () => {
+  it("resume totales de factura", () => {
+    const lines = buildPurchaseInvoiceLines([
+      {
+        description: "A",
+        quantity: 1,
+        unit: "unit",
+        unitPriceNet: 10000,
+        taxCategory: "IVA_19",
+      },
+      {
+        description: "B",
+        quantity: 2,
+        unit: "kg",
+        unitPriceNet: 5000,
+        taxCategory: "IVA_5",
+      },
+    ]);
+    const summary = summarizePurchaseInvoice(lines);
+    expect(summary.subtotal).toBe(20000);
+    expect(summary.total).toBe(summary.subtotal + summary.taxAmount);
+  });
+});

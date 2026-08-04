@@ -1,5 +1,7 @@
 import type { AuditMetadata, EntityId } from "@ghost/shared";
 
+import type { CoTaxCategory } from "../fiscal/colombia-tax.js";
+
 export const PAYMENT_METHODS = ["cash", "card", "transfer", "other"] as const;
 
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
@@ -22,6 +24,9 @@ export interface SaleLineItem {
   quantity: number;
   lineTotal: number;
   station: string;
+  saleTaxCategory?: CoTaxCategory;
+  lineNet?: number;
+  lineTax?: number;
 }
 
 export interface Sale extends AuditMetadata {
@@ -35,6 +40,11 @@ export interface Sale extends AuditMetadata {
   taxRate: number;
   taxAmount: number;
   total: number;
+  taxBreakdown?: Array<{
+    category: CoTaxCategory;
+    label: string;
+    amount: number;
+  }>;
   paymentMethod: PaymentMethod;
   cashierUserId: EntityId;
   customerName?: string;
@@ -49,6 +59,7 @@ export interface CreateSaleLineInput {
   unitPrice: number;
   quantity: number;
   station: string;
+  saleTaxCategory?: CoTaxCategory;
 }
 
 export interface CreateSaleInput {

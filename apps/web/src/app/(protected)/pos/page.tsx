@@ -7,12 +7,13 @@ import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
 import { createSale } from "@/lib/pos/pos";
-import { useAuth } from "@/providers/auth-provider";
 import {
   MENU_CATEGORIES,
   MENU_CATEGORY_LABELS,
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABELS,
+  calculateSaleTotals,
+  type CoTaxCategory,
   type MenuCategory,
   type PaymentMethod,
 } from "@ghost/domain";
@@ -24,10 +25,10 @@ interface CartLine {
   unitPrice: number;
   quantity: number;
   station: string;
+  saleTaxCategory?: CoTaxCategory;
 }
 
 export default function PosPage() {
-  const { organization } = useAuth();
   const { products, loading, error } = useMenuProducts();
   const [category, setCategory] = useState<MenuCategory | "all">("all");
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -46,13 +47,22 @@ export default function PosPage() {
     return products.filter((product) => product.category === category);
   }, [category, products]);
 
-  const subtotal = cart.reduce(
-    (sum, line) => sum + line.unitPrice * line.quantity,
-    0,
+  const salePreview = useMemo(
+    () =>
+      cart.length > 0
+        ? calculateSaleTotals(
+            cart.map((line) => ({
+              productId: line.productId,
+              name: line.name,
+              unitPrice: line.unitPrice,
+              quantity: line.quantity,
+              station: line.station,
+              saleTaxCategory: line.saleTaxCategory,
+            })),
+          )
+        : null,
+    [cart],
   );
-  const taxRate = organization?.settings.taxRate ?? 0.19;
-  const taxAmount = Math.round(subtotal * taxRate);
-  const total = subtotal + taxAmount;
 
   function addToCart(product: (typeof products)[number]) {
     setSuccess(null);
@@ -74,6 +84,7 @@ export default function PosPage() {
           unitPrice: product.price,
           quantity: 1,
           station: product.station,
+          saleTaxCategory: product.saleTaxCategory,
         },
       ];
     });
@@ -257,17 +268,25 @@ export default function PosPage() {
 
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>{formatMoney(subtotal)}</span>
+                    <span>Base gravable</span>
+                    <span>{formatMoney(salePreview?.subtotal ?? 0)}</span>
                   </div>
-                  <div className="flex justify-between text-[var(--ghost-text-muted)]">
-                    <span>IVA ({Math.round(taxRate * 100)}%)</span>
-                    <span>{formatMoney(taxAmount)}</span>
-                  </div>
+                  {salePreview?.taxBreakdown.map((entry) => (
+                    <div
+                      key={entry.category}
+                      className="flex justify-between text-[var(--ghost-text-muted)]"
+                    >
+                      <span>{entry.label} (incluido)</span>
+                      <span>{formatMoney(entry.amount)}</span>
+                    </div>
+                  ))}
                   <div className="flex justify-between text-base font-semibold">
                     <span>Total</span>
-                    <span>{formatMoney(total)}</span>
+                    <span>{formatMoney(salePreview?.total ?? 0)}</span>
                   </div>
+                  <p className="text-xs text-[var(--ghost-text-muted)]">
+                    El precio del catálogo ya incluye impuesto.
+                  </p>
                 </div>
 
                 <label className="block space-y-1">

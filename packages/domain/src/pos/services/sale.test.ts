@@ -21,6 +21,7 @@ describe("validateSaleLines", () => {
         unitPrice: 8000,
         quantity: 2,
         station: "bar",
+        saleTaxCategory: "INC_8",
       },
     ]);
     expect(result.ok).toBe(true);
@@ -28,23 +29,38 @@ describe("validateSaleLines", () => {
 });
 
 describe("calculateSaleTotals", () => {
-  it("calcula subtotal, IVA y total", () => {
-    const totals = calculateSaleTotals(
-      [
-        {
-          productId: "p1",
-          name: "Latte",
-          unitPrice: 10000,
-          quantity: 2,
-          station: "counter",
-        },
-      ],
-      0.19,
-    );
+  it("extrae impuesto incluido en el precio (INC 8%)", () => {
+    const totals = calculateSaleTotals([
+      {
+        productId: "p1",
+        name: "Americano",
+        unitPrice: 10000,
+        quantity: 1,
+        station: "bar",
+        saleTaxCategory: "INC_8",
+      },
+    ]);
 
-    expect(totals.subtotal).toBe(20000);
-    expect(totals.taxAmount).toBe(3800);
-    expect(totals.total).toBe(23800);
+    expect(totals.total).toBe(10000);
+    expect(totals.subtotal).toBe(9259);
+    expect(totals.taxAmount).toBe(741);
+    expect(totals.lines[0]?.lineTax).toBe(741);
+  });
+
+  it("suma varias líneas con impuesto incluido", () => {
+    const totals = calculateSaleTotals([
+      {
+        productId: "p1",
+        name: "Americano",
+        unitPrice: 10000,
+        quantity: 2,
+        station: "bar",
+        saleTaxCategory: "INC_8",
+      },
+    ]);
+
+    expect(totals.total).toBe(20000);
+    expect(totals.subtotal + totals.taxAmount).toBe(20000);
   });
 });
 
@@ -58,6 +74,9 @@ describe("groupKitchenLines", () => {
         quantity: 1,
         lineTotal: 8000,
         station: "bar",
+        saleTaxCategory: "INC_8",
+        lineNet: 7407,
+        lineTax: 593,
       },
       {
         productId: "2",
@@ -66,6 +85,9 @@ describe("groupKitchenLines", () => {
         quantity: 1,
         lineTotal: 12000,
         station: "kitchen",
+        saleTaxCategory: "IVA_19",
+        lineNet: 10084,
+        lineTax: 1916,
       },
     ]);
 

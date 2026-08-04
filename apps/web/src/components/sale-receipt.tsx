@@ -3,7 +3,7 @@
 import { BrandLogo } from "@/components/brand-logo";
 import { useBrandAssets } from "@/hooks/use-brand-assets";
 import { useAuth } from "@/providers/auth-provider";
-import { PAYMENT_METHOD_LABELS, type Sale } from "@ghost/domain";
+import { CO_TAX_CATEGORY_LABELS, PAYMENT_METHOD_LABELS, type Sale } from "@ghost/domain";
 import { Button } from "@ghost/ui";
 
 import { formatDateTime, formatMoney } from "@/lib/format";
@@ -20,6 +20,17 @@ export function SaleReceipt({ sale, showPrint = true }: SaleReceiptProps) {
   function handlePrint() {
     window.print();
   }
+
+  const taxLines =
+    sale.taxBreakdown && sale.taxBreakdown.length > 0
+      ? sale.taxBreakdown
+      : [
+          {
+            category: "IVA_19" as const,
+            label: CO_TAX_CATEGORY_LABELS.IVA_19,
+            amount: sale.taxAmount,
+          },
+        ];
 
   return (
     <div className="sale-receipt space-y-4">
@@ -56,13 +67,15 @@ export function SaleReceipt({ sale, showPrint = true }: SaleReceiptProps) {
 
         <div className="space-y-1 border-t border-dashed border-gray-300 pt-3 text-xs">
           <div className="flex justify-between">
-            <span>Subtotal</span>
+            <span>Base gravable</span>
             <span>{formatMoney(sale.subtotal)}</span>
           </div>
-          <div className="flex justify-between">
-            <span>IVA ({Math.round(sale.taxRate * 100)}%)</span>
-            <span>{formatMoney(sale.taxAmount)}</span>
-          </div>
+          {taxLines.map((entry) => (
+            <div key={entry.category} className="flex justify-between">
+              <span>{entry.label}</span>
+              <span>{formatMoney(entry.amount)}</span>
+            </div>
+          ))}
           <div className="flex justify-between text-base font-bold">
             <span>Total</span>
             <span>{formatMoney(sale.total)}</span>
@@ -74,7 +87,7 @@ export function SaleReceipt({ sale, showPrint = true }: SaleReceiptProps) {
         </div>
 
         <p className="mt-4 text-center text-[11px] text-gray-500">
-          Documento de uso interno. No constituye factura electrónica.
+          Precios con impuesto incluido. Documento de uso interno.
         </p>
       </div>
 
