@@ -26,6 +26,7 @@ const appNavItems = [
   { href: "/expenses", label: "Gastos fijos" },
   { href: "/purchases", label: "Compras" },
   { href: "/costing", label: "Costeo" },
+  { href: "/settings/costing", label: "Matriz costos" },
   { href: "/inventory", label: "Inventario" },
 ];
 

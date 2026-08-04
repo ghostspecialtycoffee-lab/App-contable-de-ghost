@@ -1,6 +1,7 @@
 import type { AuditMetadata, CurrencyCode, EntityId } from "@ghost/shared";
 
 import type { OrganizationFiscalProfile } from "./organization-fiscal.js";
+import type { OrganizationCostMatrixSettings } from "./organization-cost-matrix.js";
 
 export type OrganizationStatus = "active" | "suspended" | "trial";
 
@@ -19,6 +20,7 @@ export interface Organization extends AuditMetadata {
   status: OrganizationStatus;
   settings: OrganizationSettings;
   fiscalProfile?: OrganizationFiscalProfile;
+  costMatrixSettings?: OrganizationCostMatrixSettings;
 }
 
 export interface CreateOrganizationInput {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
@@ -14,7 +15,6 @@ import { saveRecipe } from "@/lib/recipes/recipes";
 import {
   BASE_UNITS,
   BASE_UNIT_LABELS,
-  CO_COST_MATRIX_DEFAULTS,
   CO_TAX_CATEGORIES,
   CO_TAX_CATEGORY_LABELS,
   KITCHEN_STATIONS,
@@ -23,6 +23,7 @@ import {
   MENU_CATEGORY_LABELS,
   calculateCostMatrix,
   calculateRecipeCost,
+  getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
   type BaseUnit,
@@ -42,6 +43,7 @@ const emptyRecipeLine = (): RecipeLineInput => ({
 
 export default function PosMenuPage() {
   const { products, loading, error } = useMenuProducts();
+  const costMatrixSettings = useCostMatrixSettings();
   const { items: inventoryItems } = useInventoryItems();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -95,10 +97,7 @@ export default function PosMenuPage() {
       return null;
     }
 
-    const targetCostPct =
-      category === "beverage"
-        ? CO_COST_MATRIX_DEFAULTS.targetBeverageCostPct
-        : CO_COST_MATRIX_DEFAULTS.targetFoodCostPct;
+    const targetCostPct = getTargetCostPctForCategory(category, costMatrixSettings);
 
     return calculateCostMatrix({
       unitCostNet: previewRecipeCost,
@@ -108,8 +107,9 @@ export default function PosMenuPage() {
       saleTaxCategory,
       recipeCost: previewRecipeCost,
       targetCostPct,
+      matrixSettings: costMatrixSettings,
     });
-  }, [price, category, saleTaxCategory, previewRecipeCost]);
+  }, [price, category, saleTaxCategory, previewRecipeCost, costMatrixSettings]);
 
   function updateRecipeLine(index: number, patch: Partial<RecipeLineInput>) {
     setRecipeLines((current) =>
@@ -208,6 +208,10 @@ export default function PosMenuPage() {
             Producto, receta, costos e IVA Colombia.{" "}
             <Link href="/costing" className="underline">
               Ver matriz de costeo
+            </Link>
+            {" · "}
+            <Link href="/settings/costing" className="underline">
+              Parámetros
             </Link>
           </p>
         </div>

@@ -33,6 +33,11 @@ const modules = [
     title: "Costeo",
     description: "Matriz de costos, márgenes e impuestos Colombia.",
   },
+  {
+    href: "/settings/costing",
+    title: "Parámetros matriz",
+    description: "Metas de food cost y retenciones de referencia.",
+  },
 ];
 
 export default function InventoryPage() {

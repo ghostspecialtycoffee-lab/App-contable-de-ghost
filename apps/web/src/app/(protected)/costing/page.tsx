@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useRecipes } from "@/hooks/use-recipes";
@@ -15,13 +16,13 @@ import { saveRecipe } from "@/lib/recipes/recipes";
 import {
   BASE_UNITS,
   BASE_UNIT_LABELS,
-  CO_COST_MATRIX_DEFAULTS,
   CO_TAX_CATEGORIES,
   CO_TAX_CATEGORY_LABELS,
   calculateCostMatrix,
   calculateRecipeCost,
   calculateRecipeCostBreakdown,
   calculateRecipeLineCost,
+  getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
   type BaseUnit,
@@ -39,6 +40,7 @@ const emptyRecipeLine = (): RecipeLineInput => ({
 
 export default function CostingPage() {
   const searchParams = useSearchParams();
+  const costMatrixSettings = useCostMatrixSettings();
   const { products } = useMenuProducts();
   const { recipes } = useRecipes();
   const { items: inventoryItems } = useInventoryItems();
@@ -127,10 +129,8 @@ export default function CostingPage() {
   }, [selectedProduct, recipeLines, inventoryItems, saleTaxCategory]);
 
   const targetCostPct = selectedProduct
-    ? selectedProduct.category === "beverage"
-      ? CO_COST_MATRIX_DEFAULTS.targetBeverageCostPct
-      : CO_COST_MATRIX_DEFAULTS.targetFoodCostPct
-    : CO_COST_MATRIX_DEFAULTS.targetFoodCostPct;
+    ? getTargetCostPctForCategory(selectedProduct.category, costMatrixSettings)
+    : costMatrixSettings.targetFoodCostPct;
 
   const matrix = useMemo(() => {
     const salePrice = Number(price) || 0;
@@ -146,8 +146,16 @@ export default function CostingPage() {
       saleTaxCategory,
       recipeCost: previewRecipeCost,
       targetCostPct,
+      matrixSettings: costMatrixSettings,
     });
-  }, [selectedProduct, price, saleTaxCategory, previewRecipeCost, targetCostPct]);
+  }, [
+    selectedProduct,
+    price,
+    saleTaxCategory,
+    previewRecipeCost,
+    targetCostPct,
+    costMatrixSettings,
+  ]);
 
   function updateRecipeLine(index: number, patch: Partial<RecipeLineInput>) {
     setRecipeLines((current) =>
@@ -245,7 +253,10 @@ export default function CostingPage() {
         </p>
         <h1 className="text-2xl font-semibold">Fichas de matriz de costos</h1>
         <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-          Crea o edita la receta, precio e impuestos de productos ya cargados en el catálogo.
+          Crea o edita la receta, precio e impuestos de productos ya cargados en el catálogo.{" "}
+          <Link href="/settings/costing" className="underline">
+            Parámetros de matriz
+          </Link>
         </p>
       </div>
 
@@ -481,12 +492,12 @@ export default function CostingPage() {
                     <Metric
                       label="ReteIVA ref."
                       value={formatMoney(matrix.reteIvaReference)}
-                      hint={`${CO_COST_MATRIX_DEFAULTS.reteIvaPct * 100}% sobre IVA`}
+                      hint={`${(costMatrixSettings.reteIvaPct * 100).toFixed(1)}% sobre IVA`}
                     />
                     <Metric
                       label="Retefuente ref."
                       value={formatMoney(matrix.reteFuenteReference)}
-                      hint={`${CO_COST_MATRIX_DEFAULTS.reteFuenteGoodsPct * 100}% bienes`}
+                      hint={`${(costMatrixSettings.reteFuenteGoodsPct * 100).toFixed(1)}% bienes`}
                     />
                   </div>
                 ) : (
@@ -515,21 +526,22 @@ export default function CostingPage() {
             </Card>
           )}
 
-          <Card title="Parámetros base Colombia">
+          <Card title="Parámetros de matriz">
             <ul className="space-y-2 text-sm text-[var(--ghost-text-muted)]">
               <li>
-                Meta food cost: {(CO_COST_MATRIX_DEFAULTS.targetFoodCostPct * 100).toFixed(0)}%
+                Meta food cost: {(costMatrixSettings.targetFoodCostPct * 100).toFixed(0)}%
               </li>
               <li>
-                Meta bebidas: {(CO_COST_MATRIX_DEFAULTS.targetBeverageCostPct * 100).toFixed(0)}%
+                Meta bebidas: {(costMatrixSettings.targetBeverageCostPct * 100).toFixed(0)}%
               </li>
               <li>
-                Categorías IVA:{" "}
-                {CO_TAX_CATEGORIES.map((category) => CO_TAX_CATEGORY_LABELS[category]).join(
-                  " · ",
-                )}
+                ReteIVA: {(costMatrixSettings.reteIvaPct * 100).toFixed(1)}% · Retefuente bienes:{" "}
+                {(costMatrixSettings.reteFuenteGoodsPct * 100).toFixed(1)}%
               </li>
             </ul>
+            <Link href="/settings/costing" className="mt-3 inline-block text-sm underline">
+              Editar parámetros
+            </Link>
           </Card>
         </div>
       </div>

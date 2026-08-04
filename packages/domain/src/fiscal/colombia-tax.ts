@@ -60,6 +60,14 @@ export function calculateTaxLine(
   };
 }
 
+export interface CostMatrixSettingsInput {
+  targetFoodCostPct?: number;
+  targetBeverageCostPct?: number;
+  reteIvaPct?: number;
+  reteFuenteServicesPct?: number;
+  reteFuenteGoodsPct?: number;
+}
+
 export interface CostMatrixInput {
   unitCostNet: number;
   quantity: number;
@@ -68,6 +76,7 @@ export interface CostMatrixInput {
   saleTaxCategory: CoTaxCategory;
   recipeCost?: number;
   targetCostPct?: number;
+  matrixSettings?: CostMatrixSettingsInput;
 }
 
 export interface CostMatrixResult {
@@ -86,6 +95,11 @@ export interface CostMatrixResult {
 }
 
 export function calculateCostMatrix(input: CostMatrixInput): CostMatrixResult {
+  const matrix = {
+    ...CO_COST_MATRIX_DEFAULTS,
+    ...input.matrixSettings,
+  };
+
   const purchaseSubtotal = input.unitCostNet * input.quantity;
   const purchase = calculateTaxLine(purchaseSubtotal, input.purchaseTaxCategory);
   const unitCostWithTax =
@@ -106,7 +120,7 @@ export function calculateCostMatrix(input: CostMatrixInput): CostMatrixResult {
     salePriceNet > 0 ? grossProfitAmount / salePriceNet : 0;
   const netProfitAfterSaleTax = grossProfitAmount - sale.taxAmount;
 
-  const targetPct = input.targetCostPct ?? CO_COST_MATRIX_DEFAULTS.targetFoodCostPct;
+  const targetPct = input.targetCostPct ?? matrix.targetFoodCostPct;
   const suggestedNet =
     targetPct > 0 ? Math.round(recipeCost / targetPct / (1 + saleTaxRate)) : 0;
   const suggestedSalePriceGross = suggestedNet + Math.round(suggestedNet * saleTaxRate);
@@ -122,9 +136,9 @@ export function calculateCostMatrix(input: CostMatrixInput): CostMatrixResult {
     grossProfitAmount,
     netProfitAfterSaleTax,
     suggestedSalePriceGross,
-    reteIvaReference: Math.round(sale.taxAmount * CO_COST_MATRIX_DEFAULTS.reteIvaPct),
+    reteIvaReference: Math.round(sale.taxAmount * matrix.reteIvaPct),
     reteFuenteReference: Math.round(
-      salePriceNet * CO_COST_MATRIX_DEFAULTS.reteFuenteGoodsPct,
+      salePriceNet * matrix.reteFuenteGoodsPct,
     ),
   };
 }
