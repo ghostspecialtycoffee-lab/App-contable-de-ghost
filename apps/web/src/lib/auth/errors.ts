@@ -42,9 +42,21 @@ export function getCallableErrorMessage(error: unknown): string {
       "already-exists": "Ese identificador ya está en uso.",
       "invalid-argument": "Revisa los datos ingresados.",
       "failed-precondition": "No puedes completar esta acción en este momento.",
+      internal:
+        "El servidor no está listo. Falta desplegar Cloud Functions (plan Blaze + deploy).",
+      "not-found":
+        "Función no encontrada. El backend aún no está desplegado en Firebase.",
+      unavailable: "Servicio temporalmente no disponible. Intenta en unos minutos.",
     };
 
+    if (code === "internal" || code === "not-found") {
+      return messages[code] ?? "El backend no está desplegado. Contacta al administrador.";
+    }
+
     if ("message" in error && typeof error.message === "string" && error.message) {
+      if (error.message === "internal") {
+        return messages.internal;
+      }
       return error.message;
     }
 

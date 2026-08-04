@@ -68,7 +68,7 @@ jobs:
 
           setup_auth
 
-          echo "=== 1/2 Hosting (app web) ==="
+          echo "=== 1/3 Hosting (app web) ==="
           if "${FB[@]}" --only hosting; then
             HOSTING_OK=1
             echo "✅ https://ghost-contable.web.app"
@@ -77,13 +77,21 @@ jobs:
             exit 1
           fi
 
-          echo "=== 2/2 Backend (Firestore + Functions + Storage) ==="
-          if "${FB[@]}" --only firestore:rules,firestore:indexes,functions,storage; then
+          echo "=== 2/3 Firestore + Functions ==="
+          if "${FB[@]}" --only firestore:rules,firestore:indexes,functions; then
             BACKEND_OK=1
-            echo "✅ Backend desplegado"
+            echo "✅ Backend desplegado (registro/onboarding listo)"
           else
-            echo "::warning::Backend no desplegado. Activa plan Blaze:"
+            echo "::warning::Firestore/Functions no desplegados. Verifica plan Blaze:"
             echo "https://console.firebase.google.com/project/ghost-contable/usage/details"
+          fi
+
+          echo "=== 3/3 Storage (opcional) ==="
+          if "${FB[@]}" --only storage; then
+            echo "✅ Storage desplegado"
+          else
+            echo "::warning::Storage omitido. Actívalo en Firebase Console:"
+            echo "https://console.firebase.google.com/project/ghost-contable/storage"
           fi
 
           if [ "$HOSTING_OK" -eq 1 ]; then
