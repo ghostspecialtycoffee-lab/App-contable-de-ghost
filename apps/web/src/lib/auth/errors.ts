@@ -55,7 +55,7 @@ export function getCallableErrorMessage(error: unknown): string {
 
     if ("message" in error && typeof error.message === "string" && error.message) {
       if (error.message === "internal") {
-        return messages.internal;
+        return messages.internal ?? "El backend no está desplegado.";
       }
       return error.message;
     }
