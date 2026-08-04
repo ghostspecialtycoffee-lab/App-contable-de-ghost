@@ -40,12 +40,12 @@ export default function KdsPage() {
     <div className="space-y-4 pb-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm text-[var(--ghost-text-muted)]">Comandas en vivo</p>
-          <h1 className="text-2xl font-bold">KDS / Comandas</h1>
+          <p className="text-sm text-[var(--ghost-text-muted)]">Operación en cocina y barra</p>
+          <h1 className="text-2xl font-semibold">Comandas</h1>
         </div>
         <Link href="/pos">
           <Button variant="secondary" size="sm">
-            Ir al POS
+            Mostrador
           </Button>
         </Link>
       </div>
@@ -59,7 +59,7 @@ export default function KdsPage() {
             className={[
               "rounded-full px-3 py-1 text-sm",
               stationFilter === filter
-                ? "bg-[var(--ghost-brand-500)] text-white"
+                ? "bg-[var(--ghost-brand-500)] text-[var(--ghost-brand-fg)]"
                 : "bg-[var(--ghost-surface-2)]",
             ].join(" ")}
           >
@@ -77,7 +77,7 @@ export default function KdsPage() {
       ) : orders.length === 0 ? (
         <Card title="Sin comandas activas">
           <p className="text-sm text-[var(--ghost-text-muted)]">
-            Las ventas con productos de barra o cocina aparecerán aquí.
+            Las operaciones con ítems de barra o cocina aparecerán aquí.
           </p>
         </Card>
       ) : (

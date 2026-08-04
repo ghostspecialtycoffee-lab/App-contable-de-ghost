@@ -69,19 +69,19 @@ export default function PosMenuPage() {
       <div>
         <p className="text-sm text-[var(--ghost-text-muted)]">
           <Link href="/pos" className="underline">
-            POS
+            Mostrador
           </Link>
         </p>
-        <h1 className="text-2xl font-bold">Productos</h1>
+        <h1 className="text-2xl font-semibold">Catálogo</h1>
         <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-          Registra lo que vendes. En 1 minuto puedes cargar un menú de cafetería de ejemplo.
+          Ítems disponibles en mostrador. Asigna estación para comandas de barra o cocina.
         </p>
       </div>
 
       {products.length === 0 ? (
-        <Card title="Inicio rápido">
+        <Card title="Catálogo base">
           <p className="text-sm text-[var(--ghost-text-muted)]">
-            Carga bebidas y comida típica de cafetería para empezar a vender de inmediato.
+            Carga un set inicial de ítems para pruebas internas.
           </p>
           <Button
             className="mt-4"
@@ -89,7 +89,7 @@ export default function PosMenuPage() {
             disabled={seeding}
             fullWidth
           >
-            {seeding ? "Creando menú..." : "Cargar menú de ejemplo"}
+            {seeding ? "Cargando..." : "Cargar catálogo base"}
           </Button>
           {seedMessage ? (
             <p className="mt-2 text-sm text-[var(--ghost-brand-500)]">{seedMessage}</p>
@@ -98,7 +98,7 @@ export default function PosMenuPage() {
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-        <Card title="Agregar producto">
+        <Card title="Agregar ítem">
           <form className="space-y-3" onSubmit={handleSubmit}>
             <label className="block space-y-1">
               <span className="text-sm font-medium">Nombre</span>
@@ -154,7 +154,7 @@ export default function PosMenuPage() {
               <p className="text-sm text-[var(--ghost-danger)]">{submitError}</p>
             ) : null}
             <Button type="submit" fullWidth disabled={submitting}>
-              {submitting ? "Guardando..." : "Guardar producto"}
+              {submitting ? "Guardando..." : "Guardar ítem"}
             </Button>
           </form>
         </Card>

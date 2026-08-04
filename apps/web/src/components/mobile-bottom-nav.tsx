@@ -6,10 +6,10 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 
 const tabs = [
-  { href: "/dashboard", label: "Inicio" },
-  { href: "/pos", label: "POS" },
+  { href: "/dashboard", label: "Panel" },
+  { href: "/pos", label: "Mostrador" },
   { href: "/kds", label: "Comandas" },
-  { href: "/billing", label: "Informes" },
+  { href: "/billing", label: "Registros" },
 ];
 
 const hiddenPrefixes = ["/login", "/register", "/onboarding"];

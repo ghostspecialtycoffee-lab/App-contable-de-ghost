@@ -13,7 +13,7 @@ export interface ButtonProps
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-[var(--ghost-brand-500)] text-white hover:bg-[var(--ghost-brand-600)]",
+    "bg-[var(--ghost-brand-500)] text-[var(--ghost-brand-fg)] hover:bg-[var(--ghost-brand-600)]",
   secondary:
     "bg-[var(--ghost-surface-2)] text-[var(--ghost-text)] border border-[var(--ghost-border)] hover:bg-[var(--ghost-surface-3)]",
   ghost: "bg-transparent text-[var(--ghost-text)] hover:bg-[var(--ghost-surface-2)]",

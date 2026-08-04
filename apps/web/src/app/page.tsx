@@ -1,71 +1,39 @@
 import Link from "next/link";
 
 import { Button, Card } from "@ghost/ui";
-import { GHOST_MODULES } from "@ghost/shared";
-
-const moduleLabels: Record<(typeof GHOST_MODULES)[number], string> = {
-  core: "Núcleo",
-  inventory: "Inventario",
-  costing: "Costeo",
-  pos: "POS",
-  kds: "Comandas KDS",
-  cash: "Caja",
-  billing: "Facturación",
-  ocr: "OCR",
-  hr: "Recursos Humanos",
-  chat: "Chat interno",
-  reports: "Reportes",
-  analytics: "Analítica",
-  ai: "Asesor IA",
-  notifications: "Notificaciones",
-};
 
 export default function HomePage() {
   return (
-    <div className="space-y-8">
-      <section className="rounded-2xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] p-8 shadow-sm">
-        <p className="text-sm font-medium uppercase tracking-wide text-[var(--ghost-accent-500)]">
-          Ghost ERP
+    <div className="mx-auto max-w-2xl space-y-6">
+      <section className="rounded-2xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] p-8">
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[var(--ghost-text-muted)]">
+          Uso interno
         </p>
-        <h1 className="mt-2 max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl">
-          Plataforma empresarial para operar cafeterías, restaurantes y
-          franquicias
-        </h1>
-        <p className="mt-4 max-w-2xl text-[var(--ghost-text-muted)]">
-          Fundación técnica con Clean Architecture, Firebase y módulos
-          desacoplados listos para escalar inventario, POS, costeo, OCR y
-          analítica.
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight">Ghost Contable</h1>
+        <p className="mt-3 text-[var(--ghost-text-muted)]">
+          Registros de mostrador, comprobantes, comandas e inventario. Acceso
+          restringido al equipo autorizado.
         </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/register">
-            <Button size="lg">Comenzar gratis</Button>
-          </Link>
-          <Link href="/dashboard">
-            <Button variant="secondary" size="lg">
-              Ir al dashboard
-            </Button>
-          </Link>
+        <div className="mt-8 flex flex-wrap gap-3">
           <Link href="/login">
-            <Button variant="ghost" size="lg">
-              Iniciar sesión
+            <Button size="lg">Entrar</Button>
+          </Link>
+          <Link href="/register">
+            <Button variant="secondary" size="lg">
+              Solicitar acceso
             </Button>
           </Link>
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {GHOST_MODULES.map((module) => (
-          <Card
-            key={module}
-            title={moduleLabels[module]}
-            description={`Módulo ${module} preparado para evolución incremental.`}
-          >
-            <p className="text-xs uppercase tracking-wide text-[var(--ghost-text-muted)]">
-              Estado: fundación
-            </p>
-          </Card>
-        ))}
-      </section>
+      <Card title="Módulos disponibles">
+        <ul className="space-y-2 text-sm text-[var(--ghost-text-muted)]">
+          <li>Mostrador — registro de operaciones</li>
+          <li>Comprobantes y reportes</li>
+          <li>Comandas — barra y cocina</li>
+          <li>Inventario — ítems, bodegas y movimientos</li>
+        </ul>
+      </Card>
     </div>
   );
 }

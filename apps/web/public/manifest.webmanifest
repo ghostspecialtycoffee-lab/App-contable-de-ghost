@@ -1,11 +1,11 @@
 {
-  "name": "Ghost ERP",
-  "short_name": "Ghost ERP",
-  "description": "ERP y POS para negocios gastronómicos",
+  "name": "Ghost Contable",
+  "short_name": "Contable",
+  "description": "Herramienta interna de operación y registros",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#2b579f",
+  "background_color": "#fafafa",
+  "theme_color": "#18181b",
   "orientation": "portrait-primary",
   "lang": "es-CO",
   "icons": [

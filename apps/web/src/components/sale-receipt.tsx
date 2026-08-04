@@ -22,14 +22,14 @@ export function SaleReceipt({ sale, showPrint = true }: SaleReceiptProps) {
     <div className="sale-receipt space-y-4">
       <div className="rounded-lg border border-[var(--ghost-border)] bg-white p-4 text-sm text-black print:border-none print:p-0">
         <div className="border-b border-dashed border-gray-300 pb-3 text-center">
-          <p className="text-base font-bold">{organization?.name ?? "Ghost ERP"}</p>
-          <p className="text-xs text-gray-600">Comprobante de venta</p>
+          <p className="text-base font-semibold">{organization?.name ?? "Ghost Contable"}</p>
+          <p className="text-xs text-gray-600">Comprobante interno</p>
           <p className="mt-2 font-mono text-xs">{sale.saleNumber}</p>
           <p className="text-xs text-gray-600">
             {formatDateTime(sale.soldAt ?? sale.createdAt)}
           </p>
           {sale.customerName ? (
-            <p className="mt-1 text-xs">Cliente: {sale.customerName}</p>
+            <p className="mt-1 text-xs">Referencia: {sale.customerName}</p>
           ) : null}
         </div>
 
@@ -58,19 +58,19 @@ export function SaleReceipt({ sale, showPrint = true }: SaleReceiptProps) {
             <span>{formatMoney(sale.total)}</span>
           </div>
           <div className="flex justify-between pt-1 text-gray-600">
-            <span>Forma de pago</span>
+            <span>Medio de pago</span>
             <span>{PAYMENT_METHOD_LABELS[sale.paymentMethod]}</span>
           </div>
         </div>
 
         <p className="mt-4 text-center text-[11px] text-gray-500">
-          Documento interno de venta. No reemplaza factura electrónica DIAN.
+          Documento de uso interno. No constituye factura electrónica.
         </p>
       </div>
 
       {showPrint ? (
         <Button variant="secondary" fullWidth onClick={handlePrint} className="print:hidden">
-          Imprimir comprobante
+          Imprimir
         </Button>
       ) : null}
     </div>

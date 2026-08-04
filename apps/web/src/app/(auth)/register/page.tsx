@@ -45,7 +45,7 @@ export default function RegisterPage() {
     <div className="mx-auto max-w-md">
       <Card
         title="Crear cuenta"
-        description="Registra tu usuario para configurar tu negocio."
+        description="Alta de usuario para acceso interno."
       >
         <form className="space-y-4" onSubmit={handleSubmit}>
           <label className="block space-y-1">

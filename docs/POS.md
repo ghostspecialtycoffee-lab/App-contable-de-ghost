@@ -1,32 +1,40 @@
-# POS, comandas y ventas — Ghost ERP
+# POS, comandas y facturación — Ghost ERP
 
-Módulo operativo para cafeterías y restaurantes **sin plan Blaze** (escritura directa en Firestore con reglas de seguridad).
+Sistema operativo para registrar ventas, emitir comprobantes y consultar informes **sin plan Blaze**.
 
 ## Rutas
 
 | Ruta | Uso |
 |------|-----|
-| `/pos` | Punto de venta: carrito, cobro, IVA |
-| `/pos/menu` | Catálogo de productos vendibles |
-| `/kds` | Comandas en vivo (barra / cocina) |
-| `/billing` | Historial de ventas y comprobantes |
+| `/pos` | Cobrar venta (carrito + cliente opcional) |
+| `/pos/menu` | Registrar productos o cargar menú de ejemplo |
+| `/billing` | **Informes** + **Comprobantes** (hoy / 7 días / mes) |
+| `/kds` | Comandas barra / cocina |
+| `/dashboard` | Resumen del día y accesos rápidos |
 
-## Flujo operativo
+## Flujo recomendado
 
-1. **Menú** — Crea productos con precio, categoría y estación (`counter`, `bar`, `kitchen`).
-2. **POS** — Agrega productos al carrito y cobra (efectivo, tarjeta, transferencia).
-3. **Comandas** — Productos de barra/cocina generan tickets en KDS automáticamente.
-4. **Ventas** — Comprobante con subtotal, IVA y total (factura electrónica DIAN en fase posterior).
+1. **Productos** → `/pos/menu` → “Cargar menú de ejemplo” o agregar manualmente.
+2. **Vender** → `/pos` → tocar productos → cobrar.
+3. **Informes** → `/billing` → pestaña Informes (total, IVA, ticket promedio, ranking).
+4. **Comprobante** → `/billing` → pestaña Comprobantes → imprimir.
+
+## Informes disponibles
+
+- Total vendido y cantidad de ventas
+- Ticket promedio
+- IVA recaudado
+- Ventas por forma de pago (efectivo, tarjeta, etc.)
+- Productos más vendidos
 
 ## Colecciones Firestore
 
-- `organizations/{orgId}/menuProducts`
-- `organizations/{orgId}/sales`
-- `organizations/{orgId}/kitchenOrders`
+- `menuProducts` — catálogo POS
+- `sales` — ventas con `soldAt`, `soldOn`, IVA y líneas
+- `kitchenOrders` — comandas
 
 ## Próximos pasos
 
+- Factura electrónica DIAN
 - Caja (apertura/cierre)
-- Factura electrónica Colombia (DIAN)
-- Recetas → descuento automático de inventario al vender
-- Mesas y propinas
+- Descuento automático de inventario por recetas

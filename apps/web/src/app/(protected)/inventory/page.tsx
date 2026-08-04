@@ -26,7 +26,7 @@ export default function InventoryPage() {
       <div>
         <h1 className="text-2xl font-bold">Inventario</h1>
         <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-          Optimizado para uso en celular y tablet.
+          Control de existencias por sucursal.
         </p>
       </div>
 
