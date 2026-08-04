@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildPurchaseInvoiceLines,
+  isoDateInTimezone,
+  purchaseInvoiceAffectsInventory,
   resolvePurchaseInventoryEntry,
   summarizePurchaseInvoice,
   unitCostWithTaxFromLine,
@@ -71,5 +73,30 @@ describe("resolvePurchaseInventoryEntry", () => {
 
     expect(entry.quantityInBase).toBe(2000);
     expect(entry.unitCostNetPerBase).toBe(80);
+  });
+});
+
+describe("purchaseInvoiceAffectsInventory", () => {
+  it("excluye facturas anteriores al día operativo", () => {
+    expect(
+      purchaseInvoiceAffectsInventory("2026-08-03", { todayIso: "2026-08-04" }),
+    ).toBe(false);
+  });
+
+  it("incluye facturas de hoy y futuras", () => {
+    expect(
+      purchaseInvoiceAffectsInventory("2026-08-04", { todayIso: "2026-08-04" }),
+    ).toBe(true);
+    expect(
+      purchaseInvoiceAffectsInventory("2026-08-10", { todayIso: "2026-08-04" }),
+    ).toBe(true);
+  });
+});
+
+describe("isoDateInTimezone", () => {
+  it("devuelve formato YYYY-MM-DD", () => {
+    expect(isoDateInTimezone("UTC", new Date("2026-08-04T15:00:00.000Z"))).toBe(
+      "2026-08-04",
+    );
   });
 });

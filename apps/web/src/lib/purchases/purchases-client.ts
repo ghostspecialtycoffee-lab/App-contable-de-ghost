@@ -1,5 +1,6 @@
 import {
   buildPurchaseInvoiceLines,
+  purchaseInvoiceAffectsInventory,
   resolvePurchaseInventoryEntry,
   summarizePurchaseInvoice,
   type PurchaseInvoiceLine,
@@ -174,7 +175,7 @@ export async function updatePurchaseInvoiceClient(input: {
 
 export async function confirmPurchaseInvoiceClient(input: {
   invoiceId: string;
-}): Promise<{ movements: number }> {
+}): Promise<{ movements: number; inventoryApplied: boolean }> {
   const userId = requireUserId();
   const { organizationId } = await getActiveContext();
   const db = getFirestoreDb();
@@ -195,19 +196,26 @@ export async function confirmPurchaseInvoiceClient(input: {
 
   const warehouseId = invoice.warehouseId as string;
   const branchId = invoice.branchId as string;
+  const invoiceDate = invoice.invoiceDate as string;
   const lines = (invoice.lines ?? []) as PurchaseInvoiceLine[];
+  const inventoryApplied = purchaseInvoiceAffectsInventory(invoiceDate);
 
-  if (!warehouseId) {
+  if (inventoryApplied && !warehouseId) {
     throw new Error("Selecciona una bodega antes de confirmar.");
   }
 
   await runTransaction(db, async (transaction) => {
     transaction.update(invoiceRef, {
       status: "confirmed",
+      inventoryApplied,
       updatedAt: serverTimestamp(),
       updatedBy: userId,
     });
   });
+
+  if (!inventoryApplied) {
+    return { movements: 0, inventoryApplied: false };
+  }
 
   let movements = 0;
   for (const line of lines) {
@@ -250,5 +258,5 @@ export async function confirmPurchaseInvoiceClient(input: {
     movements += 1;
   }
 
-  return { movements };
+  return { movements, inventoryApplied: true };
 }
