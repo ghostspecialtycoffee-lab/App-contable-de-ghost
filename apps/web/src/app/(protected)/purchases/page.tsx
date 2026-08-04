@@ -23,6 +23,8 @@ import {
   CO_TAX_CATEGORY_LABELS,
   buildPurchaseInvoiceLines,
   formatPresentationLabel,
+  isoDateInTimezone,
+  purchaseInvoiceAffectsInventory,
   resolvePurchaseInventoryEntry,
   summarizePurchaseInvoice,
   type BaseUnit,
@@ -66,6 +68,10 @@ export default function PurchasesPage() {
   const branchId = membership?.branchIds[0] ?? "";
   const selectedWarehouseId = warehouseId || warehouses[0]?.id || "";
   const canSubmitPurchase = Boolean(selectedWarehouseId);
+  const operationalToday = useMemo(() => isoDateInTimezone("America/Bogota"), []);
+  const formAffectsInventory = purchaseInvoiceAffectsInventory(invoiceDate, {
+    todayIso: operationalToday,
+  });
 
   const preview = useMemo(() => {
     const built = buildPurchaseInvoiceLines(lines.filter((line) => line.description.trim()));
@@ -282,17 +288,24 @@ export default function PurchasesPage() {
     }
   }
 
-  async function handleConfirm(invoiceId: string) {
+  async function handleConfirm(invoice: PurchaseInvoice) {
     setSubmitError(null);
-    setConfirmingId(invoiceId);
+    setSaveMessage(null);
+    setConfirmingId(invoice.id);
 
     try {
-      const result = await confirmPurchaseInvoice({ invoiceId });
-      setSubmitError(
-        result.movements > 0
-          ? null
-          : "Factura confirmada sin movimientos (vincula ítems de inventario en las líneas).",
-      );
+      const result = await confirmPurchaseInvoice({ invoiceId: invoice.id });
+      if (!result.inventoryApplied) {
+        setSaveMessage(
+          `Factura del ${formatDate(invoice.invoiceDate)} registrada como histórico. No afecta bodega (solo fechas desde ${formatDate(operationalToday)}).`,
+        );
+      } else if (result.movements > 0) {
+        setSaveMessage(`${result.movements} producto(s) entraron a bodega.`);
+      } else {
+        setSubmitError(
+          "Factura confirmada sin movimientos. Vincula ítems de inventario en las líneas.",
+        );
+      }
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -310,15 +323,23 @@ export default function PurchasesPage() {
         </p>
         <h1 className="text-2xl font-semibold">Compras</h1>
         <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-          Una factura puede incluir <strong>varios productos</strong> (café, leche, vasos, etc.).
-          Usa <strong>+ Agregar producto</strong> por cada ítem de la factura. Al confirmar, cada
-          producto actualiza su costo en inventario para las{" "}
+          Registra todas tus facturas (históricas y nuevas). Se ordenan por fecha. Solo las de{" "}
+          <strong>hoy en adelante</strong> ({formatDate(operationalToday)}) entran a bodega al
+          confirmar; las anteriores quedan como archivo sin mover inventario.
+        </p>
+      </div>
+
+      <Card title="Regla de bodega">
+        <p className="text-sm text-[var(--ghost-text-muted)]">
+          Puedes cargar facturas pasadas para tener el historial de compras. Al confirmarlas,{" "}
+          <strong>no suman stock ni cambian costos</strong> en inventario. Desde{" "}
+          {formatDate(operationalToday)} cada compra confirmada sí actualiza bodega y costos para{" "}
           <Link href="/costing" className="underline">
-            fichas de costeo
+            costeo
           </Link>
           .
         </p>
-      </div>
+      </Card>
 
       {warehouses.length === 0 ? (
         <Card title="Configura tu bodega">
@@ -379,6 +400,15 @@ export default function PurchasesPage() {
                   onChange={(event) => setInvoiceDate(event.target.value)}
                   className="ghost-input"
                 />
+                {!formAffectsInventory ? (
+                  <span className="text-xs text-[var(--ghost-brand-500)]">
+                    Fecha anterior a hoy · al confirmar solo queda registrada (sin bodega)
+                  </span>
+                ) : (
+                  <span className="text-xs text-[var(--ghost-text-muted)]">
+                    Entrará a bodega al confirmar
+                  </span>
+                )}
               </label>
             </div>
             <label className="block space-y-1">
@@ -580,7 +610,7 @@ export default function PurchasesPage() {
           </form>
         </Card>
 
-        <Card title="Facturas registradas">
+        <Card title="Facturas registradas (por fecha)">
           {loading ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">Cargando...</p>
           ) : error ? (
@@ -619,7 +649,15 @@ export default function PurchasesPage() {
                     <div className="text-right">
                       <p className="font-medium">{formatMoney(invoice.total)}</p>
                       <p className="text-xs uppercase text-[var(--ghost-text-muted)]">
-                        {invoice.status === "draft" ? "Borrador" : "Confirmada"}
+                        {invoice.status === "draft"
+                          ? purchaseInvoiceAffectsInventory(invoice.invoiceDate, {
+                              todayIso: operationalToday,
+                            })
+                            ? "Borrador · con bodega"
+                            : "Borrador · solo registro"
+                          : invoice.inventoryApplied
+                            ? "Confirmada · en bodega"
+                            : "Confirmada · histórico"}
                       </p>
                     </div>
                   </div>
@@ -636,11 +674,15 @@ export default function PurchasesPage() {
                       <Button
                         fullWidth
                         disabled={confirmingId === invoice.id}
-                        onClick={() => handleConfirm(invoice.id)}
+                        onClick={() => handleConfirm(invoice)}
                       >
                         {confirmingId === invoice.id
                           ? "Confirmando..."
-                          : "Confirmar y entrar inventario"}
+                          : purchaseInvoiceAffectsInventory(invoice.invoiceDate, {
+                                todayIso: operationalToday,
+                              })
+                            ? "Confirmar y entrar inventario"
+                            : "Registrar histórico (sin bodega)"}
                       </Button>
                     </div>
                   ) : null}

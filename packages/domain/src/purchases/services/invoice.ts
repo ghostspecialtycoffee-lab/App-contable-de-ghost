@@ -84,3 +84,29 @@ export function resolvePurchaseInventoryEntry(input: {
     unitCostNetPerBase,
   };
 }
+
+/** Fecha ISO (YYYY-MM-DD) en zona horaria de operación. */
+export function isoDateInTimezone(
+  timeZone = "America/Bogota",
+  referenceDate = new Date(),
+): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(referenceDate);
+}
+
+/**
+ * Solo las facturas con fecha >= hoy operativo entran a bodega al confirmar.
+ * Las anteriores quedan como registro histórico sin movimientos de inventario.
+ */
+export function purchaseInvoiceAffectsInventory(
+  invoiceDate: string,
+  options?: { todayIso?: string; timeZone?: string },
+): boolean {
+  const today =
+    options?.todayIso ?? isoDateInTimezone(options?.timeZone ?? "America/Bogota");
+  return invoiceDate >= today;
+}

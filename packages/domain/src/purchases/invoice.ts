@@ -25,6 +25,8 @@ export interface PurchaseInvoice extends AuditMetadata {
   invoiceNumber: string;
   invoiceDate: string;
   status: PurchaseInvoiceStatus;
+  /** Si al confirmar se generaron movimientos de inventario (false = solo registro histórico). */
+  inventoryApplied?: boolean;
   lines: PurchaseInvoiceLine[];
   subtotal: number;
   taxAmount: number;

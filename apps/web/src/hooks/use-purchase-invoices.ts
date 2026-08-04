@@ -45,6 +45,7 @@ export function usePurchaseInvoices() {
               invoiceNumber: data.invoiceNumber,
               invoiceDate: data.invoiceDate,
               status: data.status,
+              inventoryApplied: data.inventoryApplied === true,
               lines: data.lines ?? [],
               subtotal: data.subtotal ?? 0,
               taxAmount: data.taxAmount ?? 0,
