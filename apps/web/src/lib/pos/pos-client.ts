@@ -110,6 +110,35 @@ export async function createMenuProductClient(input: {
   return { productId: productRef.id };
 }
 
+export async function updateMenuProductImageClient(input: {
+  productId: string;
+  imageDataUrl: string;
+  imageMimeType: string;
+}): Promise<void> {
+  const userId = requireUserId();
+  const { organizationId } = await getActiveContext();
+
+  if (input.imageDataUrl.length > 500_000) {
+    throw new Error("La imagen es demasiado pesada. Máximo ~450 KB.");
+  }
+
+  const productRef = doc(
+    getFirestoreDb(),
+    firestorePaths.organizationMenuProduct(organizationId, input.productId),
+  );
+
+  await setDoc(
+    productRef,
+    {
+      imageDataUrl: input.imageDataUrl,
+      imageMimeType: input.imageMimeType,
+      updatedAt: serverTimestamp(),
+      updatedBy: userId,
+    },
+    { merge: true },
+  );
+}
+
 export async function createSaleClient(input: {
   lines: Array<{
     productId: string;

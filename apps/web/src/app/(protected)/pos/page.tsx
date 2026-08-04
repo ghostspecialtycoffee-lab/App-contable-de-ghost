@@ -148,6 +148,11 @@ export default function PosPage() {
               Catálogo
             </Button>
           </Link>
+          <Link href="/pos/tables">
+            <Button variant="secondary" size="sm">
+              Mesas
+            </Button>
+          </Link>
           <Link href="/billing">
             <Button variant="secondary" size="sm">
               Registros

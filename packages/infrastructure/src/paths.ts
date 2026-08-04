@@ -55,4 +55,12 @@ export const firestorePaths = {
     `organizations/${organizationId}/purchaseInvoices`,
   organizationPurchaseInvoice: (organizationId: string, invoiceId: string) =>
     `organizations/${organizationId}/purchaseInvoices/${invoiceId}`,
+  organizationDiningTables: (organizationId: string) =>
+    `organizations/${organizationId}/diningTables`,
+  organizationDiningTable: (organizationId: string, tableId: string) =>
+    `organizations/${organizationId}/diningTables/${tableId}`,
+  organizationTableSessions: (organizationId: string) =>
+    `organizations/${organizationId}/tableSessions`,
+  organizationTableSession: (organizationId: string, sessionId: string) =>
+    `organizations/${organizationId}/tableSessions/${sessionId}`,
 } as const;

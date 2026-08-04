@@ -51,6 +51,8 @@ export function useMenuProducts() {
                 category: data.category,
               }),
               recipeCost: data.recipeCost ?? 0,
+              imageDataUrl: data.imageDataUrl,
+              imageMimeType: data.imageMimeType,
               createdAt: "",
               updatedAt: "",
               createdBy: data.createdBy ?? "",
