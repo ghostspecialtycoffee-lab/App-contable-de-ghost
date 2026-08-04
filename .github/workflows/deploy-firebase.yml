@@ -43,21 +43,31 @@ jobs:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
           set -euo pipefail
-          DEPLOY=(npx firebase-tools@13 deploy --project ghost-contable --non-interactive)
+          FB=(npx firebase-tools@13 deploy --project ghost-contable --non-interactive)
+
+          deploy_phased() {
+            echo "=== 1/3 Hosting (app web) ==="
+            "${FB[@]}" --only hosting
+            echo "=== 2/3 Firestore + Functions ==="
+            "${FB[@]}" --only firestore:rules,firestore:indexes,functions
+            echo "=== 3/3 Storage (opcional) ==="
+            "${FB[@]}" --only storage || echo "::warning::Storage omitido — agrega rol Storage Admin al service account"
+          }
 
           if [ -n "${FIREBASE_SERVICE_ACCOUNT:-}" ]; then
             echo "Deploy con FIREBASE_SERVICE_ACCOUNT (JSON)..."
             CREDS="${RUNNER_TEMP}/firebase-sa.json"
             printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$CREDS"
             export GOOGLE_APPLICATION_CREDENTIALS="$CREDS"
-            "${DEPLOY[@]}"
+            deploy_phased
           elif [ -n "${FIREBASE_TOKEN:-}" ]; then
             if printf '%s' "$FIREBASE_TOKEN" | grep -q '"type"[[:space:]]*:[[:space:]]*"service_account"'; then
               echo "::error title=Secret mal nombrado::Pegaste el JSON en FIREBASE_TOKEN. Créalo como FIREBASE_SERVICE_ACCOUNT."
               exit 1
             fi
             echo "Deploy con FIREBASE_TOKEN..."
-            "${DEPLOY[@]}" --token "$FIREBASE_TOKEN"
+            FB+=(--token "$FIREBASE_TOKEN")
+            deploy_phased
           else
             echo "::error title=Secret faltante::Agrega FIREBASE_SERVICE_ACCOUNT (JSON) o FIREBASE_TOKEN en GitHub Secrets."
             echo "Guía: docs/ACTIVAR.md"
