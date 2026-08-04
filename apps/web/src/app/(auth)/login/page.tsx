@@ -1,13 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-
-import { getFirebaseAuth } from "@/lib/firebase/client";
-import { Button, Card } from "@ghost/ui";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
-export default function LoginPage() {
+import { getAuthErrorMessage } from "@/lib/auth/errors";
+import { getFirebaseAuth } from "@/lib/firebase/client";
+import { Button, Card } from "@ghost/ui";
+
+function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next") ?? "/dashboard";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,15 +25,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const auth = getFirebaseAuth();
-      await signInWithEmailAndPassword(auth, email, password);
-      window.location.href = "/dashboard";
+      await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
+      router.replace(nextPath);
     } catch (cause) {
-      const message =
-        cause instanceof Error
-          ? cause.message
-          : "No fue posible iniciar sesión.";
-      setError(message);
+      setError(getAuthErrorMessage(cause));
     } finally {
       setLoading(false);
     }
@@ -37,7 +38,7 @@ export default function LoginPage() {
     <div className="mx-auto max-w-md">
       <Card
         title="Acceso"
-        description="Autenticación con Firebase. Configura las variables de entorno antes de usar en producción."
+        description="Inicia sesión con tu cuenta Ghost ERP."
       >
         <form className="space-y-4" onSubmit={handleSubmit}>
           <label className="block space-y-1">
@@ -45,6 +46,7 @@ export default function LoginPage() {
             <input
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="w-full rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] px-3 py-2 text-sm outline-none ring-[var(--ghost-brand-500)] focus:ring-2"
@@ -55,6 +57,7 @@ export default function LoginPage() {
             <input
               type="password"
               required
+              autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="w-full rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] px-3 py-2 text-sm outline-none ring-[var(--ghost-brand-500)] focus:ring-2"
@@ -68,11 +71,20 @@ export default function LoginPage() {
           </Button>
         </form>
         <p className="mt-4 text-center text-sm text-[var(--ghost-text-muted)]">
-          <Link href="/" className="underline">
-            Volver al inicio
+          ¿No tienes cuenta?{" "}
+          <Link href="/register" className="underline">
+            Regístrate
           </Link>
         </p>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<p className="text-center text-sm">Cargando...</p>}>
+      <LoginForm />
+    </Suspense>
   );
 }

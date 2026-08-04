@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/domain",
+  "name": "@ghost/infrastructure",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,14 +15,13 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@ghost/domain": "workspace:*",
     "@ghost/shared": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.8.2",
-    "vitest": "^3.0.9"
+    "typescript": "^5.8.2"
   }
 }

@@ -1,5 +1,7 @@
 export * from "./audit.js";
 export * from "./branch.js";
+export * from "./member.js";
 export * from "./organization.js";
 export * from "./roles.js";
+export * from "./services/organization.js";
 export * from "./user.js";

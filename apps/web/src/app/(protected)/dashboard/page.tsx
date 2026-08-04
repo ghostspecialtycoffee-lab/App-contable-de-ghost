@@ -1,4 +1,8 @@
+"use client";
+
 import { Card } from "@ghost/ui";
+
+import { useAuth, useActiveMembership } from "@/providers/auth-provider";
 
 const dashboardCards = [
   {
@@ -24,13 +28,17 @@ const dashboardCards = [
 ];
 
 export default function DashboardPage() {
+  const { organization } = useAuth();
+  const membership = useActiveMembership();
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="mt-1 text-[var(--ghost-text-muted)]">
-          Vista ejecutiva inicial. Los indicadores se poblarán conforme se
-          activen módulos operativos.
+          {organization
+            ? `Organización: ${organization.name} · Rol: ${membership?.roles.join(", ") ?? "—"}`
+            : "Vista ejecutiva inicial."}
         </p>
       </div>
 
@@ -46,14 +54,13 @@ export default function DashboardPage() {
       </div>
 
       <Card
-        title="Próximos pasos recomendados"
-        description="Secuencia sugerida para activar valor operativo rápido."
+        title="Próximo módulo: Inventario"
+        description="Siguiente prioridad según roadmap autónomo."
       >
         <ol className="list-decimal space-y-2 pl-5 text-sm text-[var(--ghost-text-muted)]">
-          <li>Configurar Firebase Auth y tenant (organización + sucursal).</li>
-          <li>Implementar inventario base con kardex auditado.</li>
-          <li>Activar POS táctil y caja con arqueos.</li>
-          <li>Integrar OCR de facturas para compras automáticas.</li>
+          <li>Materias primas, unidades y bodegas por sucursal.</li>
+          <li>Kardex auditado con entradas, salidas y ajustes.</li>
+          <li>Alertas de inventario mínimo y costo promedio.</li>
         </ol>
       </Card>
     </div>

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ghost/domain": "workspace:*",
+    "@ghost/infrastructure": "workspace:*",
     "@ghost/shared": "workspace:*",
     "@ghost/ui": "workspace:*",
     "firebase": "^11.4.0",
