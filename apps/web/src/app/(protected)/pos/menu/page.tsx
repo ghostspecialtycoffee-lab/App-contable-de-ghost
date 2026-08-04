@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
@@ -21,6 +21,8 @@ import {
   MENU_CATEGORY_LABELS,
   calculateCostMatrix,
   calculateRecipeCost,
+  inferMenuProductTaxCategory,
+  isCoffeeBeverageName,
   type BaseUnit,
   type CoTaxCategory,
   type KitchenStation,
@@ -43,7 +45,7 @@ export default function PosMenuPage() {
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState<MenuCategory>("beverage");
   const [station, setStation] = useState<KitchenStation>("counter");
-  const [saleTaxCategory, setSaleTaxCategory] = useState<CoTaxCategory>("IVA_19");
+  const [saleTaxCategory, setSaleTaxCategory] = useState<CoTaxCategory>("INC_8");
   const [recipeLines, setRecipeLines] = useState<RecipeLineInput[]>([emptyRecipeLine()]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -64,6 +66,23 @@ export default function PosMenuPage() {
     );
     return validLines.length > 0 ? calculateRecipeCost(validLines, unitCosts) : 0;
   }, [recipeLines, unitCosts]);
+
+  const suggestedTaxCategory = useMemo(() => {
+    const containsCoffeeIngredient = recipeLines.some((line) => {
+      const item = inventoryItems.find((entry) => entry.id === line.inventoryItemId);
+      return item ? isCoffeeBeverageName(item.name) : false;
+    });
+
+    return inferMenuProductTaxCategory({
+      name,
+      category,
+      containsCoffeeIngredient,
+    });
+  }, [name, category, recipeLines, inventoryItems]);
+
+  useEffect(() => {
+    setSaleTaxCategory(suggestedTaxCategory);
+  }, [suggestedTaxCategory]);
 
   const previewMatrix = useMemo(() => {
     const salePrice = Number(price) || 0;
@@ -225,7 +244,7 @@ export default function PosMenuPage() {
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-sm font-medium">IVA venta</span>
+              <span className="text-sm font-medium">Impuesto venta (incluido en precio)</span>
               <select
                 value={saleTaxCategory}
                 onChange={(event) =>
@@ -329,6 +348,12 @@ export default function PosMenuPage() {
 
             {previewMatrix ? (
               <div className="rounded-lg bg-[var(--ghost-surface-2)] p-3 text-sm">
+                <p>Precio final: {formatMoney(Number(price) || 0)}</p>
+                <p>Base gravable: {formatMoney(previewMatrix.salePriceNet)}</p>
+                <p>
+                  {CO_TAX_CATEGORY_LABELS[saleTaxCategory]} incluido:{" "}
+                  {formatMoney(previewMatrix.sale.taxAmount)}
+                </p>
                 <p>Costo receta: {formatMoney(previewRecipeCost)}</p>
                 <p>Food cost: {(previewMatrix.foodCostPct * 100).toFixed(1)}%</p>
                 <p>Margen: {(previewMatrix.grossMarginPct * 100).toFixed(1)}%</p>

@@ -5,6 +5,7 @@ export const CO_TAX_CATEGORIES = [
   "IVA_19",
   "IVA_5",
   "IVA_0",
+  "INC_8",
   "EXENTO",
   "EXCLUIDO",
 ] as const;
@@ -15,6 +16,7 @@ export const CO_TAX_CATEGORY_LABELS: Record<CoTaxCategory, string> = {
   IVA_19: "IVA 19%",
   IVA_5: "IVA 5%",
   IVA_0: "IVA 0%",
+  INC_8: "INC 8% (café preparado)",
   EXENTO: "Exento",
   EXCLUIDO: "Excluido",
 };
@@ -23,6 +25,7 @@ export const CO_TAX_RATES: Record<CoTaxCategory, number> = {
   IVA_19: 0.19,
   IVA_5: 0.05,
   IVA_0: 0,
+  INC_8: 0.08,
   EXENTO: 0,
   EXCLUIDO: 0,
 };
@@ -127,4 +130,102 @@ export function validateTaxCategory(value: string): Result<CoTaxCategory> {
     return ok(value as CoTaxCategory);
   }
   return err("Categoría de impuesto no válida.");
+}
+
+/** Precio de venta en mostrador: impuesto incluido (precio final al cliente). */
+export interface GrossPriceTaxBreakdown {
+  net: number;
+  taxAmount: number;
+  gross: number;
+  taxRate: number;
+  category: CoTaxCategory;
+}
+
+export function extractTaxFromGrossPrice(
+  grossAmount: number,
+  category: CoTaxCategory,
+): GrossPriceTaxBreakdown {
+  const taxRate = CO_TAX_RATES[category];
+  const gross = Math.round(grossAmount);
+
+  if (gross <= 0 || taxRate <= 0) {
+    return { net: gross, taxAmount: 0, gross, taxRate, category };
+  }
+
+  const net = Math.round(gross / (1 + taxRate));
+  const taxAmount = gross - net;
+
+  return { net, taxAmount, gross, taxRate, category };
+}
+
+const COFFEE_BEVERAGE_KEYWORDS = [
+  "americano",
+  "espresso",
+  "expresso",
+  "latte",
+  "cappuccino",
+  "capuchino",
+  "mocha",
+  "macchiato",
+  "cortado",
+  "flat white",
+  "affogato",
+  "cafe",
+  "café",
+  "cold brew",
+  "pour over",
+  "v60",
+  "chemex",
+  "ristretto",
+  "lungo",
+  "frappe",
+  "frappé",
+] as const;
+
+export function isCoffeeBeverageName(name: string): boolean {
+  const normalized = name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  return COFFEE_BEVERAGE_KEYWORDS.some((keyword) => normalized.includes(keyword));
+}
+
+export function inferMenuProductTaxCategory(input: {
+  name: string;
+  category: "beverage" | "food" | "pastry" | "other";
+  containsCoffeeIngredient?: boolean;
+}): CoTaxCategory {
+  if (
+    input.category === "beverage" &&
+    (isCoffeeBeverageName(input.name) || input.containsCoffeeIngredient)
+  ) {
+    return "INC_8";
+  }
+
+  return "IVA_19";
+}
+
+export interface TaxBreakdownLine {
+  category: CoTaxCategory;
+  label: string;
+  amount: number;
+}
+
+export function summarizeTaxBreakdown(
+  lines: Array<{ category: CoTaxCategory; amount: number }>,
+): TaxBreakdownLine[] {
+  const totals = new Map<CoTaxCategory, number>();
+
+  for (const line of lines) {
+    totals.set(line.category, (totals.get(line.category) ?? 0) + line.amount);
+  }
+
+  return [...totals.entries()]
+    .filter(([, amount]) => amount > 0)
+    .map(([category, amount]) => ({
+      category,
+      label: CO_TAX_CATEGORY_LABELS[category],
+      amount,
+    }));
 }

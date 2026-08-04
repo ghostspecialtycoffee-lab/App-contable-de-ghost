@@ -6,7 +6,7 @@ import { collection, limit, onSnapshot, query } from "firebase/firestore";
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { getFirestoreDb } from "@/lib/firebase/client";
 import { useActiveMembership } from "@/providers/auth-provider";
-import type { MenuProduct } from "@ghost/domain";
+import { inferMenuProductTaxCategory, type MenuProduct } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 
 export function useMenuProducts() {
@@ -46,7 +46,10 @@ export function useMenuProducts() {
               status: data.status,
               sortOrder: data.sortOrder ?? 0,
               description: data.description ?? "",
-              saleTaxCategory: data.saleTaxCategory ?? "IVA_19",
+              saleTaxCategory: data.saleTaxCategory ?? inferMenuProductTaxCategory({
+                name: data.name,
+                category: data.category,
+              }),
               recipeCost: data.recipeCost ?? 0,
               createdAt: "",
               updatedAt: "",

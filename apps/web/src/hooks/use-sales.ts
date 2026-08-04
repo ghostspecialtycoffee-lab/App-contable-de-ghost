@@ -26,6 +26,7 @@ function mapSale(documentId: string, data: Record<string, unknown>): Sale {
     taxRate: Number(data.taxRate ?? 0),
     taxAmount: Number(data.taxAmount ?? 0),
     total: Number(data.total ?? 0),
+    taxBreakdown: (data.taxBreakdown as Sale["taxBreakdown"]) ?? undefined,
     paymentMethod: (data.paymentMethod as Sale["paymentMethod"]) ?? "cash",
     cashierUserId: String(data.cashierUserId ?? ""),
     customerName: String(data.customerName ?? ""),

@@ -2,7 +2,9 @@ import {
   buildSaleNumber,
   calculateSaleTotals,
   groupKitchenLines,
+  inferMenuProductTaxCategory,
   validateSaleLines,
+  type CoTaxCategory,
   type KitchenOrderStatus,
   type KitchenStation,
   type MenuCategory,
@@ -31,7 +33,6 @@ function requireUserId(): string {
 async function getActiveContext(): Promise<{
   organizationId: string;
   branchId: string;
-  taxRate: number;
 }> {
   const uid = requireUserId();
   const userRef = doc(getFirestoreDb(), firestorePaths.user(uid));
@@ -49,15 +50,6 @@ async function getActiveContext(): Promise<{
     throw new Error("No hay organización activa.");
   }
 
-  const orgRef = doc(
-    getFirestoreDb(),
-    firestorePaths.organization(membership.organizationId),
-  );
-  const orgSnap = await getDoc(orgRef);
-  const taxRate = orgSnap.exists()
-    ? Number(orgSnap.data().settings?.taxRate ?? 0.19)
-    : 0.19;
-
   const branchId = membership.branchIds?.[0];
   if (!branchId) {
     throw new Error("No hay sucursal activa.");
@@ -66,7 +58,6 @@ async function getActiveContext(): Promise<{
   return {
     organizationId: membership.organizationId as string,
     branchId: branchId as string,
-    taxRate,
   };
 }
 
@@ -77,7 +68,7 @@ export async function createMenuProductClient(input: {
   station: KitchenStation;
   description?: string;
   sortOrder?: number;
-  saleTaxCategory?: string;
+  saleTaxCategory?: CoTaxCategory;
 }): Promise<{ productId: string }> {
   const userId = requireUserId();
   const { organizationId } = await getActiveContext();
@@ -106,7 +97,9 @@ export async function createMenuProductClient(input: {
     description: input.description?.trim() ?? "",
     status: "active",
     sortOrder: input.sortOrder ?? 0,
-    saleTaxCategory: input.saleTaxCategory ?? "IVA_19",
+    saleTaxCategory:
+      input.saleTaxCategory ??
+      inferMenuProductTaxCategory({ name, category: input.category }),
     recipeCost: 0,
     createdAt: now,
     updatedAt: now,
@@ -124,6 +117,7 @@ export async function createSaleClient(input: {
     unitPrice: number;
     quantity: number;
     station: string;
+    saleTaxCategory?: CoTaxCategory;
   }>;
   paymentMethod: PaymentMethod;
   customerName?: string;
@@ -135,14 +129,14 @@ export async function createSaleClient(input: {
   kitchenOrderIds: string[];
 }> {
   const userId = requireUserId();
-  const { organizationId, branchId, taxRate } = await getActiveContext();
+  const { organizationId, branchId } = await getActiveContext();
 
   const linesResult = validateSaleLines(input.lines);
   if (!linesResult.ok) {
     throw new Error(linesResult.error);
   }
 
-  const totals = calculateSaleTotals(linesResult.value, taxRate);
+  const totals = calculateSaleTotals(linesResult.value);
   const saleNumber = buildSaleNumber();
   const soldAt = new Date().toISOString();
   const soldOn = soldAt.slice(0, 10);
@@ -165,6 +159,7 @@ export async function createSaleClient(input: {
       taxRate: totals.taxRate,
       taxAmount: totals.taxAmount,
       total: totals.total,
+      taxBreakdown: totals.taxBreakdown,
       paymentMethod: input.paymentMethod,
       cashierUserId: userId,
       customerName: input.customerName?.trim() ?? "",
@@ -243,10 +238,29 @@ const DEFAULT_MENU_TEMPLATES: Array<{
   price: number;
   category: MenuCategory;
   station: KitchenStation;
+  saleTaxCategory?: CoTaxCategory;
 }> = [
-  { name: "Americano", price: 6000, category: "beverage", station: "bar" },
-  { name: "Latte", price: 8000, category: "beverage", station: "bar" },
-  { name: "Cappuccino", price: 8000, category: "beverage", station: "bar" },
+  {
+    name: "Americano",
+    price: 6000,
+    category: "beverage",
+    station: "bar",
+    saleTaxCategory: "INC_8",
+  },
+  {
+    name: "Latte",
+    price: 8000,
+    category: "beverage",
+    station: "bar",
+    saleTaxCategory: "INC_8",
+  },
+  {
+    name: "Cappuccino",
+    price: 8000,
+    category: "beverage",
+    station: "bar",
+    saleTaxCategory: "INC_8",
+  },
   { name: "Croissant", price: 5000, category: "pastry", station: "counter" },
   { name: "Sandwich", price: 12000, category: "food", station: "kitchen" },
 ];
