@@ -8,7 +8,12 @@ import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useTableSessions } from "@/hooks/use-table-sessions";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { buildTableQrUrl, createDiningTable } from "@/lib/tables/tables";
-import { DINING_TABLE_STATUS_LABELS } from "@ghost/domain";
+import { TableServiceProcessLine } from "@/components/table-service-process";
+import {
+  activeSessionLines,
+  DINING_TABLE_STATUS_LABELS,
+  TABLE_SESSION_STATUS_LABELS,
+} from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
 function PosTablesContent() {
@@ -61,20 +66,24 @@ function PosTablesContent() {
           </p>
           <h1 className="text-2xl font-semibold">Mesas</h1>
           <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            Al crear la mesa se abre la cuenta. El cliente escanea el QR o el staff agrega ítems
-            manualmente. Al cobrar se cierra y aparece en el informe de ventas.
+            Mesa → Cuenta → Pedido (QR o staff) → Comanda → Cobro → Registros
           </p>
+          <div className="mt-3">
+            <TableServiceProcessLine currentStep="mesa" />
+          </div>
         </div>
       </div>
 
       {paidSaleNumber ? (
-        <div className="rounded-xl border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-1)] px-4 py-3 text-sm">
-          Cuenta cobrada · comprobante{" "}
-          <span className="font-mono font-medium">{paidSaleNumber}</span> registrado en ventas del
-          día.{" "}
-          <Link href="/billing" className="underline">
-            Ver informe
-          </Link>
+        <div className="space-y-3">
+          <div className="rounded-xl border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-1)] px-4 py-3 text-sm">
+            Cuenta cobrada · comprobante{" "}
+            <span className="font-mono font-medium">{paidSaleNumber}</span> registrado en{" "}
+            <Link href="/billing" className="underline">
+              Registros
+            </Link>
+          </div>
+          <TableServiceProcessLine currentStep="registro" compact />
         </div>
       ) : null}
 
@@ -111,7 +120,7 @@ function PosTablesContent() {
           </form>
         </Card>
 
-        <Card title="Mesas activas">
+        <Card title="Mesas">
           {loading ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">Cargando...</p>
           ) : error ? (
@@ -144,10 +153,12 @@ function PosTablesContent() {
 
                     {session ? (
                       <p className="mt-2 text-sm text-[var(--ghost-brand-500)]">
-                        Pedido abierto · {session.lines.length} ítems
-                        {session.status === "requested_bill" ? " · Cuenta pedida" : ""}
+                        {TABLE_SESSION_STATUS_LABELS[session.status]} ·{" "}
+                        {activeSessionLines(session.lines).length} ítem(s)
                       </p>
-                    ) : null}
+                    ) : (
+                      <p className="mt-2 text-sm text-[var(--ghost-text-muted)]">Sin cuenta abierta</p>
+                    )}
 
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrUrl)}`}
@@ -159,7 +170,7 @@ function PosTablesContent() {
 
                     <Link href={`/pos/tables/session?id=${table.id}`} className="mt-3 block">
                       <Button fullWidth variant={session ? "primary" : "secondary"}>
-                        {session ? "Ver cuenta" : "Gestionar mesa"}
+                        {session ? "Ver cuenta" : "Abrir cuenta"}
                       </Button>
                     </Link>
                   </div>

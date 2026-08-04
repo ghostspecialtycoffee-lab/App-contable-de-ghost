@@ -11,7 +11,7 @@ export default function HomePage() {
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">Ghost Contable</h1>
         <p className="mt-3 text-[var(--ghost-text-muted)]">
-          Registros de mostrador, comprobantes, comandas e inventario. Acceso
+          Registros de mostrador, mesas con QR, comprobantes y comandas. Acceso
           restringido al equipo autorizado.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
@@ -28,8 +28,9 @@ export default function HomePage() {
 
       <Card title="Módulos disponibles">
         <ul className="space-y-2 text-sm text-[var(--ghost-text-muted)]">
-          <li>Mostrador — registro de operaciones</li>
-          <li>Comprobantes y reportes</li>
+          <li>Mesas — QR, cuenta y cobro</li>
+          <li>Mostrador — cobro directo</li>
+          <li>Registros — comprobantes y reportes</li>
           <li>Comandas — barra y cocina</li>
           <li>Inventario — ítems, bodegas y movimientos</li>
         </ul>

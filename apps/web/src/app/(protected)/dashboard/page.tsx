@@ -89,7 +89,7 @@ export default function DashboardPage() {
                 {salesLoading ? "—" : formatMoney(todayReport.tableSalesTotal)}
               </p>
               <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
-                {todayReport.tableSalesCount} cuenta(s) cerrada(s)
+                {todayReport.tableSalesCount} comprobante(s) de mesa
               </p>
             </div>
             <div>
@@ -176,6 +176,16 @@ export default function DashboardPage() {
         <Link href="/pos/menu">
           <Button fullWidth variant="secondary">
             Catálogo
+          </Button>
+        </Link>
+        <Link href="/pos/tables">
+          <Button fullWidth variant="secondary">
+            Mesas
+          </Button>
+        </Link>
+        <Link href="/kds">
+          <Button fullWidth variant="secondary">
+            Comandas
           </Button>
         </Link>
         <Link href="/billing">

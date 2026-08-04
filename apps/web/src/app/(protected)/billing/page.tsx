@@ -75,9 +75,14 @@ export default function BillingPage() {
             </Link>
           </p>
         </div>
-        <Link href="/pos">
-          <Button>Nuevo registro</Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/pos">
+            <Button>Mostrador</Button>
+          </Link>
+          <Link href="/pos/tables">
+            <Button variant="secondary">Nueva cuenta de mesa</Button>
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">

@@ -14,6 +14,7 @@ import { formatMoney } from "@/lib/format";
 import { getFirestoreDb } from "@/lib/firebase/client";
 import { addTableSessionLines, openTableSession, requestTableBillGuest } from "@/lib/tables/table-sessions";
 import { findDiningTableByTokenClient } from "@/lib/tables/tables";
+import { GuestTableProcessLine, type GuestTableStepId } from "@/components/guest-table-process";
 import {
   activeSessionLines,
   calculateSaleTotals,
@@ -204,7 +205,7 @@ function GuestTableContent() {
         lines: orderLines,
       });
       setCartQty({});
-      setMessage("Pedido enviado. Te atenderemos pronto.");
+      setMessage("Ítems agregados a tu cuenta. El staff enviará la comanda a cocina.");
     } catch (cause) {
       setError(getFirestoreErrorMessage(cause));
     } finally {
@@ -262,11 +263,17 @@ function GuestTableContent() {
   }
 
   const canOrder = sessionStatus === "open";
+  const guestStep: GuestTableStepId =
+    sessionStatus === "requested_bill"
+      ? "cuenta"
+      : activeSessionLines(lines as never).length > 0
+        ? "pedido"
+        : "menu";
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4 pb-24">
       <div className="text-center">
-        <p className="text-sm text-[var(--ghost-text-muted)]">Pedido en mesa</p>
+        <p className="text-sm text-[var(--ghost-text-muted)]">Menú de mesa</p>
         <h1 className="text-2xl font-semibold">
           Mesa {table?.number}
           {table?.label ? ` · ${table.label}` : ""}
@@ -274,6 +281,9 @@ function GuestTableContent() {
         {sessionStatus === "requested_bill" ? (
           <p className="mt-1 text-sm text-[var(--ghost-brand-500)]">Cuenta solicitada</p>
         ) : null}
+        <div className="mt-3 flex justify-center">
+          <GuestTableProcessLine currentStep={guestStep} />
+        </div>
       </div>
 
       <Card title="Menú">
@@ -322,7 +332,7 @@ function GuestTableContent() {
       </Card>
 
       {lines.length > 0 ? (
-        <Card title="Tu pedido">
+        <Card title="Tu cuenta">
           <ul className="space-y-2 text-sm">
             {activeSessionLines(lines as never).map((line) => (
               <li key={line.id} className="flex justify-between gap-2">
@@ -341,7 +351,7 @@ function GuestTableContent() {
 
       <div className="space-y-2">
         <Button fullWidth size="lg" disabled={submitting || !canOrder} onClick={handleSubmitOrder}>
-          {submitting ? "Enviando..." : canOrder ? "Enviar pedido" : "Cuenta solicitada"}
+          {submitting ? "Enviando..." : canOrder ? "Agregar a la cuenta" : "Cuenta solicitada"}
         </Button>
         <Button
           fullWidth

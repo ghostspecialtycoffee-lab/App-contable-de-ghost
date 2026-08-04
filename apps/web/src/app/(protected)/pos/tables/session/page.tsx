@@ -9,6 +9,7 @@ import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useTableSessions } from "@/hooks/use-table-sessions";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
+import { TableServiceProcessLine, type TableServiceStepId } from "@/components/table-service-process";
 import {
   activeSessionLines,
   calculateSaleTotals,
@@ -16,6 +17,8 @@ import {
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABELS,
   sessionLinesToSaleInputs,
+  TABLE_SESSION_LINE_STATUS_LABELS,
+  TABLE_SESSION_STATUS_LABELS,
   type PaymentMethod,
 } from "@ghost/domain";
 import {
@@ -34,6 +37,7 @@ function TableSessionContent() {
   const { products } = useMenuProducts();
   const { sessions, loading: sessionsLoading } = useTableSessions({ openOnly: true });
   const [opening, setOpening] = useState(false);
+  const [accountOpenedNotice, setAccountOpenedNotice] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
@@ -56,6 +60,7 @@ function TableSessionContent() {
       tableLabel: table.label,
       guestToken: table.qrToken,
     })
+      .then(() => setAccountOpenedNotice(true))
       .catch((cause) => setSubmitError(getCallableErrorMessage(cause)))
       .finally(() => setOpening(false));
   }, [table, session, opening, sessionsLoading]);
@@ -67,8 +72,36 @@ function TableSessionContent() {
     return calculateSaleTotals(sessionLinesToSaleInputs(activeSessionLines(session.lines)));
   }, [session]);
 
+  const activeLines = useMemo(
+    () => (session ? activeSessionLines(session.lines) : []),
+    [session],
+  );
+
+  const pendingKitchenCount = useMemo(
+    () => activeLines.filter((line) => line.status === "pending").length,
+    [activeLines],
+  );
+
+  const canAddItems = session?.status === "open";
+
+  const processStep = useMemo((): TableServiceStepId => {
+    if (!session) {
+      return "cuenta";
+    }
+    if (session.status === "requested_bill") {
+      return "cobro";
+    }
+    if (pendingKitchenCount > 0) {
+      return "comanda";
+    }
+    if (activeLines.length > 0) {
+      return "pedido";
+    }
+    return "cuenta";
+  }, [session, pendingKitchenCount, activeLines.length]);
+
   async function handleAddProduct(product: (typeof products)[number]) {
-    if (!table || !session) {
+    if (!table || !session || !canAddItems) {
       return;
     }
 
@@ -122,6 +155,15 @@ function TableSessionContent() {
       return;
     }
 
+    if (
+      pendingKitchenCount > 0 &&
+      !window.confirm(
+        `Hay ${pendingKitchenCount} ítem(s) sin enviar a comanda. ¿Cobrar la cuenta igual?`,
+      )
+    ) {
+      return;
+    }
+
     setWorking(true);
     setSubmitError(null);
 
@@ -130,7 +172,7 @@ function TableSessionContent() {
         sessionId: session.id,
         paymentMethod,
       });
-      setSuccess(`Cobro registrado · ${result.saleNumber} · ${formatMoney(result.total)}`);
+      setSuccess(`Cuenta cobrada · ${result.saleNumber} · ${formatMoney(result.total)}`);
       router.push(`/pos/tables?paid=${encodeURIComponent(result.saleNumber)}`);
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
@@ -169,6 +211,10 @@ function TableSessionContent() {
     <div className="space-y-6 pb-24">
       <div>
         <p className="text-sm text-[var(--ghost-text-muted)]">
+          <Link href="/pos" className="underline">
+            Mostrador
+          </Link>
+          {" · "}
           <Link href="/pos/tables" className="underline">
             Mesas
           </Link>
@@ -177,20 +223,41 @@ function TableSessionContent() {
           Mesa {table.number}
           {table.label ? ` · ${table.label}` : ""}
         </h1>
-        {session?.status === "requested_bill" ? (
-          <p className="mt-1 text-sm text-[var(--ghost-brand-500)]">Cliente pidió la cuenta</p>
+        {session ? (
+          <p className="mt-1 text-sm text-[var(--ghost-brand-500)]">
+            {TABLE_SESSION_STATUS_LABELS[session.status]}
+          </p>
+        ) : null}
+        <div className="mt-3">
+          <TableServiceProcessLine currentStep={processStep} compact />
+        </div>
+        {accountOpenedNotice && session ? (
+          <p className="mt-2 text-sm text-[var(--ghost-brand-500)]">
+            Cuenta abierta para Mesa {table.number}
+          </p>
         ) : null}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <Card title="Agregar del catálogo">
+          {!canAddItems && session ? (
+            <p className="mb-3 text-sm text-[var(--ghost-brand-500)]">
+              Cuenta solicitada — solo queda cobrar.
+            </p>
+          ) : null}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {products.map((product) => (
               <button
                 key={product.id}
                 type="button"
+                disabled={!canAddItems}
                 onClick={() => handleAddProduct(product)}
-                className="rounded-xl border border-[var(--ghost-border)] p-3 text-left hover:border-[var(--ghost-brand-500)]"
+                className={[
+                  "rounded-xl border border-[var(--ghost-border)] p-3 text-left",
+                  canAddItems
+                    ? "hover:border-[var(--ghost-brand-500)]"
+                    : "cursor-not-allowed opacity-50",
+                ].join(" ")}
               >
                 {product.imageDataUrl ? (
                   <img
@@ -209,12 +276,12 @@ function TableSessionContent() {
         <Card title="Cuenta de mesa">
           {!session ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">
-              {opening ? "Abriendo cuenta..." : "Preparando sesión..."}
+              {opening ? "Abriendo cuenta..." : "Preparando cuenta..."}
             </p>
           ) : (
             <div className="space-y-3">
               <ul className="space-y-2 text-sm">
-                {activeSessionLines(session.lines).map((line) => (
+                {activeLines.map((line) => (
                   <li
                     key={line.id}
                     className="flex justify-between gap-2 border-b border-[var(--ghost-border)] pb-2"
@@ -222,7 +289,7 @@ function TableSessionContent() {
                     <span>
                       {line.quantity} x {line.name}
                       <span className="ml-1 text-xs text-[var(--ghost-text-muted)]">
-                        ({line.status === "sent" ? "comanda" : "pendiente"})
+                        ({TABLE_SESSION_LINE_STATUS_LABELS[line.status]})
                       </span>
                     </span>
                     <span>{formatMoney(line.unitPrice * line.quantity)}</span>
@@ -230,10 +297,16 @@ function TableSessionContent() {
                 ))}
               </ul>
 
+              {activeLines.length === 0 ? (
+                <p className="text-sm text-[var(--ghost-text-muted)]">
+                  Sin ítems. El cliente puede pedir por QR o agrega del catálogo.
+                </p>
+              ) : null}
+
               {totals ? (
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span>Base</span>
+                    <span>Base gravable</span>
                     <span>{formatMoney(totals.subtotal)}</span>
                   </div>
                   {totals.taxBreakdown.map((entry) => (
@@ -252,9 +325,19 @@ function TableSessionContent() {
                 </div>
               ) : null}
 
-              <Button fullWidth variant="secondary" disabled={working} onClick={handleSendKitchen}>
+              <Button
+                fullWidth
+                variant="secondary"
+                disabled={working || pendingKitchenCount === 0}
+                onClick={handleSendKitchen}
+              >
                 Enviar comanda (barra/cocina)
+                {pendingKitchenCount > 0 ? ` · ${pendingKitchenCount}` : ""}
               </Button>
+
+              <p className="text-xs text-[var(--ghost-text-muted)]">
+                Los pedidos del QR quedan pendientes hasta enviar comanda.
+              </p>
 
               <label className="block space-y-1">
                 <span className="text-sm font-medium">Medio de pago</span>
@@ -271,8 +354,8 @@ function TableSessionContent() {
                 </select>
               </label>
 
-              <Button fullWidth disabled={working} onClick={handleCheckout}>
-                Cobrar mesa
+              <Button fullWidth disabled={working || activeLines.length === 0} onClick={handleCheckout}>
+                Cobrar cuenta
               </Button>
 
               {submitError ? (

@@ -78,7 +78,7 @@ export function SaleReceipt({ sale, showPrint = true }: SaleReceiptProps) {
 
       {showPrint ? (
         <Button variant="secondary" fullWidth onClick={handlePrint} className="print:hidden">
-          Imprimir factura
+          Imprimir comprobante
         </Button>
       ) : null}
     </div>

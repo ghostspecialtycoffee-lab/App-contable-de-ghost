@@ -43,11 +43,18 @@ export default function KdsPage() {
           <p className="text-sm text-[var(--ghost-text-muted)]">Operación en cocina y barra</p>
           <h1 className="text-2xl font-semibold">Comandas</h1>
         </div>
-        <Link href="/pos">
-          <Button variant="secondary" size="sm">
-            Mostrador
-          </Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/pos/tables">
+            <Button variant="secondary" size="sm">
+              Mesas
+            </Button>
+          </Link>
+          <Link href="/pos">
+            <Button variant="secondary" size="sm">
+              Mostrador
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
