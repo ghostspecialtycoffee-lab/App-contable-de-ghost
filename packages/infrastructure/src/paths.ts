@@ -1,0 +1,26 @@
+export const firestorePaths = {
+  users: () => "users",
+  user: (userId: string) => `users/${userId}`,
+  organizations: () => "organizations",
+  organization: (organizationId: string) => `organizations/${organizationId}`,
+  organizationMembers: (organizationId: string) =>
+    `organizations/${organizationId}/members`,
+  organizationMember: (organizationId: string, userId: string) =>
+    `organizations/${organizationId}/members/${userId}`,
+  organizationBranches: (organizationId: string) =>
+    `organizations/${organizationId}/branches`,
+  organizationBranch: (organizationId: string, branchId: string) =>
+    `organizations/${organizationId}/branches/${branchId}`,
+  organizationAuditLogs: (organizationId: string) =>
+    `organizations/${organizationId}/auditLogs`,
+  organizationInventoryItems: (organizationId: string) =>
+    `organizations/${organizationId}/inventoryItems`,
+  organizationInventoryItem: (organizationId: string, itemId: string) =>
+    `organizations/${organizationId}/inventoryItems/${itemId}`,
+  organizationWarehouses: (organizationId: string) =>
+    `organizations/${organizationId}/warehouses`,
+  organizationInventoryMovements: (organizationId: string) =>
+    `organizations/${organizationId}/inventoryMovements`,
+  organizationInventoryBalances: (organizationId: string) =>
+    `organizations/${organizationId}/inventoryBalances`,
+} as const;

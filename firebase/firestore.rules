@@ -18,8 +18,7 @@ service cloud.firestore {
 
     match /organizations/{organizationId} {
       allow read: if isOrgMember(organizationId);
-      allow create: if isSignedIn();
-      allow update, delete: if false;
+      allow create, update, delete: if false;
 
       match /members/{memberId} {
         allow read: if isSignedIn() && request.auth.uid == memberId;
@@ -33,8 +32,27 @@ service cloud.firestore {
 
       match /auditLogs/{logId} {
         allow read: if isOrgMember(organizationId);
-        allow create: if isOrgMember(organizationId);
-        allow update, delete: if false;
+        allow create, update, delete: if false;
+      }
+
+      match /inventoryItems/{itemId} {
+        allow read: if isOrgMember(organizationId);
+        allow write: if false;
+      }
+
+      match /warehouses/{warehouseId} {
+        allow read: if isOrgMember(organizationId);
+        allow write: if false;
+      }
+
+      match /inventoryMovements/{movementId} {
+        allow read: if isOrgMember(organizationId);
+        allow write: if false;
+      }
+
+      match /inventoryBalances/{balanceId} {
+        allow read: if isOrgMember(organizationId);
+        allow write: if false;
       }
     }
   }

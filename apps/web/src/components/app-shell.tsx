@@ -3,16 +3,27 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { SignOutButton } from "@/components/sign-out-button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuth } from "@/providers/auth-provider";
 
-const navItems = [
+const publicNavItems = [
+  { href: "/", label: "Inicio" },
+  { href: "/login", label: "Acceso" },
+  { href: "/register", label: "Registro" },
+];
+
+const appNavItems = [
   { href: "/", label: "Inicio" },
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/login", label: "Acceso" },
+  { href: "/inventory", label: "Inventario" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { firebaseUser, profile, organization } = useAuth();
+
+  const navItems = firebaseUser ? appNavItems : publicNavItems;
 
   return (
     <div className="min-h-screen bg-[var(--ghost-surface-0)]">
@@ -26,7 +37,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div>
                 <p className="text-sm font-semibold">Ghost ERP</p>
                 <p className="text-xs text-[var(--ghost-text-muted)]">
-                  Specialty Coffee Lab
+                  {organization?.name ?? "Specialty Coffee Lab"}
                 </p>
               </div>
             </Link>
@@ -50,7 +61,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               })}
             </nav>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            {firebaseUser ? (
+              <span className="hidden text-sm text-[var(--ghost-text-muted)] sm:inline">
+                {profile?.displayName ?? firebaseUser.email}
+              </span>
+            ) : null}
+            {firebaseUser ? <SignOutButton /> : null}
+            <ThemeToggle />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">{children}</main>

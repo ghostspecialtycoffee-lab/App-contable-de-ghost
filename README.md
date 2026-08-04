@@ -7,43 +7,54 @@ Sistema ERP y POS para cafeterías, restaurantes, panaderías y negocios gastron
 - **Monorepo:** pnpm workspaces + Turborepo
 - **Frontend:** Next.js 15 (App Router), Tailwind CSS, modo claro/oscuro
 - **Backend:** Firebase Auth, Firestore, Storage, Cloud Functions
-- **Arquitectura:** Clean Architecture con paquetes `@ghost/domain`, `@ghost/shared`, `@ghost/ui`
+- **Arquitectura:** Clean Architecture con paquetes `@ghost/domain`, `@ghost/infrastructure`, `@ghost/shared`, `@ghost/ui`
 
 ## Estructura
 
 ```
 apps/
-  web/          # Aplicación web (POS + administración)
-  functions/    # Cloud Functions (auth, auditoría)
+  web/              # Aplicación web (POS + administración)
+  functions/        # Cloud Functions (auth, onboarding, auditoría)
 packages/
-  domain/       # Entidades y reglas de negocio
-  shared/       # Tipos y utilidades compartidas
-  ui/           # Componentes UI reutilizables
-firebase/       # Reglas e índices Firestore/Storage
-.cursor/skills/ # Skill maestra del Arquitecto Principal
+  domain/           # Entidades y reglas de negocio
+  infrastructure/   # Adaptadores Firestore (paths, mappers)
+  shared/           # Tipos y utilidades compartidas
+  ui/               # Componentes UI reutilizables
+firebase/           # Reglas e índices Firestore/Storage
+docs/               # Documentación técnica
+.cursor/skills/     # Skill maestra del Arquitecto Principal
 ```
+
+## Estado actual
+
+| Módulo | Estado |
+|--------|--------|
+| Infraestructura / arquitectura | ✅ Base monorepo |
+| Autenticación | ✅ Login, registro, sesión, guards |
+| Base de datos / multi-tenant | ✅ Onboarding organización + sucursal |
+| Inventario | ✅ Catálogo de ítems, functions kardex (base) |
 
 ## Requisitos
 
 - Node.js 20+
 - pnpm 10+
-- Cuenta Firebase (opcional para desarrollo local con emuladores)
+- Cuenta Firebase (opcional con emuladores locales)
 
 ## Inicio rápido
 
 ```bash
 pnpm install
+cp .env.example apps/web/.env.local
 pnpm dev
 ```
 
 La app web corre en http://localhost:3000
 
-## Variables de entorno
-
-Copia `.env.example` a `apps/web/.env.local` y completa las credenciales Firebase:
+### Emuladores Firebase (recomendado en desarrollo)
 
 ```bash
-cp .env.example apps/web/.env.local
+firebase emulators:start
+NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true pnpm dev
 ```
 
 ## Scripts
@@ -52,12 +63,19 @@ cp .env.example apps/web/.env.local
 |---------|-------------|
 | `pnpm dev` | Desarrollo en todos los paquetes |
 | `pnpm build` | Build de producción |
+| `pnpm test` | Tests unitarios |
 | `pnpm typecheck` | Verificación de tipos |
 | `pnpm lint` | Lint del frontend |
 
-## Módulos planificados
+## Documentación
 
-Core, Inventario, Costeo, POS, KDS, Caja, Facturación, OCR, RRHH, Chat, Reportes, Analítica, IA y Notificaciones.
+- [Autenticación y multi-tenant](docs/AUTH.md)
+- [Inventario](docs/INVENTORY.md)
+- [Decisiones técnicas (ADR)](docs/DECISIONS.md)
+
+## Roadmap
+
+Inventario → Compras → Producción → Costeo → POS → Comandas → Caja → Facturación → Contabilidad → Reportes → CRM → RRHH → IA → Integraciones.
 
 ## Licencia
 

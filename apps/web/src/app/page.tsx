@@ -37,11 +37,16 @@ export default function HomePage() {
           analítica.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
+          <Link href="/register">
+            <Button size="lg">Comenzar gratis</Button>
+          </Link>
           <Link href="/dashboard">
-            <Button size="lg">Ir al dashboard</Button>
+            <Button variant="secondary" size="lg">
+              Ir al dashboard
+            </Button>
           </Link>
           <Link href="/login">
-            <Button variant="secondary" size="lg">
+            <Button variant="ghost" size="lg">
               Iniciar sesión
             </Button>
           </Link>

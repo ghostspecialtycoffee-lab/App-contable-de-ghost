@@ -1,6 +1,10 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import { connectAuthEmulator, getAuth, type Auth } from "firebase/auth";
+import {
+  connectFirestoreEmulator,
+  getFirestore,
+  type Firestore,
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "",
@@ -14,6 +18,7 @@ const firebaseConfig = {
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 let db: Firestore | undefined;
+let emulatorsConnected = false;
 
 function assertConfigured() {
   if (!firebaseConfig.projectId) {
@@ -21,6 +26,23 @@ function assertConfigured() {
       "Firebase no está configurado. Define NEXT_PUBLIC_FIREBASE_* en .env.local",
     );
   }
+}
+
+function maybeConnectEmulators() {
+  if (
+    emulatorsConnected ||
+    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS !== "true" ||
+    !auth ||
+    !db
+  ) {
+    return;
+  }
+
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", {
+    disableWarnings: true,
+  });
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  emulatorsConnected = true;
 }
 
 export function getFirebaseApp(): FirebaseApp {
@@ -36,6 +58,7 @@ export function getFirebaseApp(): FirebaseApp {
 export function getFirebaseAuth(): Auth {
   if (!auth) {
     auth = getAuth(getFirebaseApp());
+    maybeConnectEmulators();
   }
 
   return auth;
@@ -44,6 +67,7 @@ export function getFirebaseAuth(): Auth {
 export function getFirestoreDb(): Firestore {
   if (!db) {
     db = getFirestore(getFirebaseApp());
+    maybeConnectEmulators();
   }
 
   return db;
