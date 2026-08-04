@@ -239,6 +239,18 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /fixedExpenses/{expenseId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.amount > 0
+          && request.resource.data.monthlyEquivalent > 0;
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
       match /diningTables/{tableId} {
         allow read: if canAccessOrg(organizationId)
           || resource.data.status != 'closed';

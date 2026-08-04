@@ -176,6 +176,11 @@ export default function DashboardPage() {
             Identidad
           </Button>
         </Link>
+        <Link href="/expenses">
+          <Button fullWidth variant="secondary">
+            Gastos fijos
+          </Button>
+        </Link>
         <Link href="/inventory">
           <Button fullWidth variant="secondary">
             Inventario

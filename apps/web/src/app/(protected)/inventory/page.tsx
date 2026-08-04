@@ -24,6 +24,11 @@ const modules = [
     description: "Facturas de compra con IVA e ingreso a inventario.",
   },
   {
+    href: "/expenses",
+    title: "Gastos fijos",
+    description: "Arriendo, nómina y costos recurrentes.",
+  },
+  {
     href: "/costing",
     title: "Costeo",
     description: "Matriz de costos, márgenes e impuestos Colombia.",
