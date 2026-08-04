@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { SaleReceipt } from "@/components/sale-receipt";
+import { SalesAccessButtons } from "@/components/sales-access-buttons";
 import { useSales } from "@/hooks/use-sales";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { useAuth } from "@/providers/auth-provider";
@@ -84,6 +85,8 @@ export default function BillingPage() {
           </Link>
         </div>
       </div>
+
+      <SalesAccessButtons compact />
 
       <div className="flex flex-wrap gap-2">
         <button

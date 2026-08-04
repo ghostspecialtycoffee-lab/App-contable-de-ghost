@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 
 import { BrandLogo } from "@/components/brand-logo";
+import { SalesAccessButtons } from "@/components/sales-access-buttons";
 import { useBrandAssets } from "@/hooks/use-brand-assets";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useSales } from "@/hooks/use-sales";
@@ -48,6 +49,8 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 pb-4">
+      <SalesAccessButtons title="Acceso rápido — ventas" />
+
       <section className="overflow-hidden rounded-2xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)]">
         <div className="grid gap-0 lg:grid-cols-[220px_1fr]">
           <div className="flex flex-col items-center justify-center border-b border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] p-8 lg:border-b-0 lg:border-r">
@@ -167,58 +170,50 @@ export default function DashboardPage() {
         )}
       </Card>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        <Link href="/pos">
-          <Button fullWidth size="lg">
-            Mostrador
-          </Button>
-        </Link>
-        <Link href="/pos/menu">
-          <Button fullWidth variant="secondary">
-            Catálogo
-          </Button>
-        </Link>
-        <Link href="/pos/tables">
-          <Button fullWidth variant="secondary">
-            Mesas
-          </Button>
-        </Link>
-        <Link href="/kds">
-          <Button fullWidth variant="secondary">
-            Comandas
-          </Button>
-        </Link>
-        <Link href="/billing">
-          <Button fullWidth variant="secondary">
-            Registros
-          </Button>
-        </Link>
-        <Link href="/brand">
-          <Button fullWidth variant="secondary">
-            Identidad
-          </Button>
-        </Link>
-        <Link href="/expenses">
-          <Button fullWidth variant="secondary">
-            Gastos fijos
-          </Button>
-        </Link>
-        <Link href="/inventory">
-          <Button fullWidth variant="secondary">
-            Inventario
-          </Button>
-        </Link>
-        <Link href="/purchases">
-          <Button fullWidth variant="secondary">
-            Compras
-          </Button>
-        </Link>
-        <Link href="/costing">
-          <Button fullWidth variant="secondary">
-            Costeo
-          </Button>
-        </Link>
-      </div>
+      <Card title="Administración">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <Link href="/pos/menu">
+            <Button fullWidth variant="secondary">
+              Catálogo
+            </Button>
+          </Link>
+          <Link href="/brand">
+            <Button fullWidth variant="secondary">
+              Identidad
+            </Button>
+          </Link>
+          <Link href="/expenses">
+            <Button fullWidth variant="secondary">
+              Gastos fijos
+            </Button>
+          </Link>
+          <Link href="/inventory">
+            <Button fullWidth variant="secondary">
+              Inventario
+            </Button>
+          </Link>
+          <Link href="/purchases">
+            <Button fullWidth variant="secondary">
+              Compras
+            </Button>
+          </Link>
+          <Link href="/costing">
+            <Button fullWidth variant="secondary">
+              Costeo
+            </Button>
+          </Link>
+          <Link href="/settings/costing">
+            <Button fullWidth variant="secondary">
+              Matriz costos
+            </Button>
+          </Link>
+          <Link href="/settings/fiscal">
+            <Button fullWidth variant="secondary">
+              Facturación
+            </Button>
+          </Link>
+        </div>
+      </Card>
     </div>
   );
 }
