@@ -110,6 +110,68 @@ export async function createPurchaseInvoiceClient(input: {
   return { invoiceId: invoiceRef.id };
 }
 
+export async function updatePurchaseInvoiceClient(input: {
+  invoiceId: string;
+  supplierName: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  warehouseId: string;
+  lines: PurchaseInvoiceLineInput[];
+  attachmentDataUrl?: string;
+  attachmentName?: string;
+}): Promise<void> {
+  const userId = requireUserId();
+  const { organizationId } = await getActiveContext();
+  const supplierName = input.supplierName.trim();
+  const invoiceNumber = input.invoiceNumber.trim();
+
+  if (!supplierName || !invoiceNumber) {
+    throw new Error("Proveedor y número de factura son obligatorios.");
+  }
+
+  const filteredLines = input.lines.filter((line) => line.description.trim());
+  if (filteredLines.length === 0) {
+    throw new Error("Agrega al menos un producto a la factura.");
+  }
+
+  const db = getFirestoreDb();
+  const invoiceRef = doc(
+    db,
+    firestorePaths.organizationPurchaseInvoice(organizationId, input.invoiceId),
+  );
+  const invoiceSnap = await getDoc(invoiceRef);
+
+  if (!invoiceSnap.exists()) {
+    throw new Error("Factura no encontrada.");
+  }
+
+  if (invoiceSnap.data().status !== "draft") {
+    throw new Error("Solo puedes editar facturas en borrador.");
+  }
+
+  const lines = buildPurchaseInvoiceLines(filteredLines);
+  const summary = summarizePurchaseInvoice(lines);
+
+  await setDoc(
+    invoiceRef,
+    {
+      supplierName,
+      invoiceNumber,
+      invoiceDate: input.invoiceDate,
+      warehouseId: input.warehouseId,
+      lines,
+      subtotal: summary.subtotal,
+      taxAmount: summary.taxAmount,
+      total: summary.total,
+      attachmentDataUrl: input.attachmentDataUrl ?? "",
+      attachmentName: input.attachmentName ?? "",
+      updatedAt: serverTimestamp(),
+      updatedBy: userId,
+    },
+    { merge: true },
+  );
+}
+
 export async function confirmPurchaseInvoiceClient(input: {
   invoiceId: string;
 }): Promise<{ movements: number }> {
