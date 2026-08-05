@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { DocumentTypesPanel } from "@/components/document-types-panel";
 import { OperationalFlowSteps } from "@/components/operational-flow-steps";
 import {
@@ -71,52 +69,5 @@ export function OperationalModelPanel({ compact = false }: { compact?: boolean }
         como histórico sin mover bodega al confirmar.
       </p>
     </div>
-  );
-}
-
-interface OperationalHintProps {
-  context: "sales" | "purchases" | "inventory" | "billing";
-  defaultOpen?: boolean;
-}
-
-export function OperationalHint({ context, defaultOpen = false }: OperationalHintProps) {
-  const hints: Record<OperationalHintProps["context"], { title: string; text: string; href: string }> = {
-    sales: {
-      title: "Lógica de venta",
-      text: "Cobro → comprobante V-… o M-… en Registros. No confundir con factura de compra.",
-      href: "/guia#ventas",
-    },
-    purchases: {
-      title: "Lógica de compra",
-      text: "Proveedor + N.º factura + fecha. Históricas no mueven bodega.",
-      href: "/guia#compras",
-    },
-    inventory: {
-      title: "Clases de insumo",
-      text: "Alimenticio entra al food cost; menaje es operación; operativo no tiene stock.",
-      href: "/guia#productos",
-    },
-    billing: {
-      title: "Solo ventas aquí",
-      text: "Solo comprobantes de venta. Las compras van en Compras, no aquí.",
-      href: "/guia#documentos",
-    },
-  };
-
-  const hint = hints[context];
-
-  return (
-    <details className="ghost-hint" open={defaultOpen}>
-      <summary className="ghost-hint-summary">
-        <span>{hint.title}</span>
-        <span className="text-xs text-[var(--ghost-text-muted)]">Ver</span>
-      </summary>
-      <div className="ghost-hint-body">
-        <p>{hint.text}</p>
-        <Link href={hint.href} className="ghost-hint-link">
-          Guía completa →
-        </Link>
-      </div>
-    </details>
   );
 }

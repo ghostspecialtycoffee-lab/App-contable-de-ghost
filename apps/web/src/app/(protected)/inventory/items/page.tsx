@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { OperationalHint } from "@/components/operational-model-panel";
 import { PageHeader } from "@/components/page-header";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
@@ -95,19 +94,13 @@ export default function InventoryItemsPage() {
     <div className="ghost-page-stack pb-4">
       <PageHeader
         title="Insumos"
-        description="Catálogo de bodega: alimenticio entra al food cost; menaje no. El costo promedio se guarda por unidad base."
         backHref="/inventory"
         backLabel="Inventario"
       />
 
-      <OperationalHint context="inventory" />
-
       <div className="flex flex-wrap gap-2 text-sm">
         <Link href="/purchases" className="ghost-pill-link">
-          Compras →
-        </Link>
-        <Link href="/guia#productos" className="ghost-pill-link">
-          Clases de producto
+          Compras
         </Link>
       </div>
 

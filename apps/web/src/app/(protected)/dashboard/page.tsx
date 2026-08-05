@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo } from "react";
 
-import { DocumentTypesPanel } from "@/components/document-types-panel";
 import { PageHeader } from "@/components/page-header";
 import { PageSection } from "@/components/page-section";
 import { useMenuProducts } from "@/hooks/use-menu-products";
@@ -41,46 +40,38 @@ export default function DashboardPage() {
 
   return (
     <div className="ghost-page-stack">
-      <PageHeader
-        title="Inicio"
-        description="Accesos rápidos y resumen del día."
-        action={
-          <Link href="/guia" className="ghost-pill-link">
-            Guía
-          </Link>
-        }
-      />
+      <PageHeader title="Inicio" />
 
-      <PageSection title="Operación" description="Lo que usas cada día">
+      <PageSection title="Operación">
         <div className="ghost-action-grid">
           <Link href="/ventas" className="ghost-action-tile ghost-action-tile-primary">
-            <span className="text-base font-semibold">Centro de ventas</span>
+            <span className="text-base font-semibold">Ventas</span>
             <span className="mt-0.5 text-sm text-[var(--ghost-text-muted)]">
-              Cobrar, mesas y comprobantes
+              Cobros y comprobantes
             </span>
           </Link>
           <Link href="/pos" className="ghost-action-tile">
             <span className="text-base font-semibold">Mostrador</span>
             <span className="mt-0.5 text-sm text-[var(--ghost-text-muted)]">
-              Venta rápida
+              Venta directa
             </span>
           </Link>
           <Link href="/pos/tables" className="ghost-action-tile">
             <span className="text-base font-semibold">Mesas</span>
             <span className="mt-0.5 text-sm text-[var(--ghost-text-muted)]">
-              Abrir cuenta o QR
+              Cuentas y QR
             </span>
           </Link>
           <Link href="/billing" className="ghost-action-tile">
             <span className="text-base font-semibold">Registros</span>
             <span className="mt-0.5 text-sm text-[var(--ghost-text-muted)]">
-              Informes y comprobantes
+              Informes del día
             </span>
           </Link>
         </div>
       </PageSection>
 
-      <PageSection title="Hoy" description="Ventas del día">
+      <PageSection title="Hoy">
         <section className="ghost-stat-grid" aria-label="Resumen de hoy">
           <div className="ghost-stat">
             <p className="ghost-stat-label">Ventas</p>
@@ -111,16 +102,6 @@ export default function DashboardPage() {
           </div>
         </section>
       </PageSection>
-
-      <details className="ghost-hint">
-        <summary className="ghost-hint-summary">
-          <span>Compra vs venta</span>
-          <span className="text-xs text-[var(--ghost-text-muted)]">Ver</span>
-        </summary>
-        <div className="ghost-hint-body">
-          <DocumentTypesPanel />
-        </div>
-      </details>
 
       <PageSection title="Contabilidad">
         <div className="ghost-link-grid">

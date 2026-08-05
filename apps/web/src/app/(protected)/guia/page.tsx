@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import { OperationalModelPanel } from "@/components/operational-model-panel";
 import { PageHeader } from "@/components/page-header";
 
@@ -9,8 +7,8 @@ export default function GuiaPage() {
   return (
     <div className="ghost-page-stack pb-8">
       <PageHeader
-        title="Cómo funciona"
-        description="Documentos, flujos y clases de producto."
+        title="Guía operativa"
+        description="Documentos, flujos y reglas del sistema."
         backHref="/dashboard"
         backLabel="Inicio"
       />
@@ -34,18 +32,6 @@ export default function GuiaPage() {
       </nav>
 
       <OperationalModelPanel />
-
-      <div className="flex flex-wrap gap-2">
-        <Link href="/ventas" className="ghost-pill-link">
-          Centro de ventas
-        </Link>
-        <Link href="/purchases" className="ghost-pill-link">
-          Compras
-        </Link>
-        <Link href="/inventory/items" className="ghost-pill-link">
-          Inventario
-        </Link>
-      </div>
     </div>
   );
 }
