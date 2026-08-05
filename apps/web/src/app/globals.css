@@ -261,26 +261,6 @@ a {
     @apply mb-3 text-sm font-medium;
   }
 
-  .ghost-hint {
-    @apply rounded-xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-2)] text-sm;
-  }
-
-  .ghost-hint-summary {
-    @apply flex min-h-[var(--ghost-touch-min)] cursor-pointer list-none items-center justify-between gap-3 px-4 py-2 text-sm font-medium;
-  }
-
-  .ghost-hint-summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .ghost-hint-body {
-    @apply border-t border-[var(--ghost-border)] px-4 pb-3 pt-2 text-sm leading-relaxed text-[var(--ghost-text-muted)];
-  }
-
-  .ghost-hint-link {
-    @apply mt-2 inline-flex min-h-[2.5rem] items-center text-sm font-medium underline;
-  }
-
   .ghost-pill-link {
     @apply inline-flex min-h-[2.5rem] items-center rounded-full border border-[var(--ghost-border)] px-3.5 py-2 text-sm transition active:scale-[0.98] hover:bg-[var(--ghost-surface-2)];
   }

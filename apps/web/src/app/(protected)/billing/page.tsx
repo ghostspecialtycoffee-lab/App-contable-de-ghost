@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { OperationalHint } from "@/components/operational-model-panel";
 import { PageHeader } from "@/components/page-header";
 import { SaleReceipt } from "@/components/sale-receipt";
 import { SalesAccessButtons } from "@/components/sales-access-buttons";
@@ -67,10 +66,7 @@ export default function BillingPage() {
 
   return (
     <div className="ghost-page-stack pb-4">
-      <PageHeader
-        title="Registros"
-        description="Comprobantes de venta e informes."
-      />
+      <PageHeader title="Registros" />
 
       <div className="ghost-sticky-actions">
         <div className="ghost-secondary-actions">
@@ -84,8 +80,6 @@ export default function BillingPage() {
           </Link>
         </div>
       </div>
-
-      <OperationalHint context="billing" />
 
       <div className="ghost-secondary-actions">
         <Link href="/settings/fiscal">

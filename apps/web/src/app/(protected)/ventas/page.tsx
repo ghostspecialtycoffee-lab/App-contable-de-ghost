@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo } from "react";
 
-import { OperationalHint } from "@/components/operational-model-panel";
 import { PageHeader } from "@/components/page-header";
 import { PageSection } from "@/components/page-section";
 import { useSales } from "@/hooks/use-sales";
@@ -51,10 +50,7 @@ export default function VentasPage() {
 
   return (
     <div className="ghost-page-stack">
-      <PageHeader
-        title="Ventas"
-        description="Cobra primero; revisa el día después."
-      />
+      <PageHeader title="Ventas" />
 
       <div className="ghost-sticky-actions">
         <div className="ghost-action-grid">
@@ -109,17 +105,13 @@ export default function VentasPage() {
         </Link>
       </div>
 
-      <OperationalHint context="sales" />
-
       <Card title="Últimos comprobantes">
         {loading ? (
           <p className="text-sm text-[var(--ghost-text-muted)]">Cargando…</p>
         ) : error ? (
           <p className="text-sm text-[var(--ghost-danger)]">{error}</p>
         ) : recentSales.length === 0 ? (
-          <p className="text-sm text-[var(--ghost-text-muted)]">
-            Sin ventas recientes. Usa los botones de arriba para cobrar.
-          </p>
+          <p className="text-sm text-[var(--ghost-text-muted)]">Sin ventas recientes.</p>
         ) : (
           <ul className="divide-y divide-[var(--ghost-border)] text-sm">
             {recentSales.map((sale) => (

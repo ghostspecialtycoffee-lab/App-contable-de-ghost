@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 
-import { OperationalHint } from "@/components/operational-model-panel";
 import { PageHeader } from "@/components/page-header";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { usePurchaseInvoices } from "@/hooks/use-purchase-invoices";
@@ -319,24 +318,9 @@ export default function PurchasesPage() {
     <div className="ghost-page-stack pb-4">
       <PageHeader
         title="Compras"
-        description={`Facturas de proveedor. Desde ${formatDate(operationalToday)} mueven bodega al confirmar.`}
         backHref="/inventory"
         backLabel="Inventario"
       />
-
-      <OperationalHint context="purchases" />
-
-      <Card title="Regla de bodega">
-        <p className="text-sm text-[var(--ghost-text-muted)]">
-          Puedes cargar facturas pasadas para tener el historial de compras. Al confirmarlas,{" "}
-          <strong>no suman stock ni cambian costos</strong> en inventario. Desde{" "}
-          {formatDate(operationalToday)} cada compra confirmada sí actualiza bodega y costos para{" "}
-          <Link href="/costing" className="underline">
-            costeo
-          </Link>
-          .
-        </p>
-      </Card>
 
       {warehouses.length === 0 ? (
         <Card title="Configura tu bodega">
