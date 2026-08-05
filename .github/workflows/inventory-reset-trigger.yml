@@ -1,0 +1,33 @@
+name: Inventory reset on trigger
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ops/trigger-inventory-reset
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reset balances to zero
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GOOGLE_CLOUD_PROJECT: ghost-contable
+        run: |
+          set -euo pipefail
+
+          if [ -z "${FIREBASE_SERVICE_ACCOUNT:-}" ]; then
+            echo "::error::Falta FIREBASE_SERVICE_ACCOUNT"
+            exit 1
+          fi
+
+          CREDS="${RUNNER_TEMP}/firebase-sa.json"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$CREDS"
+          export GOOGLE_APPLICATION_CREDENTIALS="$CREDS"
+
+          node scripts/reset-inventory-balances.mjs --auto --confirm --org bJkbcmagbUbaSBFn5vWr
