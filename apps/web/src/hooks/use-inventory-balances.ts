@@ -5,6 +5,7 @@ import { collection, onSnapshot } from "firebase/firestore";
 
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { getFirestoreDb } from "@/lib/firebase/client";
+import { parseFirestoreDate } from "@/lib/format";
 import { useActiveMembership } from "@/providers/auth-provider";
 import type { InventoryBalance } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -41,7 +42,7 @@ export function useInventoryBalances() {
               itemId: data.itemId,
               quantity: data.quantity ?? 0,
               averageCost: data.averageCost ?? 0,
-              updatedAt: data.updatedAt ?? "",
+              updatedAt: parseFirestoreDate(data.updatedAt),
             } satisfies InventoryBalance;
           }),
         );

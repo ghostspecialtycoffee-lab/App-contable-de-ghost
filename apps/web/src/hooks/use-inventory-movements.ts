@@ -5,6 +5,7 @@ import { collection, limit, onSnapshot, query } from "firebase/firestore";
 
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { getFirestoreDb } from "@/lib/firebase/client";
+import { parseFirestoreDate } from "@/lib/format";
 import { useActiveMembership } from "@/providers/auth-provider";
 import type { InventoryMovement, InventoryMovementType } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -52,12 +53,13 @@ export function useInventoryMovements(limitCount = 300) {
                 notes: data.notes ?? "",
                 lotCode: data.lotCode ?? "",
                 actorUserId: data.actorUserId ?? "",
-                occurredAt: data.occurredAt ?? "",
+                occurredAt: parseFirestoreDate(data.occurredAt),
               } satisfies InventoryMovement;
             })
             .sort(
               (left, right) =>
-                new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime(),
+                new Date(right.occurredAt || 0).getTime() -
+                new Date(left.occurredAt || 0).getTime(),
             ),
         );
         setLoading(false);

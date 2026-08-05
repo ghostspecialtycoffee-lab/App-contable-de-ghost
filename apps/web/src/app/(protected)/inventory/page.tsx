@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 import { InitialDataImportPanel } from "@/components/initial-data-import-panel";
