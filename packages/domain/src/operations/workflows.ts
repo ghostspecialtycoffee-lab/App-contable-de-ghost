@@ -7,21 +7,89 @@ export interface OperationalStep {
   href?: string;
 }
 
+/** Jornada diaria: caja → ventas → cierre. */
+export const DAILY_OPERATION_FLOW: OperationalStep[] = [
+  {
+    order: 1,
+    label: "Abrir caja",
+    description: "Registra el fondo inicial en efectivo",
+    href: "/cash",
+  },
+  {
+    order: 2,
+    label: "Cobrar",
+    description: "Mostrador o mesas con caja abierta",
+    href: "/pos",
+  },
+  {
+    order: 3,
+    label: "Movimientos",
+    description: "Entradas, salidas y préstamos de caja",
+    href: "/cash",
+  },
+  {
+    order: 4,
+    label: "Informes",
+    description: "Ventas, ticket y productos top del día",
+    href: "/billing",
+  },
+  {
+    order: 5,
+    label: "Cerrar caja",
+    description: "Arqueo y cierre de jornada",
+    href: "/cash",
+  },
+];
+
+/** Configuración inicial automática (post-import). */
+export const ORGANIZATION_SETUP_FLOW: OperationalStep[] = [
+  {
+    order: 1,
+    label: "Importar compras",
+    description: "Facturas, insumos y bodega desde manifiesto",
+    href: "/purchases",
+  },
+  {
+    order: 2,
+    label: "Carta bebidas",
+    description: "25 bebidas Ghost + fichas de costo base",
+    href: "/costing",
+  },
+  {
+    order: 3,
+    label: "Catálogo POS",
+    description: "Revisar precios y productos terminados",
+    href: "/pos/menu",
+  },
+  {
+    order: 4,
+    label: "Abrir caja",
+    description: "Iniciar operación diaria",
+    href: "/cash",
+  },
+];
+
 export const SALES_COUNTER_FLOW: OperationalStep[] = [
   {
     order: 1,
+    label: "Abrir caja",
+    description: "Fondo inicial del día",
+    href: "/cash",
+  },
+  {
+    order: 2,
     label: "Mostrador",
     description: "Arma el pedido en POS",
     href: "/pos",
   },
   {
-    order: 2,
+    order: 3,
     label: "Cobro",
     description: "Registra pago y genera comprobante",
     href: "/pos",
   },
   {
-    order: 3,
+    order: 4,
     label: "Comprobante",
     description: "Queda en Registros (V-…)",
     href: "/billing",
@@ -31,30 +99,36 @@ export const SALES_COUNTER_FLOW: OperationalStep[] = [
 export const SALES_TABLE_FLOW: OperationalStep[] = [
   {
     order: 1,
+    label: "Abrir caja",
+    description: "Fondo inicial del día",
+    href: "/cash",
+  },
+  {
+    order: 2,
     label: "Mesa",
     description: "Abre cuenta o QR",
     href: "/pos/tables",
   },
   {
-    order: 2,
+    order: 3,
     label: "Pedido",
     description: "Cliente ordena desde la mesa",
     href: "/pos/tables",
   },
   {
-    order: 3,
+    order: 4,
     label: "Comanda",
     description: "Barra/cocina prepara",
     href: "/kds",
   },
   {
-    order: 4,
+    order: 5,
     label: "Cobro",
     description: "Cierra cuenta en mesa",
     href: "/pos/tables",
   },
   {
-    order: 5,
+    order: 6,
     label: "Comprobante",
     description: "Registros (M-…)",
     href: "/billing",
@@ -82,9 +156,42 @@ export const PURCHASE_INVENTORY_FLOW: OperationalStep[] = [
   },
   {
     order: 4,
+    label: "Carta y costos",
+    description: "Bebidas Ghost y fichas (automático tras import)",
+    href: "/costing",
+  },
+  {
+    order: 5,
     label: "Bodega",
     description: "Solo si fecha de factura ≥ hoy (Colombia)",
     href: "/inventory/movements",
+  },
+];
+
+export const REPORTS_FLOW: OperationalStep[] = [
+  {
+    order: 1,
+    label: "Ventas del periodo",
+    description: "Total, IVA, canal y medio de pago",
+    href: "/billing",
+  },
+  {
+    order: 2,
+    label: "Productos top",
+    description: "Ítems con más movimiento",
+    href: "/billing",
+  },
+  {
+    order: 3,
+    label: "Compras",
+    description: "Historial de facturas proveedor",
+    href: "/purchases",
+  },
+  {
+    order: 4,
+    label: "Caja",
+    description: "Movimientos y arqueo del día",
+    href: "/cash",
   },
 ];
 
@@ -92,7 +199,7 @@ export const APP_NAV_ZONES = [
   {
     id: "operacion",
     label: "Operación",
-    purpose: "Uso diario: cobrar, mesas, comandas y registros.",
+    purpose: "Uso diario: caja, cobrar, mesas, comandas y registros.",
   },
   {
     id: "contabilidad",
@@ -113,6 +220,9 @@ export type OperationalContext =
   | "purchases"
   | "inventory"
   | "billing"
+  | "daily"
+  | "setup"
+  | "reports"
   | "general";
 
 export function stepsForContext(context: OperationalContext): OperationalStep[] {
@@ -123,8 +233,14 @@ export function stepsForContext(context: OperationalContext): OperationalStep[] 
     case "inventory":
       return PURCHASE_INVENTORY_FLOW;
     case "billing":
-      return SALES_TABLE_FLOW.slice(3);
+      return REPORTS_FLOW;
+    case "daily":
+      return DAILY_OPERATION_FLOW;
+    case "setup":
+      return ORGANIZATION_SETUP_FLOW;
+    case "reports":
+      return REPORTS_FLOW;
     default:
-      return SALES_COUNTER_FLOW;
+      return DAILY_OPERATION_FLOW;
   }
 }

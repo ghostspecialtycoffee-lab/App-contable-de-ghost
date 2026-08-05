@@ -17,6 +17,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Operación",
     items: [
       { href: "/dashboard", label: "Inicio", description: "Resumen del día" },
+      { href: "/cash", label: "Caja", description: "Apertura y movimientos" },
       { href: "/ventas", label: "Ventas", description: "Cobros y accesos" },
       { href: "/pos", label: "Mostrador", description: "Venta directa" },
       { href: "/pos/tables", label: "Mesas", description: "Cuenta y QR" },
@@ -52,7 +53,7 @@ export const MOBILE_PRIMARY_TABS = [
   {
     href: "/ventas",
     label: "Ventas",
-    match: ["/ventas", "/pos", "/billing", "/kds"],
+    match: ["/ventas", "/pos", "/billing", "/kds", "/cash"],
   },
   { href: "/pos/tables", label: "Mesas", match: ["/pos/tables", "/mesa"] },
 ] as const;

@@ -17,6 +17,8 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { seedGhostMenu } from "./lib/ghost-menu-seed.mjs";
+
 const require = createRequire(import.meta.url);
 const admin = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
@@ -724,6 +726,14 @@ async function main() {
     );
   }
 
+  let ghostMenu = null;
+  if (args.bootstrap) {
+    ghostMenu = await seedGhostMenu(db, FieldValue, {
+      organizationId: args.org,
+      actorUserId: args.actor,
+    });
+  }
+
   console.log(`\nResumen:`);
   console.log(`  Modo: ${args.bootstrap ? "bootstrap (histórico → bodega)" : "operativo diario"}`);
   console.log(`  Facturas importadas: ${imported}`);
@@ -732,6 +742,11 @@ async function main() {
   console.log(`  Líneas operativas (sin bodega): ${operativoLines}`);
   if (args.bootstrap) {
     console.log(`  Productos POS creados: ${menuProductsCreated}`);
+    if (ghostMenu) {
+      console.log(
+        `  Carta Ghost: ${ghostMenu.productsCreated} bebidas nuevas, ${ghostMenu.recipesCreated} fichas, ${ghostMenu.recipesUpdated} fichas actualizadas`,
+      );
+    }
   } else {
     console.log(`  Fecha corte bodega (Colombia): ${todayIso}`);
   }

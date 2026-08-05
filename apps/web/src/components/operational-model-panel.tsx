@@ -2,8 +2,11 @@ import { DocumentTypesPanel } from "@/components/document-types-panel";
 import { OperationalFlowSteps } from "@/components/operational-flow-steps";
 import {
   APP_NAV_ZONES,
+  DAILY_OPERATION_FLOW,
+  ORGANIZATION_SETUP_FLOW,
   PRODUCT_CATEGORY_RULES,
   PURCHASE_INVENTORY_FLOW,
+  REPORTS_FLOW,
   SALES_COUNTER_FLOW,
   SALES_TABLE_FLOW,
 } from "@ghost/domain";
@@ -37,8 +40,17 @@ export function OperationalModelPanel({ compact = false }: { compact?: boolean }
       </div>
 
       <div id="ventas" className="scroll-mt-20 grid gap-6 lg:grid-cols-2">
+        <OperationalFlowSteps title="Jornada diaria" steps={DAILY_OPERATION_FLOW} />
+        <OperationalFlowSteps title="Setup inicial" steps={ORGANIZATION_SETUP_FLOW} />
+      </div>
+
+      <div className="scroll-mt-20 grid gap-6 lg:grid-cols-2">
         <OperationalFlowSteps title="Venta — mostrador" steps={SALES_COUNTER_FLOW} />
         <OperationalFlowSteps title="Venta — mesa" steps={SALES_TABLE_FLOW} />
+      </div>
+
+      <div id="informes" className="scroll-mt-20">
+        <OperationalFlowSteps title="Informes y registros" steps={REPORTS_FLOW} />
       </div>
 
       <div id="compras" className="scroll-mt-20">
