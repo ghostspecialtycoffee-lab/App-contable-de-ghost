@@ -31,7 +31,16 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Contabilidad",
     items: [
       { href: "/purchases", label: "Compras", description: "Facturas proveedor" },
-      { href: "/inventory", label: "Inventario", description: "Bodega e insumos" },
+      {
+        href: "/inventory",
+        label: "Inventario",
+        description: "Existencias, entradas y salidas",
+      },
+      {
+        href: "/inventory/movements",
+        label: "Existencias",
+        description: "Agregar o quitar unidades",
+      },
       { href: "/costing", label: "Costeo", description: "Recetas y márgenes" },
       { href: "/expenses", label: "Gastos fijos", description: "Arriendo, nómina…" },
     ],
