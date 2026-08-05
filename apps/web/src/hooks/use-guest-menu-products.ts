@@ -26,33 +26,35 @@ export function useGuestMenuProducts(organizationId: string | null) {
       productsQuery,
       (snapshot) => {
         setProducts(
-          snapshot.docs.map((document) => {
-            const data = document.data();
-            return {
-              id: document.id,
-              organizationId: data.organizationId,
-              name: data.name,
-              price: data.price ?? 0,
-              category: data.category,
-              station: data.station,
-              status: data.status,
-              sortOrder: data.sortOrder ?? 0,
-              description: data.description ?? "",
-              saleTaxCategory:
-                data.saleTaxCategory ??
-                inferMenuProductTaxCategory({
-                  name: data.name,
-                  category: data.category,
-                }),
-              recipeCost: data.recipeCost ?? 0,
-              imageDataUrl: data.imageDataUrl,
-              imageMimeType: data.imageMimeType,
-              createdAt: "",
-              updatedAt: "",
-              createdBy: "",
-              updatedBy: "",
-            } satisfies MenuProduct;
-          }),
+          snapshot.docs
+            .map((document) => {
+              const data = document.data();
+              return {
+                id: document.id,
+                organizationId: data.organizationId,
+                name: data.name,
+                price: data.price ?? 0,
+                category: data.category,
+                station: data.station,
+                status: data.status,
+                sortOrder: data.sortOrder ?? 0,
+                description: data.description ?? "",
+                saleTaxCategory:
+                  data.saleTaxCategory ??
+                  inferMenuProductTaxCategory({
+                    name: data.name,
+                    category: data.category,
+                  }),
+                recipeCost: data.recipeCost ?? 0,
+                imageDataUrl: data.imageDataUrl,
+                imageMimeType: data.imageMimeType,
+                createdAt: "",
+                updatedAt: "",
+                createdBy: "",
+                updatedBy: "",
+              } satisfies MenuProduct;
+            })
+            .sort((left, right) => left.sortOrder - right.sortOrder),
         );
         setLoading(false);
         setError(null);
