@@ -269,6 +269,14 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /tableQrLookup/{qrToken} {
+        allow read: if resource.data.status != 'closed';
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.qrToken == qrToken;
+        allow delete: if canAccessOrg(organizationId);
+      }
+
       match /tableSessions/{sessionId} {
         allow read: if canAccessOrg(organizationId)
           || (resource.data.guestToken is string

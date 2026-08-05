@@ -63,6 +63,8 @@ export const firestorePaths = {
     `organizations/${organizationId}/diningTables`,
   organizationDiningTable: (organizationId: string, tableId: string) =>
     `organizations/${organizationId}/diningTables/${tableId}`,
+  organizationTableQrLookup: (organizationId: string, qrToken: string) =>
+    `organizations/${organizationId}/tableQrLookup/${qrToken}`,
   organizationTableSessions: (organizationId: string) =>
     `organizations/${organizationId}/tableSessions`,
   organizationTableSession: (organizationId: string, sessionId: string) =>

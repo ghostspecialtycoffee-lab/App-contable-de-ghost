@@ -154,3 +154,6 @@ jobs:
 
           node scripts/seed-ghost-menu.mjs \
             --auto --confirm --skip-if-seeded || echo "::warning::Seed carta Ghost omitido o falló"
+
+          node scripts/sync-table-qr-lookups.mjs \
+            --auto --confirm || echo "::warning::Sync QR mesas omitido o falló"
