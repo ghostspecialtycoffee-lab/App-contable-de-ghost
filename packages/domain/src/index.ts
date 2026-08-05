@@ -7,6 +7,7 @@ export * from "./inventory/index.js";
 export * from "./production/index.js";
 export * from "./purchases/index.js";
 export * from "./member.js";
+export * from "./operations/index.js";
 export * from "./organization-fiscal.js";
 export * from "./organization-cost-matrix.js";
 export * from "./organization.js";

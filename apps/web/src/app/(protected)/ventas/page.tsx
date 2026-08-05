@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo } from "react";
 
+import { OperationalHint } from "@/components/operational-model-panel";
+import { OperationalFlowSteps } from "@/components/operational-flow-steps";
 import { PageHeader } from "@/components/page-header";
 import { useSales } from "@/hooks/use-sales";
 import { formatDateTime, formatMoney } from "@/lib/format";
@@ -11,6 +13,7 @@ import {
   buildSalesReport,
   filterSalesByPeriod,
   getReportPeriod,
+  SALES_COUNTER_FLOW,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
@@ -54,6 +57,10 @@ export default function VentasPage() {
         title="Ventas"
         description="Cobra, revisa el día y abre comprobantes."
       />
+
+      <OperationalHint context="sales" />
+
+      <OperationalFlowSteps title="Flujo mostrador" steps={SALES_COUNTER_FLOW} compact />
 
       <section className="ghost-stat-grid sm:grid-cols-2 xl:grid-cols-4" aria-label="Hoy">
         <div className="ghost-stat">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 
+import { DocumentTypesPanel } from "@/components/document-types-panel";
 import { PageHeader } from "@/components/page-header";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useSales } from "@/hooks/use-sales";
@@ -43,6 +44,12 @@ export default function DashboardPage() {
         title="Inicio"
         description="Resumen de hoy y accesos directos."
       />
+
+      <Link href="/guia" className="ghost-pill-link">
+        Cómo funciona la app →
+      </Link>
+
+      <DocumentTypesPanel />
 
       <section className="ghost-stat-grid" aria-label="Resumen de hoy">
         <div className="ghost-stat">

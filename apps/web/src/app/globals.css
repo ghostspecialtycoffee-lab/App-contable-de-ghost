@@ -209,6 +209,94 @@ a {
   .ghost-icon-button {
     @apply inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--ghost-text-muted)] hover:bg-[var(--ghost-surface-2)] hover:text-[var(--ghost-text)];
   }
+
+  .ghost-section-label {
+    @apply mb-3 text-sm font-medium;
+  }
+
+  .ghost-hint {
+    @apply flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-2)] px-4 py-3 text-sm;
+  }
+
+  .ghost-hint-link {
+    @apply shrink-0 text-sm font-medium underline;
+  }
+
+  .ghost-pill-link {
+    @apply inline-flex rounded-full border border-[var(--ghost-border)] px-3 py-1.5 text-sm transition hover:bg-[var(--ghost-surface-2)];
+  }
+
+  .ghost-doc-compare {
+    @apply space-y-3;
+  }
+
+  .ghost-doc-grid {
+    @apply grid gap-3 sm:grid-cols-2;
+  }
+
+  .ghost-doc-card {
+    @apply rounded-xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] p-4;
+  }
+
+  .ghost-doc-type {
+    @apply font-semibold;
+  }
+
+  .ghost-doc-summary {
+    @apply mt-1 text-sm text-[var(--ghost-text-muted)];
+  }
+
+  .ghost-doc-key {
+    @apply mt-2 font-mono text-xs text-[var(--ghost-text-muted)];
+  }
+
+  .ghost-doc-link {
+    @apply mt-3 inline-block text-sm underline;
+  }
+
+  .ghost-zone-grid {
+    @apply grid gap-3 sm:grid-cols-3;
+  }
+
+  .ghost-zone-card {
+    @apply rounded-xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] p-4;
+  }
+
+  .ghost-flow-title {
+    @apply mb-3 text-sm font-medium;
+  }
+
+  .ghost-flow-list {
+    @apply space-y-2;
+  }
+
+  .ghost-flow-step {
+    @apply flex items-start gap-3 rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] px-3 py-2;
+  }
+
+  .ghost-flow-order {
+    @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--ghost-surface-2)] text-xs font-semibold;
+  }
+
+  .ghost-flow-label {
+    @apply font-medium;
+  }
+
+  .ghost-flow-desc {
+    @apply text-xs text-[var(--ghost-text-muted)];
+  }
+
+  .ghost-flow-compact .ghost-flow-list {
+    @apply flex flex-wrap gap-2 space-y-0;
+  }
+
+  .ghost-flow-compact .ghost-flow-step {
+    @apply items-center px-2 py-1;
+  }
+
+  .ghost-flow-compact .ghost-flow-order {
+    @apply h-5 w-5 text-[10px];
+  }
 }
 
 @media print {

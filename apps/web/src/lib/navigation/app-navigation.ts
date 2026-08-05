@@ -17,6 +17,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Operación",
     items: [
       { href: "/dashboard", label: "Inicio", description: "Resumen del día" },
+      { href: "/guia", label: "Cómo funciona", description: "Lógica operativa" },
       { href: "/ventas", label: "Ventas", description: "Cobros y accesos" },
       { href: "/pos", label: "Mostrador", description: "Venta directa" },
       { href: "/pos/tables", label: "Mesas", description: "Cuenta y QR" },

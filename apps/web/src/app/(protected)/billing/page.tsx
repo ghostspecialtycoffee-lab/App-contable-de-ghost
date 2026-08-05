@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { OperationalHint } from "@/components/operational-model-panel";
+import { PageHeader } from "@/components/page-header";
 import { SaleReceipt } from "@/components/sale-receipt";
 import { SalesAccessButtons } from "@/components/sales-access-buttons";
 import { useSales } from "@/hooks/use-sales";
@@ -65,25 +67,23 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-4 pb-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-sm text-[var(--ghost-text-muted)]">Registros</p>
-          <h1 className="text-2xl font-semibold">Comprobantes y reportes</h1>
-          <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            {organization?.name ?? "Operación interna"} · consulta histórica y resúmenes ·{" "}
-            <Link href="/settings/fiscal" className="underline">
-              Datos de factura
-            </Link>
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/pos">
-            <Button>Mostrador</Button>
-          </Link>
-          <Link href="/pos/tables">
-            <Button variant="secondary">Nueva cuenta de mesa</Button>
-          </Link>
-        </div>
+      <PageHeader
+        title="Registros"
+        description="Comprobantes de venta e informes. Las compras van en Compras."
+      />
+
+      <OperationalHint context="billing" />
+
+      <div className="flex flex-wrap gap-2">
+        <Link href="/pos">
+          <Button>Mostrador</Button>
+        </Link>
+        <Link href="/pos/tables">
+          <Button variant="secondary">Nueva cuenta de mesa</Button>
+        </Link>
+        <Link href="/settings/fiscal">
+          <Button variant="secondary">Datos fiscales</Button>
+        </Link>
       </div>
 
       <SalesAccessButtons compact />
