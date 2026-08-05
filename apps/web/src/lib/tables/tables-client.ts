@@ -128,6 +128,14 @@ export function buildTableQrUrl(organizationId: string, qrToken: string): string
   return `/mesa?${query}`;
 }
 
+export function buildGuestMenuUrl(organizationId: string): string {
+  const query = `o=${encodeURIComponent(organizationId)}`;
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/menu?${query}`;
+  }
+  return `/menu?${query}`;
+}
+
 export async function findDiningTableByTokenClient(input: {
   organizationId: string;
   qrToken: string;

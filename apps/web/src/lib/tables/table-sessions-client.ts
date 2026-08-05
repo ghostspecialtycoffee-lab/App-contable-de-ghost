@@ -449,6 +449,61 @@ export async function cancelTableSessionClient(input: {
   });
 }
 
+export async function requestWaiterGuestClient(input: {
+  organizationId: string;
+  sessionId: string;
+  guestToken: string;
+}): Promise<void> {
+  const sessionRef = doc(
+    getFirestoreDb(),
+    firestorePaths.organizationTableSession(input.organizationId, input.sessionId),
+  );
+  const sessionSnap = await getDoc(sessionRef);
+
+  if (!sessionSnap.exists()) {
+    throw new Error("Sesión de mesa no encontrada.");
+  }
+
+  const session = sessionSnap.data();
+  if (session.guestToken !== input.guestToken) {
+    throw new Error("Token de mesa no válido.");
+  }
+
+  if (session.status !== "open" && session.status !== "requested_bill") {
+    throw new Error("Esta mesa ya no acepta solicitudes.");
+  }
+
+  await setDoc(
+    sessionRef,
+    {
+      waiterRequestedAt: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
+      updatedBy: "guest",
+    },
+    { merge: true },
+  );
+}
+
+export async function clearWaiterAlertClient(input: {
+  sessionId: string;
+}): Promise<void> {
+  const { userId, organizationId } = await getStaffContext();
+  const sessionRef = doc(
+    getFirestoreDb(),
+    firestorePaths.organizationTableSession(organizationId, input.sessionId),
+  );
+
+  await setDoc(
+    sessionRef,
+    {
+      waiterRequestedAt: null,
+      updatedAt: serverTimestamp(),
+      updatedBy: userId,
+    },
+    { merge: true },
+  );
+}
+
 export async function requestTableBillGuestClient(input: {
   organizationId: string;
   sessionId: string;

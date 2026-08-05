@@ -7,6 +7,7 @@ import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
+import { buildGuestMenuUrl } from "@/lib/tables/tables";
 import { buildInventoryCostProfiles } from "@/lib/costing/recipe-costing";
 import { formatMoney } from "@/lib/format";
 import { createMenuProduct, seedDefaultMenu, updateMenuProductImage } from "@/lib/pos/pos";
@@ -33,6 +34,7 @@ import {
   type RecipeLineInput,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
+import { useActiveMembership } from "@/providers/auth-provider";
 
 const emptyRecipeLine = (): RecipeLineInput => ({
   inventoryItemId: "",
@@ -42,10 +44,12 @@ const emptyRecipeLine = (): RecipeLineInput => ({
 });
 
 export default function PosMenuPage() {
+  const membership = useActiveMembership();
   const { products, loading, error } = useMenuProducts();
   const costMatrixSettings = useCostMatrixSettings();
   const { items: inventoryItems } = useInventoryItems();
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState<MenuCategory>("beverage");
   const [station, setStation] = useState<KitchenStation>("counter");
@@ -141,6 +145,7 @@ export default function PosMenuPage() {
     try {
       const result = await createMenuProduct({
         name: name.trim(),
+        description: description.trim() || undefined,
         price: Number(price),
         category,
         station,
@@ -168,6 +173,7 @@ export default function PosMenuPage() {
       }
 
       setName("");
+      setDescription("");
       setPrice("");
       setRecipeLines([emptyRecipeLine()]);
       setPhotoPreview(null);
@@ -193,6 +199,10 @@ export default function PosMenuPage() {
       setSeeding(false);
     }
   }
+
+  const guestMenuUrl = membership?.organizationId
+    ? buildGuestMenuUrl(membership.organizationId)
+    : null;
 
   return (
     <div className="space-y-6 pb-4">
@@ -223,6 +233,35 @@ export default function PosMenuPage() {
         </Link>
       </div>
 
+      {guestMenuUrl ? (
+        <Card title="Menú público (QR)">
+          <p className="text-sm text-[var(--ghost-text-muted)]">
+            Comparte este enlace o QR para que los clientes vean el menú por categorías, con foto,
+            descripción y precio — sin pedir desde la mesa.
+          </p>
+          <img
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(guestMenuUrl)}`}
+            alt="QR menú público"
+            className="mx-auto my-4 rounded-lg border border-[var(--ghost-border)] bg-white p-2"
+          />
+          <p className="break-all text-[10px] text-[var(--ghost-text-muted)]">{guestMenuUrl}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href={`/menu?o=${encodeURIComponent(membership!.organizationId)}`}>
+              <Button variant="secondary">Ver menú</Button>
+            </Link>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                void navigator.clipboard?.writeText(guestMenuUrl);
+              }}
+            >
+              Copiar enlace
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+
       {products.length === 0 ? (
         <Card title="Catálogo base">
           <p className="text-sm text-[var(--ghost-text-muted)]">
@@ -249,6 +288,16 @@ export default function PosMenuPage() {
                 onChange={(event) => setName(event.target.value)}
                 className="ghost-input"
                 placeholder="Latte, Croissant..."
+              />
+            </label>
+            <label className="block space-y-1">
+              <span className="text-sm font-medium">Descripción (opcional)</span>
+              <textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                className="ghost-input min-h-[72px] resize-y"
+                placeholder="Ingredientes, tamaño, notas para el cliente..."
+                rows={3}
               />
             </label>
             <label className="block space-y-1">

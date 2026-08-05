@@ -14,7 +14,7 @@ import { MobileMoreMenu } from "@/components/mobile-more-menu";
 import { useAuth } from "@/providers/auth-provider";
 import { MOBILE_PRIMARY_TABS, isNavActive } from "@/lib/navigation/app-navigation";
 
-const hiddenPrefixes = ["/login", "/register", "/onboarding", "/mesa"];
+const hiddenPrefixes = ["/login", "/register", "/onboarding", "/mesa", "/menu"];
 
 const TAB_ICONS = {
   "/dashboard": NavIconHome,
