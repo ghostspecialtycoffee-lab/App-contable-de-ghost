@@ -12,9 +12,8 @@ export function getInitialDataWorkflowActionsUrl(): string {
 }
 
 export const INITIAL_DATA_IMPORT_STEPS = [
-  "En GitHub, abre el repositorio y ve a Settings → Secrets → Actions.",
-  "Confirma que existe el secret FIREBASE_SERVICE_ACCOUNT (JSON del service account de Firebase Admin).",
-  "Ve a Actions → Import initial data → Run workflow.",
-  "Deja reset_first y bootstrap en true y ejecuta.",
-  "Recarga la app: verás facturas en Compras, insumos en Inventario y productos en Catálogo.",
+  "En GitHub, abre el repositorio y confirma FIREBASE_SERVICE_ACCOUNT en Secrets.",
+  "Cada deploy a main importa compras si la base está vacía y carga la carta Ghost (25 bebidas).",
+  "Opción rápida en Compras: botón «Cargar facturas ahora» + carta automática.",
+  "Recarga la app: Compras, Inventario, Catálogo, Costeo y Caja listos para operar.",
 ] as const;

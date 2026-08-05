@@ -5,6 +5,7 @@ import { useMemo } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { PageSection } from "@/components/page-section";
+import { DailyOperationsPanel } from "@/components/daily-operations-panel";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useSales } from "@/hooks/use-sales";
 import { formatMoney } from "@/lib/format";
@@ -42,6 +43,8 @@ export default function DashboardPage() {
     <div className="ghost-page-stack">
       <PageHeader title="Inicio" />
 
+      <DailyOperationsPanel />
+
       <PageSection title="Operación">
         <div className="ghost-action-grid">
           <Link href="/ventas" className="ghost-action-tile ghost-action-tile-primary">
@@ -60,6 +63,12 @@ export default function DashboardPage() {
             <span className="text-base font-semibold">Mesas</span>
             <span className="mt-0.5 text-sm text-[var(--ghost-text-muted)]">
               Cuentas y QR
+            </span>
+          </Link>
+          <Link href="/cash" className="ghost-action-tile">
+            <span className="text-base font-semibold">Caja</span>
+            <span className="mt-0.5 text-sm text-[var(--ghost-text-muted)]">
+              Apertura y movimientos
             </span>
           </Link>
           <Link href="/billing" className="ghost-action-tile">

@@ -7,6 +7,7 @@ import { getFirestoreDb } from "@/lib/firebase/client";
 import { createInventoryItem, createWarehouse } from "@/lib/inventory/inventory";
 import { createMenuProduct } from "@/lib/pos/pos";
 import { confirmPurchaseInvoice, createPurchaseInvoice } from "@/lib/purchases/purchases";
+import { seedCostMatrix } from "@/lib/costing/seed-cost-matrix";
 
 const TAX_MAP: Record<string, CoTaxCategory> = {
   exempt: "EXENTO",
@@ -156,6 +157,10 @@ export interface BootstrapImportResult {
   movements: number;
   menuProducts: number;
   skipped: number;
+  ghostMenuProducts: number;
+  ghostRecipesCreated: number;
+  ghostRecipesUpdated: number;
+  ghostWarnings: string[];
 }
 
 async function ensureDefaultWarehouse(input: {
@@ -322,11 +327,32 @@ export async function runBootstrapPurchaseImport(input: {
     menuProducts += 1;
   }
 
+  let ghostMenuProducts = 0;
+  let ghostRecipesCreated = 0;
+  let ghostRecipesUpdated = 0;
+  let ghostWarnings: string[] = [];
+
+  try {
+    const menuSeed = await seedCostMatrix();
+    ghostMenuProducts = menuSeed.productsCreated;
+    ghostRecipesCreated = menuSeed.recipesCreated;
+    ghostRecipesUpdated = menuSeed.recipesUpdated;
+    ghostWarnings = menuSeed.warnings;
+  } catch (cause) {
+    ghostWarnings = [
+      cause instanceof Error ? cause.message : "No se pudo cargar la carta Ghost automáticamente.",
+    ];
+  }
+
   return {
     inventoryItems: itemIdByName.size,
     invoices: imported,
     movements,
     menuProducts,
     skipped,
+    ghostMenuProducts,
+    ghostRecipesCreated,
+    ghostRecipesUpdated,
+    ghostWarnings,
   };
 }

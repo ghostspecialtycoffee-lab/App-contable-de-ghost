@@ -63,7 +63,12 @@ export function InitialDataImportPanel({
         warehouseId,
       });
       setImportResult(
-        `Listo: ${result.invoices} facturas, ${result.inventoryItems} insumos, ${result.movements} movimientos de bodega y ${result.menuProducts} productos POS.`,
+        `Listo: ${result.invoices} facturas, ${result.inventoryItems} insumos, ${result.movements} movimientos, ${result.menuProducts} productos POS` +
+          (result.ghostMenuProducts > 0 || result.ghostRecipesCreated > 0
+            ? ` y carta Ghost (${result.ghostMenuProducts} bebidas, ${result.ghostRecipesCreated} fichas).`
+            : result.ghostRecipesUpdated > 0
+              ? ` · ${result.ghostRecipesUpdated} fichas de costo actualizadas.`
+              : "."),
       );
     } catch (cause) {
       setImportError(getCallableErrorMessage(cause));

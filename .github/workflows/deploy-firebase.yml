@@ -151,3 +151,6 @@ jobs:
 
           node scripts/import-initial-purchases.mjs \
             --auto --bootstrap --confirm --skip-if-populated
+
+          node scripts/seed-ghost-menu.mjs \
+            --auto --confirm --skip-if-seeded || echo "::warning::Seed carta Ghost omitido o falló"
