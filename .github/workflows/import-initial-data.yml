@@ -1,0 +1,69 @@
+name: Import initial data
+
+on:
+  workflow_dispatch:
+    inputs:
+      organization_id:
+        description: "Organization ID (vacío = auto-detectar)"
+        required: false
+        default: ""
+      reset_first:
+        description: "Borrar data operativa antes de importar"
+        type: boolean
+        default: true
+
+concurrency:
+  group: import-initial-data
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Import purchases from manifest
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_CLOUD_PROJECT: ghost-contable
+        run: |
+          set -euo pipefail
+
+          if [ -n "${FIREBASE_SERVICE_ACCOUNT:-}" ]; then
+            CREDS="${RUNNER_TEMP}/firebase-sa.json"
+            printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$CREDS"
+            export GOOGLE_APPLICATION_CREDENTIALS="$CREDS"
+          elif [ -n "${FIREBASE_TOKEN:-}" ]; then
+            echo "::error::Configura FIREBASE_SERVICE_ACCOUNT (JSON) para import admin."
+            exit 1
+          else
+            echo "::error::Falta secret FIREBASE_SERVICE_ACCOUNT en GitHub."
+            exit 1
+          fi
+
+          CMD=(node scripts/import-initial-purchases.mjs --auto --confirm)
+          if [ "${{ inputs.reset_first }}" = "true" ]; then
+            CMD+=(--reset-first)
+          fi
+          if [ -n "${{ inputs.organization_id }}" ]; then
+            CMD+=(--org "${{ inputs.organization_id }}")
+          fi
+
+          echo "Ejecutando: ${CMD[*]}"
+          "${CMD[@]}"
