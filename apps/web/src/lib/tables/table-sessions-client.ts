@@ -100,13 +100,15 @@ export async function openTableSessionClient(input: {
   guestToken: string;
   actorUserId?: string;
 }): Promise<{ sessionId: string }> {
-  const existing = await findOpenTableSessionClient({
-    organizationId: input.organizationId,
-    tableId: input.tableId,
-  });
+  if (input.actorUserId) {
+    const existing = await findOpenTableSessionClient({
+      organizationId: input.organizationId,
+      tableId: input.tableId,
+    });
 
-  if (existing) {
-    return { sessionId: existing.sessionId };
+    if (existing) {
+      return { sessionId: existing.sessionId };
+    }
   }
 
   const db = getFirestoreDb();
@@ -132,19 +134,21 @@ export async function openTableSessionClient(input: {
     updatedBy: input.actorUserId ?? "guest",
   });
 
-  const tableRef = doc(
-    db,
-    firestorePaths.organizationDiningTable(input.organizationId, input.tableId),
-  );
-  await setDoc(
-    tableRef,
-    {
-      status: "occupied",
-      updatedAt: now,
-      updatedBy: input.actorUserId ?? "guest",
-    },
-    { merge: true },
-  );
+  if (input.actorUserId) {
+    const tableRef = doc(
+      db,
+      firestorePaths.organizationDiningTable(input.organizationId, input.tableId),
+    );
+    await setDoc(
+      tableRef,
+      {
+        status: "occupied",
+        updatedAt: now,
+        updatedBy: input.actorUserId,
+      },
+      { merge: true },
+    );
+  }
 
   return { sessionId: sessionRef.id };
 }

@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 
 import { GuestMenuCatalog } from "@/components/guest-menu-catalog";
 import { GuestTableProcessLine, type GuestTableStepId } from "@/components/guest-table-process";
@@ -25,6 +25,10 @@ import {
 } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import { Button, Card } from "@ghost/ui";
+
+function guestSessionStorageKey(organizationId: string, qrToken: string): string {
+  return `ghost-mesa-session:${organizationId}:${qrToken}`;
+}
 
 function GuestTableContent() {
   const searchParams = useSearchParams();
@@ -75,6 +79,33 @@ function GuestTableContent() {
           branchId: found.branchId,
         });
 
+        const storageKey = guestSessionStorageKey(organizationId, qrToken);
+        const storedSessionId =
+          typeof window !== "undefined" ? window.localStorage.getItem(storageKey) : null;
+
+        if (storedSessionId) {
+          const sessionRef = doc(
+            getFirestoreDb(),
+            firestorePaths.organizationTableSession(organizationId, storedSessionId),
+          );
+          const sessionSnap = await getDoc(sessionRef);
+
+          if (sessionSnap.exists()) {
+            const sessionData = sessionSnap.data();
+            if (
+              sessionData.guestToken === qrToken &&
+              (sessionData.status === "open" || sessionData.status === "requested_bill")
+            ) {
+              if (!cancelled) {
+                setSessionId(storedSessionId);
+              }
+              return;
+            }
+          }
+
+          window.localStorage.removeItem(storageKey);
+        }
+
         const opened = await openTableSession({
           organizationId,
           branchId: found.branchId,
@@ -85,6 +116,7 @@ function GuestTableContent() {
         });
 
         if (!cancelled) {
+          window.localStorage.setItem(storageKey, opened.sessionId);
           setSessionId(opened.sessionId);
         }
       } catch (cause) {
