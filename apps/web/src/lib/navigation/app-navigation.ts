@@ -23,7 +23,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/pos/tables", label: "Mesas", description: "Cuenta y QR" },
       { href: "/kds", label: "Comandas", description: "Barra y cocina" },
       { href: "/billing", label: "Registros", description: "Comprobantes de venta" },
-      { href: "/reports", label: "Informes", description: "Ventas, compras y caja" },
+      { href: "/reports", label: "Informes", description: "Ventas, compras, gastos y caja" },
     ],
   },
   {

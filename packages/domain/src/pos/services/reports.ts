@@ -129,7 +129,7 @@ export function buildSalesReport(sales: SaleForReport[]): SalesReport {
   };
 }
 
-export function getReportPeriod(preset: "today" | "week" | "month"): SalesReportPeriod {
+export function getReportPeriod(preset: "today" | "week" | "month" | "year"): SalesReportPeriod {
   const now = new Date();
 
   if (preset === "today") {
@@ -147,6 +147,15 @@ export function getReportPeriod(preset: "today" | "week" | "month"): SalesReport
       from,
       to: endOfDay(now),
       label: "Últimos 7 días",
+    };
+  }
+
+  if (preset === "year") {
+    const from = startOfDay(new Date(now.getFullYear(), 0, 1));
+    return {
+      from,
+      to: endOfDay(now),
+      label: `Este año (${now.getFullYear()})`,
     };
   }
 

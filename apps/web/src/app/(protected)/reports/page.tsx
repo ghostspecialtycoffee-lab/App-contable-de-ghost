@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { useCashMovements } from "@/hooks/use-cash-movements";
+import { useFixedExpenses } from "@/hooks/use-fixed-expenses";
 import { useInventoryMovements } from "@/hooks/use-inventory-movements";
 import { usePurchaseInvoices } from "@/hooks/use-purchase-invoices";
 import { useSales } from "@/hooks/use-sales";
@@ -19,18 +20,22 @@ import {
   buildInventoryAdjustmentsReport,
   buildPurchasesReport,
   buildSalesReport,
+  buildYearExpensesReport,
   filterByTimestampRange,
   filterPurchasesByPeriod,
   filterSalesByPeriod,
+  FIXED_EXPENSE_CATEGORIES,
+  FIXED_EXPENSE_CATEGORY_LABELS,
   getReportPeriod,
 } from "@ghost/domain";
 import { Card } from "@ghost/ui";
 
-type ReportPreset = "today" | "week" | "month";
+type ReportPreset = "today" | "week" | "month" | "year";
 
 export default function ReportsPage() {
   const { sales, loading: salesLoading, error: salesError } = useSales();
   const { invoices, loading: purchasesLoading, error: purchasesError } = usePurchaseInvoices();
+  const { expenses, loading: expensesLoading } = useFixedExpenses();
   const { movements: cashMovements, loading: cashLoading } = useCashMovements();
   const { movements: inventoryMovements, loading: inventoryLoading } = useInventoryMovements();
   const [preset, setPreset] = useState<ReportPreset>("today");
@@ -86,6 +91,25 @@ export default function ReportsPage() {
     });
   }, [sales, invoices, cashMovements, inventoryMovements, period]);
 
+  const yearExpenses = useMemo(() => {
+    return buildYearExpensesReport({
+      purchases: invoices.map((invoice) => ({
+        invoiceDate: invoice.invoiceDate,
+        status: invoice.status,
+        supplierName: invoice.supplierName,
+        subtotal: invoice.subtotal,
+        taxAmount: invoice.taxAmount,
+        total: invoice.total,
+      })),
+      fixedExpenses: expenses,
+      cashMovements: cashMovements.map((movement) => ({
+        type: movement.type,
+        amount: movement.amount,
+        occurredAt: movement.occurredAt,
+      })),
+    });
+  }, [invoices, expenses, cashMovements]);
+
   const recentSales = useMemo(() => {
     return filterSalesByPeriod(
       sales.map((sale) => ({
@@ -124,18 +148,18 @@ export default function ReportsPage() {
     [cashMovements, period],
   );
 
-  const loading = salesLoading || purchasesLoading || cashLoading || inventoryLoading;
+  const loading = salesLoading || purchasesLoading || cashLoading || inventoryLoading || expensesLoading;
   const error = salesError || purchasesError;
 
   return (
     <div className="ghost-page-stack pb-4">
       <PageHeader
         title="Informes"
-        description="Ventas, compras, caja, ajustes de bodega e historial del periodo."
+        description="Ventas, compras, gastos del año, caja y bodega."
       />
 
       <div className="flex flex-wrap gap-2">
-        {(["today", "week", "month"] as const).map((item) => (
+        {(["today", "week", "month", "year"] as const).map((item) => (
           <button
             key={item}
             type="button"
@@ -158,6 +182,64 @@ export default function ReportsPage() {
         <p className="text-sm text-[var(--ghost-danger)]">{error}</p>
       ) : (
         <>
+          <Card title={`Gastos del año — ${yearExpenses.year}`}>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard
+                label="Total gastos"
+                value={formatMoney(yearExpenses.totalExpenses)}
+                hint={yearExpenses.periodLabel}
+              />
+              <StatCard
+                label="Compras"
+                value={formatMoney(yearExpenses.purchasesTotal)}
+                hint={`${yearExpenses.purchaseCount} facturas`}
+              />
+              <StatCard
+                label="Gastos fijos"
+                value={formatMoney(yearExpenses.fixedExpensesTotal)}
+                hint={`${yearExpenses.fixedExpenseCount} activos · ${yearExpenses.monthsElapsed} meses`}
+              />
+              <StatCard
+                label="Salidas de caja"
+                value={formatMoney(yearExpenses.cashOutflowsTotal)}
+                hint={`${yearExpenses.cashMovementCount} movimientos`}
+              />
+            </div>
+
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <div>
+                <p className="mb-2 text-xs uppercase text-[var(--ghost-text-muted)]">
+                  Gastos fijos por categoría (acumulado)
+                </p>
+                {yearExpenses.fixedExpenseCount === 0 ? (
+                  <EmptyHint href="/expenses" label="Sin gastos fijos registrados" />
+                ) : (
+                  <ul className="space-y-2 text-sm">
+                    {FIXED_EXPENSE_CATEGORIES.filter(
+                      (category) => yearExpenses.fixedByCategory[category] > 0,
+                    ).map((category) => (
+                      <li key={category} className="flex justify-between gap-3">
+                        <span>{FIXED_EXPENSE_CATEGORY_LABELS[category]}</span>
+                        <span className="font-medium">
+                          {formatMoney(yearExpenses.fixedByCategory[category])}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="text-sm text-[var(--ghost-text-muted)]">
+                <p>
+                  El total incluye compras confirmadas, gastos fijos prorrateados por mes y salidas
+                  de caja del año en curso.
+                </p>
+                <Link href="/expenses" className="mt-2 inline-block underline">
+                  Administrar gastos fijos
+                </Link>
+              </div>
+            </div>
+          </Card>
+
           <section className="ghost-stat-grid sm:grid-cols-2 xl:grid-cols-4">
             <StatCard label="Ventas" value={formatMoney(summary.sales.totalSales)} hint={`${summary.sales.invoiceCount} comprobantes`} />
             <StatCard label="Compras" value={formatMoney(summary.purchases.totalPurchases)} hint={`${summary.purchases.invoiceCount} facturas`} />
