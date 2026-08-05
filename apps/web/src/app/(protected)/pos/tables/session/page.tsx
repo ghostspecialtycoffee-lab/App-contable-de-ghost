@@ -23,6 +23,7 @@ import {
 } from "@ghost/domain";
 import {
   addTableSessionLines,
+  cancelTableSession,
   checkoutTableSession,
   openTableSession,
   sendTableSessionToKitchen,
@@ -174,6 +175,33 @@ function TableSessionContent() {
       });
       setSuccess(`Cuenta cobrada · ${result.saleNumber} · ${formatMoney(result.total)}`);
       router.push(`/pos/tables?paid=${encodeURIComponent(result.saleNumber)}`);
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function handleCancelSession() {
+    if (!session) {
+      return;
+    }
+
+    const hasItems = activeLines.length > 0;
+    const message = hasItems
+      ? "¿Cerrar la cuenta sin cobrar? La mesa quedará libre y el detalle se guarda en historial."
+      : "¿Cerrar la cuenta vacía? La mesa quedará libre.";
+
+    if (!window.confirm(message)) {
+      return;
+    }
+
+    setWorking(true);
+    setSubmitError(null);
+
+    try {
+      await cancelTableSession({ sessionId: session.id });
+      router.push("/pos/tables");
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -364,6 +392,18 @@ function TableSessionContent() {
               <Button fullWidth disabled={working || activeLines.length === 0} onClick={handleCheckout}>
                 Cobrar cuenta
               </Button>
+
+              <Button
+                fullWidth
+                variant="secondary"
+                disabled={working}
+                onClick={handleCancelSession}
+              >
+                Cerrar mesa
+              </Button>
+              <p className="text-xs text-[var(--ghost-text-muted)]">
+                Libera la mesa sin venta. La cuenta queda en historial.
+              </p>
 
               {submitError ? (
                 <p className="text-sm text-[var(--ghost-danger)]">{submitError}</p>

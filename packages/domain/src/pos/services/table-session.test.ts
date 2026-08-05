@@ -3,12 +3,20 @@ import { describe, expect, it } from "vitest";
 import { calculateSaleTotals } from "./sale.js";
 import {
   buildTableSessionLine,
+  isTableSessionActive,
   pendingSessionLines,
   sessionLinesToSaleInputs,
   sessionSubtotal,
 } from "./table-session.js";
 
 describe("table session helpers", () => {
+  it("identifica sesiones activas", () => {
+    expect(isTableSessionActive("open")).toBe(true);
+    expect(isTableSessionActive("requested_bill")).toBe(true);
+    expect(isTableSessionActive("closed")).toBe(false);
+    expect(isTableSessionActive("cancelled")).toBe(false);
+  });
+
   it("calcula subtotal de líneas activas", () => {
     const lines = [
       buildTableSessionLine(

@@ -399,6 +399,56 @@ export async function checkoutTableSessionClient(input: {
   };
 }
 
+export async function cancelTableSessionClient(input: {
+  sessionId: string;
+  reason?: string;
+}): Promise<void> {
+  const { userId, organizationId } = await getStaffContext();
+  const db = getFirestoreDb();
+  const sessionRef = doc(
+    db,
+    firestorePaths.organizationTableSession(organizationId, input.sessionId),
+  );
+  const sessionSnap = await getDoc(sessionRef);
+
+  if (!sessionSnap.exists()) {
+    throw new Error("Sesión no encontrada.");
+  }
+
+  const session = sessionSnap.data();
+  if (session.status !== "open" && session.status !== "requested_bill") {
+    throw new Error("Esta cuenta ya está cerrada.");
+  }
+
+  const closedAt = new Date().toISOString();
+  const now = serverTimestamp();
+  const lines = (session.lines ?? []) as Array<{ status: string }>;
+  const updatedLines = lines.map((line) =>
+    line.status !== "cancelled" ? { ...line, status: "cancelled" } : line,
+  );
+
+  await runTransaction(db, async (transaction) => {
+    transaction.update(sessionRef, {
+      status: "cancelled",
+      closedAt,
+      cancelReason: input.reason?.trim() ?? "",
+      lines: updatedLines,
+      updatedAt: now,
+      updatedBy: userId,
+    });
+
+    transaction.set(
+      doc(db, firestorePaths.organizationDiningTable(organizationId, session.tableId as string)),
+      {
+        status: "available",
+        updatedAt: now,
+        updatedBy: userId,
+      },
+      { merge: true },
+    );
+  });
+}
+
 export async function requestTableBillGuestClient(input: {
   organizationId: string;
   sessionId: string;

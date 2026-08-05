@@ -1,5 +1,6 @@
 import {
   addTableSessionLinesClient,
+  cancelTableSessionClient,
   checkoutTableSessionClient,
   findOpenTableSessionClient,
   openTableSessionClient,
@@ -24,6 +25,10 @@ export async function sendTableSessionToKitchen(
 
 export async function checkoutTableSession(input: Parameters<typeof checkoutTableSessionClient>[0]) {
   return checkoutTableSessionClient(input);
+}
+
+export async function cancelTableSession(input: Parameters<typeof cancelTableSessionClient>[0]) {
+  return cancelTableSessionClient(input);
 }
 
 export async function requestTableBill(input: Parameters<typeof requestTableBillClient>[0]) {

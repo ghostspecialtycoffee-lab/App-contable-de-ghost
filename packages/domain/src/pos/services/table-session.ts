@@ -1,6 +1,14 @@
 import type { CoTaxCategory } from "../../fiscal/colombia-tax.js";
 import type { CreateSaleLineInput } from "../sale.js";
-import type { TableSessionLine, TableSessionLineInput } from "../table-session.js";
+import type {
+  TableSessionLine,
+  TableSessionLineInput,
+  TableSessionStatus,
+} from "../table-session.js";
+
+export function isTableSessionActive(status: TableSessionStatus): boolean {
+  return status === "open" || status === "requested_bill";
+}
 
 export function buildTableSessionLine(
   input: TableSessionLineInput,
