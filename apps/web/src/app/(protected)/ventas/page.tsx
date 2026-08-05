@@ -97,6 +97,9 @@ export default function VentasPage() {
       </PageSection>
 
       <div className="ghost-secondary-actions">
+        <Link href="/pos/menu#nuevo-producto">
+          <Button variant="secondary">Crear producto</Button>
+        </Link>
         <Link href="/kds">
           <Button variant="secondary">Comandas</Button>
         </Link>

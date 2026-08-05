@@ -223,6 +223,13 @@ function TableSessionContent() {
           Mesa {table.number}
           {table.label ? ` · ${table.label}` : ""}
         </h1>
+        <div className="mt-2">
+          <Link href="/pos/menu#nuevo-producto">
+            <Button size="sm" variant="secondary">
+              Crear producto
+            </Button>
+          </Link>
+        </div>
         {session ? (
           <p className="mt-1 text-sm text-[var(--ghost-brand-500)]">
             {TABLE_SESSION_STATUS_LABELS[session.status]}

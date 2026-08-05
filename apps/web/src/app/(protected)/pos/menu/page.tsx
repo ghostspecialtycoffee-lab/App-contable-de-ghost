@@ -238,6 +238,7 @@ export default function PosMenuPage() {
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+        <div id="nuevo-producto" className="scroll-mt-24">
         <Card title="Agregar ítem con receta">
           <form className="space-y-3" onSubmit={handleSubmit}>
             <label className="block space-y-1">
@@ -430,6 +431,7 @@ export default function PosMenuPage() {
             </Button>
           </form>
         </Card>
+        </div>
 
         <Card title="Catálogo">
           {loading ? (

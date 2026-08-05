@@ -143,7 +143,14 @@ export default function PosPage() {
           <p className="text-sm text-[var(--ghost-text-muted)]">Mostrador</p>
           <h1 className="text-2xl font-semibold">Mostrador</h1>
         </div>
-        <SalesAccessButtons compact />
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/pos/menu#nuevo-producto">
+            <Button size="sm" variant="secondary">
+              Crear producto
+            </Button>
+          </Link>
+          <SalesAccessButtons compact />
+        </div>
       </div>
 
       {loading ? (
@@ -155,14 +162,15 @@ export default function PosPage() {
           <p className="text-sm text-[var(--ghost-text-muted)]">
             Agrega ítems al catálogo antes de registrar operaciones en mostrador.
           </p>
-          <Link href="/pos/menu" className="mt-4 inline-block">
-            <Button>Ir al catálogo</Button>
+          <Link href="/pos/menu#nuevo-producto" className="mt-4 inline-block">
+            <Button>Crear producto</Button>
           </Link>
         </Card>
       ) : (
         <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
           <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setCategory("all")}
@@ -190,6 +198,12 @@ export default function PosPage() {
                   {MENU_CATEGORY_LABELS[item]}
                 </button>
               ))}
+              </div>
+              <Link href="/pos/menu#nuevo-producto">
+                <Button size="sm" variant="secondary">
+                  Crear producto
+                </Button>
+              </Link>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
