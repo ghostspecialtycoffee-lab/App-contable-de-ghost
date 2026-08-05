@@ -8,6 +8,7 @@ import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useTableSessions } from "@/hooks/use-table-sessions";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { buildTableQrUrl, createDiningTable } from "@/lib/tables/tables";
+import { cancelTableSession } from "@/lib/tables/table-sessions";
 import { TableServiceProcessLine } from "@/components/table-service-process";
 import { SalesAccessButtons } from "@/components/sales-access-buttons";
 import {
@@ -15,6 +16,7 @@ import {
   DINING_TABLE_STATUS_LABELS,
   TABLE_SESSION_STATUS_LABELS,
 } from "@ghost/domain";
+import { formatDateTime } from "@/lib/format";
 import { Button, Card } from "@ghost/ui";
 
 function PosTablesContent() {
@@ -23,10 +25,12 @@ function PosTablesContent() {
   const paidSaleNumber = searchParams.get("paid");
   const { tables, loading, error } = useDiningTables();
   const { sessions } = useTableSessions({ openOnly: true });
+  const { sessions: allSessions } = useTableSessions();
   const [tableNumber, setTableNumber] = useState("");
   const [tableLabel, setTableLabel] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
 
   const sessionByTableId = useMemo(() => {
     const map = new Map<string, (typeof sessions)[number]>();
@@ -35,6 +39,36 @@ function PosTablesContent() {
     }
     return map;
   }, [sessions]);
+
+  const recentHistory = useMemo(() => {
+    return allSessions
+      .filter((session) => session.status === "closed" || session.status === "cancelled")
+      .sort(
+        (left, right) =>
+          new Date(right.closedAt ?? right.openedAt).getTime() -
+          new Date(left.closedAt ?? left.openedAt).getTime(),
+      )
+      .slice(0, 8);
+  }, [allSessions]);
+
+  async function handleCloseSession(sessionId: string) {
+    const message =
+      "¿Cerrar la cuenta y liberar la mesa? Queda registrada en historial sin generar venta.";
+    if (!window.confirm(message)) {
+      return;
+    }
+
+    setClosingSessionId(sessionId);
+    setSubmitError(null);
+
+    try {
+      await cancelTableSession({ sessionId });
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setClosingSessionId(null);
+    }
+  }
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -176,6 +210,17 @@ function PosTablesContent() {
                         {session ? "Ver cuenta" : "Abrir cuenta"}
                       </Button>
                     </Link>
+                    {session ? (
+                      <Button
+                        fullWidth
+                        variant="secondary"
+                        className="mt-2"
+                        disabled={closingSessionId === session.id}
+                        onClick={() => handleCloseSession(session.id)}
+                      >
+                        {closingSessionId === session.id ? "Cerrando..." : "Cerrar mesa"}
+                      </Button>
+                    ) : null}
                   </div>
                 );
               })}
@@ -183,6 +228,33 @@ function PosTablesContent() {
           )}
         </Card>
       </div>
+
+      {recentHistory.length > 0 ? (
+        <Card title="Historial reciente">
+          <ul className="divide-y divide-[var(--ghost-border)] text-sm">
+            {recentHistory.map((session) => (
+              <li key={session.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <div>
+                  <p className="font-medium">
+                    Mesa {session.tableNumber}
+                    {session.tableLabel ? ` · ${session.tableLabel}` : ""}
+                  </p>
+                  <p className="text-[var(--ghost-text-muted)]">
+                    {TABLE_SESSION_STATUS_LABELS[session.status]}
+                    {" · "}
+                    {formatDateTime(session.closedAt ?? session.openedAt)}
+                  </p>
+                </div>
+                {session.saleId ? (
+                  <Link href="/billing" className="text-xs underline">
+                    Ver venta
+                  </Link>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
     </div>
   );
 }

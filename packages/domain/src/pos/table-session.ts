@@ -58,6 +58,7 @@ export interface TableSession {
   saleId?: EntityId;
   openedAt: ISODateString;
   closedAt?: ISODateString;
+  cancelReason?: string;
 }
 
 export interface TableSessionLineInput {

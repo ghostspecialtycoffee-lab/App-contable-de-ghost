@@ -60,6 +60,7 @@ export function useTableSessions(options?: { openOnly?: boolean }) {
                 saleId: data.saleId,
                 openedAt: data.openedAt ?? parseFirestoreDate(data.createdAt),
                 closedAt: data.closedAt,
+                cancelReason: data.cancelReason ?? "",
               } satisfies TableSession;
             })
             .sort((left, right) => left.tableNumber - right.tableNumber),
@@ -120,6 +121,7 @@ export function useTableSession(sessionId: string | null) {
           saleId: data.saleId,
           openedAt: data.openedAt ?? "",
           closedAt: data.closedAt,
+          cancelReason: data.cancelReason ?? "",
         });
         setLoading(false);
         setError(null);
