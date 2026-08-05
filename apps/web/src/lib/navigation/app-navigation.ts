@@ -1,0 +1,77 @@
+export interface NavItem {
+  href: string;
+  label: string;
+  description?: string;
+}
+
+export interface NavSection {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
+
+/** Navegación agrupada: operación diaria arriba, contabilidad abajo. */
+export const NAV_SECTIONS: NavSection[] = [
+  {
+    id: "operacion",
+    label: "Operación",
+    items: [
+      { href: "/dashboard", label: "Inicio", description: "Resumen del día" },
+      { href: "/guia", label: "Cómo funciona", description: "Lógica operativa" },
+      { href: "/ventas", label: "Ventas", description: "Cobros y accesos" },
+      { href: "/pos", label: "Mostrador", description: "Venta directa" },
+      { href: "/pos/tables", label: "Mesas", description: "Cuenta y QR" },
+      { href: "/kds", label: "Comandas", description: "Barra y cocina" },
+      { href: "/billing", label: "Registros", description: "Comprobantes" },
+    ],
+  },
+  {
+    id: "contabilidad",
+    label: "Contabilidad",
+    items: [
+      { href: "/purchases", label: "Compras", description: "Facturas proveedor" },
+      { href: "/inventory", label: "Inventario", description: "Bodega e insumos" },
+      { href: "/costing", label: "Costeo", description: "Recetas y márgenes" },
+      { href: "/expenses", label: "Gastos fijos", description: "Arriendo, nómina…" },
+    ],
+  },
+  {
+    id: "config",
+    label: "Ajustes",
+    items: [
+      { href: "/pos/menu", label: "Catálogo", description: "Productos del menú" },
+      { href: "/brand", label: "Identidad", description: "Logo y marca" },
+      { href: "/settings/fiscal", label: "Facturación", description: "Datos fiscales" },
+      { href: "/settings/costing", label: "Matriz costos", description: "Metas food cost" },
+    ],
+  },
+];
+
+export const MOBILE_PRIMARY_TABS = [
+  { href: "/dashboard", label: "Inicio", match: ["/dashboard"] },
+  {
+    href: "/ventas",
+    label: "Ventas",
+    match: ["/ventas", "/pos", "/billing", "/kds"],
+  },
+  { href: "/pos/tables", label: "Mesas", match: ["/pos/tables", "/mesa"] },
+] as const;
+
+export function isNavActive(pathname: string, href: string, extraMatches: string[] = []): boolean {
+  if (pathname === href || pathname.startsWith(`${href}/`)) {
+    return true;
+  }
+
+  return extraMatches.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+export function findActiveSection(pathname: string): string | null {
+  for (const section of NAV_SECTIONS) {
+    if (section.items.some((item) => isNavActive(pathname, item.href))) {
+      return section.id;
+    }
+  }
+  return null;
+}

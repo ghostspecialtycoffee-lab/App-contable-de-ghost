@@ -143,7 +143,7 @@ export default function PosPage() {
           <p className="text-sm text-[var(--ghost-text-muted)]">Mostrador</p>
           <h1 className="text-2xl font-semibold">Mostrador</h1>
         </div>
-        <SalesAccessButtons compact title="Ventas" />
+        <SalesAccessButtons compact />
       </div>
 
       {loading ? (

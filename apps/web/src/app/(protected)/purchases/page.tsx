@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 
+import { OperationalHint } from "@/components/operational-model-panel";
+import { PageHeader } from "@/components/page-header";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { usePurchaseInvoices } from "@/hooks/use-purchase-invoices";
 import { useWarehouses } from "@/hooks/use-warehouses";
@@ -314,20 +316,15 @@ export default function PurchasesPage() {
   }
 
   return (
-    <div className="space-y-6 pb-4">
-      <div>
-        <p className="text-sm text-[var(--ghost-text-muted)]">
-          <Link href="/inventory" className="underline">
-            Inventario
-          </Link>
-        </p>
-        <h1 className="text-2xl font-semibold">Compras</h1>
-        <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-          Registra todas tus facturas (históricas y nuevas). Se ordenan por fecha. Solo las de{" "}
-          <strong>hoy en adelante</strong> ({formatDate(operationalToday)}) entran a bodega al
-          confirmar; las anteriores quedan como archivo sin mover inventario.
-        </p>
-      </div>
+    <div className="ghost-page-stack pb-4">
+      <PageHeader
+        title="Compras"
+        description={`Facturas de proveedor. Desde ${formatDate(operationalToday)} mueven bodega al confirmar.`}
+        backHref="/inventory"
+        backLabel="Inventario"
+      />
+
+      <OperationalHint context="purchases" />
 
       <Card title="Regla de bodega">
         <p className="text-sm text-[var(--ghost-text-muted)]">

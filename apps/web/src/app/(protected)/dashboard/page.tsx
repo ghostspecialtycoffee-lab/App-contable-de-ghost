@@ -3,25 +3,19 @@
 import Link from "next/link";
 import { useMemo } from "react";
 
-import { BrandLogo } from "@/components/brand-logo";
-import { SalesAccessButtons } from "@/components/sales-access-buttons";
-import { useBrandAssets } from "@/hooks/use-brand-assets";
+import { DocumentTypesPanel } from "@/components/document-types-panel";
+import { PageHeader } from "@/components/page-header";
+import { PageSection } from "@/components/page-section";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useSales } from "@/hooks/use-sales";
 import { formatMoney } from "@/lib/format";
-import { useAuth, useActiveMembership } from "@/providers/auth-provider";
 import {
-  BRAND_ASSET_TYPE_LABELS,
   buildSalesReport,
   filterSalesByPeriod,
   getReportPeriod,
 } from "@ghost/domain";
-import { Button, Card } from "@ghost/ui";
 
 export default function DashboardPage() {
-  const { organization } = useAuth();
-  const membership = useActiveMembership();
-  const { assets, primaryLogo, loading: brandLoading } = useBrandAssets();
   const { products, loading: productsLoading } = useMenuProducts();
   const { sales, loading: salesLoading } = useSales();
 
@@ -45,175 +39,117 @@ export default function DashboardPage() {
     return buildSalesReport(todaySales);
   }, [sales, todayPeriod.from, todayPeriod.to]);
 
-  const previewAssets = assets.slice(0, 4);
-
   return (
-    <div className="space-y-6 pb-4">
-      <SalesAccessButtons title="Acceso rápido — ventas" />
+    <div className="ghost-page-stack">
+      <PageHeader
+        title="Inicio"
+        description="Accesos rápidos y resumen del día."
+        action={
+          <Link href="/guia" className="ghost-pill-link">
+            Guía
+          </Link>
+        }
+      />
 
-      <section className="overflow-hidden rounded-2xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)]">
-        <div className="grid gap-0 lg:grid-cols-[220px_1fr]">
-          <div className="flex flex-col items-center justify-center border-b border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] p-8 lg:border-b-0 lg:border-r">
-            <BrandLogo
-              asset={primaryLogo}
-              organizationName={organization?.name}
-              size="xl"
-            />
-            <p className="mt-4 text-center text-sm font-medium">
-              {organization?.name ?? "Organización"}
-            </p>
-            <p className="mt-1 text-center text-xs text-[var(--ghost-text-muted)]">
-              {membership?.roles.join(", ") ?? "—"}
-            </p>
-            <Link href="/brand" className="mt-4">
-              <Button size="sm" variant="secondary">
-                Gestionar identidad
-              </Button>
-            </Link>
-          </div>
-
-          <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-4">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--ghost-text-muted)]">
-                Registros hoy
-              </p>
-              <p className="mt-2 text-2xl font-semibold">
-                {salesLoading ? "—" : formatMoney(todayReport.totalSales)}
-              </p>
-              <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
-                {todayReport.invoiceCount} comprobante(s)
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--ghost-text-muted)]">
-                Mesas hoy
-              </p>
-              <p className="mt-2 text-2xl font-semibold">
-                {salesLoading ? "—" : formatMoney(todayReport.tableSalesTotal)}
-              </p>
-              <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
-                {todayReport.tableSalesCount} comprobante(s) de mesa
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--ghost-text-muted)]">
-                Promedio
-              </p>
-              <p className="mt-2 text-2xl font-semibold">
-                {salesLoading ? "—" : formatMoney(todayReport.averageTicket)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--ghost-text-muted)]">
-                Catálogo
-              </p>
-              <p className="mt-2 text-2xl font-semibold">
-                {productsLoading ? "—" : products.length}
-              </p>
-              <Link href="/pos/menu" className="mt-1 inline-block text-xs underline">
-                Administrar
-              </Link>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--ghost-text-muted)]">
-                Archivos visuales
-              </p>
-              <p className="mt-2 text-2xl font-semibold">
-                {brandLoading ? "—" : assets.length}
-              </p>
-              <Link href="/brand" className="mt-1 inline-block text-xs underline">
-                Ver biblioteca
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <Card title="Identidad visual">
-        {brandLoading ? (
-          <p className="text-sm text-[var(--ghost-text-muted)]">Cargando...</p>
-        ) : previewAssets.length === 0 ? (
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-[var(--ghost-text-muted)]">
-              Aún no hay logos ni piezas gráficas cargadas.
-            </p>
-            <Link href="/brand">
-              <Button>Subir logo</Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {previewAssets.map((asset) => (
-              <Link
-                key={asset.id}
-                href="/brand"
-                className="group overflow-hidden rounded-xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] transition hover:border-[var(--ghost-text-muted)]"
-              >
-                <div className="flex aspect-square items-center justify-center p-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={asset.dataUrl}
-                    alt={asset.name}
-                    className="max-h-full max-w-full object-contain"
-                  />
-                </div>
-                <div className="border-t border-[var(--ghost-border)] px-3 py-2">
-                  <p className="truncate text-sm font-medium">{asset.name}</p>
-                  <p className="text-xs text-[var(--ghost-text-muted)]">
-                    {BRAND_ASSET_TYPE_LABELS[asset.type]}
-                    {asset.isPrimary ? " · Principal" : ""}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <Card title="Administración">
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          <Link href="/pos/menu">
-            <Button fullWidth variant="secondary">
-              Catálogo
-            </Button>
+      <PageSection title="Operación" description="Lo que usas cada día">
+        <div className="ghost-action-grid">
+          <Link href="/ventas" className="ghost-action-tile ghost-action-tile-primary">
+            <span className="text-base font-semibold">Centro de ventas</span>
+            <span className="mt-0.5 text-sm text-[var(--ghost-text-muted)]">
+              Cobrar, mesas y comprobantes
+            </span>
           </Link>
-          <Link href="/brand">
-            <Button fullWidth variant="secondary">
-              Identidad
-            </Button>
+          <Link href="/pos" className="ghost-action-tile">
+            <span className="text-base font-semibold">Mostrador</span>
+            <span className="mt-0.5 text-sm text-[var(--ghost-text-muted)]">
+              Venta rápida
+            </span>
           </Link>
-          <Link href="/expenses">
-            <Button fullWidth variant="secondary">
-              Gastos fijos
-            </Button>
+          <Link href="/pos/tables" className="ghost-action-tile">
+            <span className="text-base font-semibold">Mesas</span>
+            <span className="mt-0.5 text-sm text-[var(--ghost-text-muted)]">
+              Abrir cuenta o QR
+            </span>
           </Link>
-          <Link href="/inventory">
-            <Button fullWidth variant="secondary">
-              Inventario
-            </Button>
-          </Link>
-          <Link href="/purchases">
-            <Button fullWidth variant="secondary">
-              Compras
-            </Button>
-          </Link>
-          <Link href="/costing">
-            <Button fullWidth variant="secondary">
-              Costeo
-            </Button>
-          </Link>
-          <Link href="/settings/costing">
-            <Button fullWidth variant="secondary">
-              Matriz costos
-            </Button>
-          </Link>
-          <Link href="/settings/fiscal">
-            <Button fullWidth variant="secondary">
-              Facturación
-            </Button>
+          <Link href="/billing" className="ghost-action-tile">
+            <span className="text-base font-semibold">Registros</span>
+            <span className="mt-0.5 text-sm text-[var(--ghost-text-muted)]">
+              Informes y comprobantes
+            </span>
           </Link>
         </div>
-      </Card>
+      </PageSection>
+
+      <PageSection title="Hoy" description="Ventas del día">
+        <section className="ghost-stat-grid" aria-label="Resumen de hoy">
+          <div className="ghost-stat">
+            <p className="ghost-stat-label">Ventas</p>
+            <p className="ghost-stat-value">
+              {salesLoading ? "—" : formatMoney(todayReport.totalSales)}
+            </p>
+            <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
+              {todayReport.invoiceCount} comprobante(s)
+            </p>
+          </div>
+          <div className="ghost-stat">
+            <p className="ghost-stat-label">Mesas</p>
+            <p className="ghost-stat-value">
+              {salesLoading ? "—" : formatMoney(todayReport.tableSalesTotal)}
+            </p>
+            <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
+              {todayReport.tableSalesCount} cuenta(s)
+            </p>
+          </div>
+          <div className="ghost-stat col-span-2 sm:col-span-1">
+            <p className="ghost-stat-label">Ticket</p>
+            <p className="ghost-stat-value">
+              {salesLoading ? "—" : formatMoney(todayReport.averageTicket)}
+            </p>
+            <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
+              {productsLoading ? "—" : `${products.length} productos`}
+            </p>
+          </div>
+        </section>
+      </PageSection>
+
+      <details className="ghost-hint">
+        <summary className="ghost-hint-summary">
+          <span>Compra vs venta</span>
+          <span className="text-xs text-[var(--ghost-text-muted)]">Ver</span>
+        </summary>
+        <div className="ghost-hint-body">
+          <DocumentTypesPanel />
+        </div>
+      </details>
+
+      <PageSection title="Contabilidad">
+        <div className="ghost-link-grid">
+          <Link href="/purchases" className="ghost-link-row">
+            <span>Compras</span>
+            <span className="text-[var(--ghost-text-muted)]">→</span>
+          </Link>
+          <Link href="/inventory" className="ghost-link-row">
+            <span>Inventario</span>
+            <span className="text-[var(--ghost-text-muted)]">→</span>
+          </Link>
+          <Link href="/costing" className="ghost-link-row">
+            <span>Costeo</span>
+            <span className="text-[var(--ghost-text-muted)]">→</span>
+          </Link>
+          <Link href="/expenses" className="ghost-link-row">
+            <span>Gastos fijos</span>
+            <span className="text-[var(--ghost-text-muted)]">→</span>
+          </Link>
+          <Link href="/pos/menu" className="ghost-link-row">
+            <span>Catálogo</span>
+            <span className="text-[var(--ghost-text-muted)]">→</span>
+          </Link>
+          <Link href="/settings/fiscal" className="ghost-link-row">
+            <span>Facturación</span>
+            <span className="text-[var(--ghost-text-muted)]">→</span>
+          </Link>
+        </div>
+      </PageSection>
     </div>
   );
 }

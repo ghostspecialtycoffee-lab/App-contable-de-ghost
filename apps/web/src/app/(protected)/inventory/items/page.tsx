@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { OperationalHint } from "@/components/operational-model-panel";
+import { PageHeader } from "@/components/page-header";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
@@ -12,9 +14,12 @@ import {
   BASE_UNIT_LABELS,
   INVENTORY_ITEM_TYPES,
   INVENTORY_ITEM_TYPE_LABELS,
+  PRODUCT_CATEGORIES,
+  PRODUCT_CATEGORY_LABELS,
   formatPresentationLabel,
   type BaseUnit,
   type InventoryItemType,
+  type ProductCategory,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
@@ -36,6 +41,7 @@ export default function InventoryItemsPage() {
   const [sku, setSku] = useState("");
   const [name, setName] = useState("");
   const [type, setType] = useState<InventoryItemType>("raw_material");
+  const [category, setCategory] = useState<ProductCategory>("alimenticio");
   const [baseUnit, setBaseUnit] = useState<BaseUnit>("g");
   const [purchaseUnit, setPurchaseUnit] = useState<BaseUnit>("kg");
   const [presentationQuantity, setPresentationQuantity] = useState("1000");
@@ -60,6 +66,7 @@ export default function InventoryItemsPage() {
         sku,
         name,
         type,
+        category,
         baseUnit,
         purchaseUnit,
         presentationQuantity: Number(presentationQuantity) || 1,
@@ -85,24 +92,23 @@ export default function InventoryItemsPage() {
   });
 
   return (
-    <div className="space-y-6 pb-4">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-sm text-[var(--ghost-text-muted)]">
-            <Link href="/inventory" className="underline">
-              Inventario
-            </Link>{" "}
-            ·{" "}
-            <Link href="/purchases" className="underline">
-              Compras
-            </Link>
-          </p>
-          <h1 className="text-2xl font-bold">Materias primas e insumos</h1>
-          <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            Define unidad de costeo y presentación de compra. El costo promedio se guarda por
-            unidad base (g, ml, unidad).
-          </p>
-        </div>
+    <div className="ghost-page-stack pb-4">
+      <PageHeader
+        title="Insumos"
+        description="Catálogo de bodega: alimenticio entra al food cost; menaje no. El costo promedio se guarda por unidad base."
+        backHref="/inventory"
+        backLabel="Inventario"
+      />
+
+      <OperationalHint context="inventory" />
+
+      <div className="flex flex-wrap gap-2 text-sm">
+        <Link href="/purchases" className="ghost-pill-link">
+          Compras →
+        </Link>
+        <Link href="/guia#productos" className="ghost-pill-link">
+          Clases de producto
+        </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
@@ -140,6 +146,24 @@ export default function InventoryItemsPage() {
                     {INVENTORY_ITEM_TYPE_LABELS[itemType]}
                   </option>
                 ))}
+              </select>
+            </label>
+            <label className="block space-y-1">
+              <span className="text-sm font-medium">Clase</span>
+              <select
+                value={category}
+                onChange={(event) =>
+                  setCategory(event.target.value as ProductCategory)
+                }
+                className="ghost-input"
+              >
+                {PRODUCT_CATEGORIES.filter((entry) => entry !== "operativo").map(
+                  (entry) => (
+                    <option key={entry} value={entry}>
+                      {PRODUCT_CATEGORY_LABELS[entry]}
+                    </option>
+                  ),
+                )}
               </select>
             </label>
             <label className="block space-y-1">
@@ -236,6 +260,7 @@ export default function InventoryItemsPage() {
                   <tr>
                     <th className="px-2 py-2 font-medium">SKU</th>
                     <th className="px-2 py-2 font-medium">Nombre</th>
+                    <th className="px-2 py-2 font-medium">Clase</th>
                     <th className="px-2 py-2 font-medium">Costeo</th>
                     <th className="px-2 py-2 font-medium">Presentación</th>
                     <th className="px-2 py-2 font-medium">Costo / base</th>
@@ -249,6 +274,13 @@ export default function InventoryItemsPage() {
                     >
                       <td className="px-2 py-2 font-mono text-xs">{item.sku}</td>
                       <td className="px-2 py-2">{item.name}</td>
+                      <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
+                        {item.category
+                          ? PRODUCT_CATEGORY_LABELS[
+                              item.category as ProductCategory
+                            ] ?? item.category
+                          : "—"}
+                      </td>
                       <td className="px-2 py-2">{item.baseUnit}</td>
                       <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
                         {formatPresentationLabel({
