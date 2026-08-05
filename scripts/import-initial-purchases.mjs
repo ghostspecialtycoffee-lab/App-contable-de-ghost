@@ -48,12 +48,13 @@ const VALID_UNITS = new Set(["g", "kg", "ml", "l", "unit", "box", "bag"]);
 const TRACKS_INVENTORY = new Set(["alimenticio", "menaje"]);
 
 function parseArgs(argv) {
-  const args = { confirm: false, resetFirst: false, bootstrap: false };
+  const args = { confirm: false, resetFirst: false, bootstrap: false, skipIfPopulated: false };
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--confirm") args.confirm = true;
     else if (arg === "--reset-first") args.resetFirst = true;
     else if (arg === "--bootstrap") args.bootstrap = true;
+    else if (arg === "--skip-if-populated") args.skipIfPopulated = true;
     else if (arg === "--org") args.org = argv[++i];
     else if (arg === "--actor") args.actor = argv[++i];
     else if (arg === "--branch") args.branch = argv[++i];
@@ -559,6 +560,17 @@ async function main() {
   const orgSnap = await db.doc(`organizations/${args.org}`).get();
   if (!orgSnap.exists) {
     throw new Error(`Organización no encontrada: ${args.org}`);
+  }
+
+  if (args.skipIfPopulated && !args.resetFirst) {
+    const existingInvoices = await db
+      .collection(`organizations/${args.org}/purchaseInvoices`)
+      .limit(1)
+      .get();
+    if (!existingInvoices.empty) {
+      console.log("Import omitido: la organización ya tiene facturas de compra.");
+      process.exit(0);
+    }
   }
 
   if (args.resetFirst) {
