@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { useOrganizationSetupStatus } from "@/hooks/use-organization-setup-status";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { runBootstrapPurchaseImport } from "@/lib/import/bootstrap-purchases-client";
 import {
@@ -18,7 +19,6 @@ interface InitialDataImportPanelProps {
   /** Si true, muestra botón para cargar el manifiesto desde la app (sin GitHub Actions). */
   showInAppImport?: boolean;
   warehouseId?: string;
-  hasExistingData?: boolean;
 }
 
 export function InitialDataImportPanel({
@@ -26,9 +26,9 @@ export function InitialDataImportPanel({
   showGuiaLink = true,
   showInAppImport = true,
   warehouseId,
-  hasExistingData = false,
 }: InitialDataImportPanelProps) {
   const membership = useActiveMembership();
+  const setup = useOrganizationSetupStatus();
   const workflowUrl = getInitialDataWorkflowUrl();
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
@@ -36,9 +36,7 @@ export function InitialDataImportPanel({
 
   const branchId = membership?.branchIds[0] ?? "";
   const canImportInApp =
-    showInAppImport &&
-    Boolean(membership?.organizationId && branchId) &&
-    !hasExistingData;
+    showInAppImport && Boolean(membership?.organizationId && branchId) && !setup.isSetupComplete;
 
   async function handleInAppImport() {
     if (!membership?.organizationId || !branchId) {
@@ -77,52 +75,89 @@ export function InitialDataImportPanel({
     }
   }
 
+  if (setup.loading) {
+    return (
+      <Card title="Carga inicial">
+        <p className="text-sm text-[var(--ghost-text-muted)]">Verificando datos…</p>
+      </Card>
+    );
+  }
+
+  if (setup.isSetupComplete) {
+    return (
+      <Card title="Datos iniciales listos">
+        <p className="text-sm text-[var(--ghost-brand-500)]">
+          Tu cuenta ya tiene la carga inicial: {setup.invoiceCount} facturas, {setup.itemCount}{" "}
+          insumos y {setup.ghostBeverageCount} bebidas Ghost en catálogo.
+        </p>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Link href="/purchases">
+            <Button variant="secondary" fullWidth className="sm:w-auto">
+              Ver compras
+            </Button>
+          </Link>
+          <Link href="/inventory/movements">
+            <Button variant="secondary" fullWidth className="sm:w-auto">
+              Ver existencias
+            </Button>
+          </Link>
+          <Link href="/costing">
+            <Button variant="secondary" fullWidth className="sm:w-auto">
+              Ver costeo
+            </Button>
+          </Link>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card
       title="Carga inicial desde tus facturas"
       description={
         compact
-          ? "Las facturas están preparadas en el sistema pero aún no en tu cuenta — hay que importarlas una vez."
-          : "Tus facturas fotografiadas están en el manifiesto del proyecto. La app de Compras lee Firebase: hasta que importes, verás la lista vacía."
+          ? "Faltan datos en tu cuenta. Importa el manifiesto una vez para ver compras, bodega y carta."
+          : "Tus facturas fotografiadas están en el manifiesto del proyecto. La app lee Firebase: hasta que importes, verás listas vacías."
       }
     >
-      {hasExistingData ? (
-        <p className="text-sm text-[var(--ghost-brand-500)]">
-          Ya hay datos cargados. Usa Compras e Inventario para revisarlos.
-        </p>
-      ) : (
-        <>
-          {canImportInApp ? (
-            <div className="mb-4 rounded-xl border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-2)] p-4">
-              <p className="text-sm font-medium">Opción rápida (desde la app)</p>
-              <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-                Un clic carga facturas, insumos por clase, stock en bodega y productos de venta.
-              </p>
-              <Button
-                className="mt-3"
-                fullWidth
-                disabled={importing}
-                onClick={handleInAppImport}
-              >
-                {importing ? "Importando facturas..." : "Cargar facturas ahora"}
-              </Button>
-              {importResult ? (
-                <p className="mt-2 text-sm text-[var(--ghost-brand-500)]">{importResult}</p>
-              ) : null}
-              {importError ? (
-                <p className="mt-2 text-sm text-[var(--ghost-danger)]">{importError}</p>
-              ) : null}
-            </div>
-          ) : null}
+      {!setup.hasPurchases || !setup.hasInventory || !setup.hasGhostMenu ? (
+        <ul className="mb-4 space-y-1 text-sm text-[var(--ghost-text-muted)]">
+          <li className={setup.hasPurchases ? "text-[var(--ghost-brand-500)]" : ""}>
+            {setup.hasPurchases ? "✓" : "○"} Compras ({setup.invoiceCount} facturas)
+          </li>
+          <li className={setup.hasInventory ? "text-[var(--ghost-brand-500)]" : ""}>
+            {setup.hasInventory ? "✓" : "○"} Insumos ({setup.itemCount})
+          </li>
+          <li className={setup.hasGhostMenu ? "text-[var(--ghost-brand-500)]" : ""}>
+            {setup.hasGhostMenu ? "✓" : "○"} Carta Ghost ({setup.ghostBeverageCount} bebidas)
+          </li>
+        </ul>
+      ) : null}
 
-          <p className="text-sm font-medium">Opción alternativa (GitHub Actions)</p>
-          <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-[var(--ghost-text-muted)]">
-            {INITIAL_DATA_IMPORT_STEPS.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ol>
-        </>
-      )}
+      {canImportInApp ? (
+        <div className="mb-4 rounded-xl border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-2)] p-4">
+          <p className="text-sm font-medium">Opción rápida (desde la app)</p>
+          <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
+            Un clic carga facturas, insumos por clase, stock en bodega y productos de venta.
+          </p>
+          <Button className="mt-3" fullWidth disabled={importing} onClick={handleInAppImport}>
+            {importing ? "Importando facturas..." : "Cargar facturas ahora"}
+          </Button>
+          {importResult ? (
+            <p className="mt-2 text-sm text-[var(--ghost-brand-500)]">{importResult}</p>
+          ) : null}
+          {importError ? (
+            <p className="mt-2 text-sm text-[var(--ghost-danger)]">{importError}</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <p className="text-sm font-medium">Opción alternativa (GitHub Actions)</p>
+      <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-[var(--ghost-text-muted)]">
+        {INITIAL_DATA_IMPORT_STEPS.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <a
@@ -148,8 +183,8 @@ export function InitialDataImportPanel({
 
       {!compact ? (
         <p className="mt-3 text-xs text-[var(--ghost-text-muted)]">
-          Si no ves facturas en Compras, es porque aún no se ejecutó ninguna importación en tu
-          organización de Firebase.
+          Si ya ejecutaste el workflow en GitHub y sigues viendo listas vacías, recarga la página o
+          usa &quot;Cargar facturas ahora&quot; arriba (importa en tu organización activa).
         </p>
       ) : null}
     </Card>

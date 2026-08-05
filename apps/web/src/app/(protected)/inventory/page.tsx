@@ -52,7 +52,7 @@ export default function InventoryPage() {
         </p>
       </div>
 
-      <InitialDataImportPanel compact showInAppImport={false} />
+      <InitialDataImportPanel compact showInAppImport />
 
       <InventoryStockPanel />
 

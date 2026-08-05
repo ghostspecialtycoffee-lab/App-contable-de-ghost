@@ -347,11 +347,7 @@ export default function PurchasesPage() {
       ) : null}
 
       {!loading && invoices.length === 0 ? (
-        <InitialDataImportPanel
-          compact
-          warehouseId={selectedWarehouseId || undefined}
-          hasExistingData={inventoryItems.length > 0}
-        />
+        <InitialDataImportPanel compact warehouseId={selectedWarehouseId || undefined} />
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
