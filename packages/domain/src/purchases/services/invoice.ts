@@ -104,8 +104,11 @@ export function isoDateInTimezone(
  */
 export function purchaseInvoiceAffectsInventory(
   invoiceDate: string,
-  options?: { todayIso?: string; timeZone?: string },
+  options?: { todayIso?: string; timeZone?: string; bootstrap?: boolean },
 ): boolean {
+  if (options?.bootstrap) {
+    return true;
+  }
   const today =
     options?.todayIso ?? isoDateInTimezone(options?.timeZone ?? "America/Bogota");
   return invoiceDate >= today;

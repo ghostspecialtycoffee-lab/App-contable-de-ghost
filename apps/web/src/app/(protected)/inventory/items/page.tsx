@@ -124,7 +124,9 @@ export default function InventoryItemsPage() {
         </Link>
       </div>
 
-      {!loading && items.length === 0 ? <InitialDataImportPanel compact /> : null}
+      {!loading && items.length === 0 ? (
+        <InitialDataImportPanel compact warehouseId={undefined} />
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         <Card title="Nuevo ítem">

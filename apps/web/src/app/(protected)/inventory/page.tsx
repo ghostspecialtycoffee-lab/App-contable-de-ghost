@@ -51,7 +51,7 @@ export default function InventoryPage() {
         </p>
       </div>
 
-      <InitialDataImportPanel compact />
+      <InitialDataImportPanel compact showInAppImport={false} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {modules.map((module) => (

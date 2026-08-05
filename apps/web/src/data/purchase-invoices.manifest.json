@@ -1,0 +1,1937 @@
+{
+  "source": {
+    "driveFolderId": "1Q9lwDslc7eu2C2gk1FV9J8ZdsfoReqsh",
+    "driveUrl": "https://drive.google.com/drive/folders/1Q9lwDslc7eu2C2gk1FV9J8ZdsfoReqsh",
+    "photosAnalyzed": 41,
+    "analyzedAt": "2026-08-05"
+  },
+  "classification": {
+    "factura_compra": 41,
+    "comprobante_venta": 0,
+    "notes": "Todas las fotos son compras/gastos de Ghost (insumos, empaques, panadería, supermercado). No hay comprobantes de venta al cliente."
+  },
+  "dedupKeys": {
+    "purchaseInvoice": [
+      "supplierName",
+      "invoiceNumber",
+      "invoiceDate"
+    ],
+    "description": "Proveedor + número documento + fecha evita duplicar totales parecidos entre facturas distintas."
+  },
+  "unitQuestions": [
+    {
+      "item": "Paq Café / Paq Café 2.5 kg / Paq Café Competencia Marbella",
+      "suggestedUnit": "bag",
+      "question": "¿Cada paquete es 2,5 kg de café tostado? ¿Registramos por paquete o convertimos a kg?"
+    },
+    {
+      "item": "Galletas (red velvet, avena, chocolate)",
+      "suggestedUnit": "unit",
+      "question": "¿Unidad = 1 galleta individual?"
+    },
+    {
+      "item": "Brownies / tortas / tartas / panes de proveedores",
+      "suggestedUnit": "unit",
+      "question": "¿Unidad = 1 pieza para reventa en mostrador?"
+    },
+    {
+      "item": "Bolsas 1/2 libra, bolsas 1 lb, 500grs blanca 1/2",
+      "suggestedUnit": "unit",
+      "question": "¿Unidad = 1 bolsa de empaque?"
+    },
+    {
+      "item": "Deshidratado naranja / limón",
+      "suggestedUnit": "unit",
+      "question": "¿Es 1 frasco/bote por línea?"
+    },
+    {
+      "item": "Hielo Kolbitos 5 kg",
+      "suggestedUnit": "bag",
+      "question": "¿Unidad = 1 bolsa de 5 kg?"
+    },
+    {
+      "item": "Leche / agua / insumos supermercado",
+      "suggestedUnit": "unit",
+      "question": "¿Registramos por botella/unidad de lo comprado?"
+    }
+  ],
+  "dateAmbiguity": "Varias cuentas de cobro Black Coffee llevan año '24' (2024). Tickets Rapimerque/D1 muestran 2026. Confirmar fechas correctas antes de aplicar regla histórica vs bodega.",
+  "suppliers": [
+    {
+      "name": "Black Coffee (Ximena Polo)",
+      "nit": "31320969-7",
+      "docType": "cuenta_cobro",
+      "count": 12
+    },
+    {
+      "name": "Supermercados Rapimerque SAS",
+      "nit": "900160512-1",
+      "docType": "factura_electronica",
+      "count": 9
+    },
+    {
+      "name": "D1 SAS",
+      "nit": "900276962-1",
+      "docType": "factura_electronica",
+      "count": 10
+    },
+    {
+      "name": "Camilo Molina Repostería",
+      "nit": "1113656433-2",
+      "docType": "factura_venta",
+      "count": 1
+    },
+    {
+      "name": "Contrast Hojaldre y Panadería",
+      "nit": "1144097562-8",
+      "docType": "remision",
+      "count": 1
+    },
+    {
+      "name": "Empakar Empaques",
+      "nit": null,
+      "docType": "remision",
+      "count": 1
+    },
+    {
+      "name": "Supermercado La Gran Colombia",
+      "nit": "805027024-4",
+      "docType": "factura_electronica",
+      "count": 1
+    },
+    {
+      "name": "Dollarcity / Suramericana Comercial",
+      "nit": "900943243-4",
+      "docType": "comprobante",
+      "count": 1
+    },
+    {
+      "name": "Almacenes La 14",
+      "nit": "900212550-4",
+      "docType": "factura_electronica",
+      "count": 1
+    },
+    {
+      "name": "Inversiones Tatiana GA",
+      "nit": "900954696-4",
+      "docType": "factura_electronica",
+      "count": 1
+    },
+    {
+      "name": "Jaime Salazar / Empastelarte",
+      "nit": "10482266",
+      "docType": "factura",
+      "count": 1
+    },
+    {
+      "name": "Santiago Salazar",
+      "nit": "110283798-2",
+      "docType": "recibo",
+      "count": 1
+    },
+    {
+      "name": "Terminal Intermunicipal Cali (parqueadero)",
+      "nit": "900001738-6",
+      "docType": "factura_electronica",
+      "count": 1
+    }
+  ],
+  "invoices": [
+    {
+      "image": "IMG_20260805_071000507_HDR.jpg",
+      "documentType": "cuenta_cobro",
+      "supplierName": "Black Coffee (Ximena Polo)",
+      "supplierNit": "31320969-7",
+      "invoiceNumber": "0407",
+      "invoiceDate": "2024-08-01",
+      "total": 101000,
+      "lines": [
+        {
+          "description": "Galletas red velvet",
+          "quantity": 10,
+          "unitPriceNet": 5000,
+          "lineTotal": 50000,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Galletas avena",
+          "quantity": 6,
+          "unitPriceNet": 3500,
+          "lineTotal": 21000,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Deshidratado naranja",
+          "quantity": 1,
+          "unitPriceNet": 15000,
+          "lineTotal": 15000,
+          "unit": "unit",
+          "itemType": "supply",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Deshidratado limón",
+          "quantity": 1,
+          "unitPriceNet": 15000,
+          "lineTotal": 15000,
+          "unit": "unit",
+          "itemType": "supply",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071018086_HDR.jpg",
+      "documentType": "cuenta_cobro",
+      "supplierName": "Black Coffee (Ximena Polo)",
+      "supplierNit": "31320969-7",
+      "invoiceNumber": "0396",
+      "invoiceDate": "2024-07-27",
+      "total": 63000,
+      "lines": [
+        {
+          "description": "Torta zanahoria",
+          "quantity": 1,
+          "unitPriceNet": 63000,
+          "lineTotal": 63000,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071027039_HDR.jpg",
+      "documentType": "cuenta_cobro",
+      "supplierName": "Black Coffee (Ximena Polo)",
+      "supplierNit": "31320969-7",
+      "invoiceNumber": "0394",
+      "invoiceDate": "2024-07-26",
+      "total": 466500,
+      "lines": [
+        {
+          "description": "Paq Café Competencia Marbella",
+          "quantity": 3,
+          "unitPriceNet": 145000,
+          "lineTotal": 435000,
+          "unit": "bag",
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Bolsas 1/2 libra",
+          "quantity": 21,
+          "unitPriceNet": 1500,
+          "lineTotal": 31500,
+          "unit": "unit",
+          "itemType": "packaging",
+          "productCategory": "menaje"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071035551_HDR.jpg",
+      "documentType": "cuenta_cobro",
+      "supplierName": "Black Coffee (Ximena Polo)",
+      "supplierNit": "31320969-7",
+      "invoiceNumber": "0392",
+      "invoiceDate": "2024-07-26",
+      "total": 71600,
+      "lines": [
+        {
+          "description": "Brownies",
+          "quantity": 12,
+          "unitPriceNet": 5300,
+          "lineTotal": 63600,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Tarro salsa",
+          "quantity": 1,
+          "unitPriceNet": 8000,
+          "lineTotal": 8000,
+          "unit": "unit",
+          "itemType": "supply",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071044592_HDR.jpg",
+      "documentType": "cuenta_cobro",
+      "supplierName": "Black Coffee (Ximena Polo)",
+      "supplierNit": "31320969-7",
+      "invoiceNumber": "0391",
+      "invoiceDate": "2024-07-25",
+      "total": 90000,
+      "lines": [
+        {
+          "description": "Galletas red velvet",
+          "quantity": 9,
+          "unitPriceNet": 5000,
+          "lineTotal": 45000,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Galletas chocolate",
+          "quantity": 9,
+          "unitPriceNet": 5000,
+          "lineTotal": 45000,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071052442_HDR.jpg",
+      "documentType": "cuenta_cobro",
+      "supplierName": "Black Coffee (Ximena Polo)",
+      "supplierNit": "31320969-7",
+      "invoiceNumber": "0403",
+      "invoiceDate": "2024-07-28",
+      "total": 348000,
+      "lines": [
+        {
+          "description": "Paq Café 2.5 kg regional",
+          "quantity": 2,
+          "unitPriceNet": 145000,
+          "lineTotal": 290000,
+          "unit": "bag",
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Bolsas libra",
+          "quantity": 20,
+          "unitPriceNet": 1650,
+          "lineTotal": 33000,
+          "unit": "unit",
+          "itemType": "packaging",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Bolsas 1/2 libra",
+          "quantity": 17,
+          "unitPriceNet": 1500,
+          "lineTotal": 25500,
+          "unit": "unit",
+          "itemType": "packaging",
+          "productCategory": "menaje"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071100011_HDR.jpg",
+      "documentType": "cuenta_cobro",
+      "supplierName": "Black Coffee (Ximena Polo)",
+      "supplierNit": "31320969-7",
+      "invoiceNumber": "0404",
+      "invoiceDate": "2024-07-30",
+      "total": 310000,
+      "lines": [
+        {
+          "description": "Paq café",
+          "quantity": 2,
+          "unitPriceNet": 155000,
+          "lineTotal": 310000,
+          "unit": "bag",
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071109119_HDR.jpg",
+      "documentType": "cuenta_cobro",
+      "supplierName": "Black Coffee (Ximena Polo)",
+      "supplierNit": "31320969-7",
+      "invoiceNumber": "0384",
+      "invoiceDate": "2024-07-22",
+      "total": 145000,
+      "lines": [
+        {
+          "description": "Paq Café 2.5 kg",
+          "quantity": 1,
+          "unitPriceNet": 145000,
+          "lineTotal": 145000,
+          "unit": "bag",
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071114713_HDR.jpg",
+      "documentType": "cuenta_cobro",
+      "supplierName": "Black Coffee (Ximena Polo)",
+      "supplierNit": "31320969-7",
+      "invoiceNumber": "0393",
+      "invoiceDate": "2024-07-26",
+      "total": 302000,
+      "lines": [
+        {
+          "description": "Paq café",
+          "quantity": 2,
+          "unitPriceNet": 145000,
+          "lineTotal": 290000,
+          "unit": "bag",
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Bolsas 1/2 libra",
+          "quantity": 8,
+          "unitPriceNet": 1500,
+          "lineTotal": 12000,
+          "unit": "unit",
+          "itemType": "packaging",
+          "productCategory": "menaje"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071122303_HDR.jpg",
+      "documentType": "cuenta_cobro",
+      "supplierName": "Black Coffee (Ximena Polo)",
+      "supplierNit": "31320969-7",
+      "invoiceNumber": "0400",
+      "invoiceDate": "2024-07-28",
+      "total": 45000,
+      "lines": [
+        {
+          "description": "Galletas red velvet",
+          "quantity": 9,
+          "unitPriceNet": 5000,
+          "lineTotal": 45000,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071125143_HDR.jpg",
+      "documentType": "cuenta_cobro",
+      "supplierName": "Black Coffee (Ximena Polo)",
+      "supplierNit": "31320969-7",
+      "invoiceNumber": "0406",
+      "invoiceDate": "2024-08-01",
+      "total": 290000,
+      "lines": [
+        {
+          "description": "Paq café regional 2.5 kg",
+          "quantity": 2,
+          "unitPriceNet": 145000,
+          "lineTotal": 290000,
+          "unit": "bag",
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071128523_HDR.jpg",
+      "documentType": "cuenta_cobro",
+      "supplierName": "Black Coffee (Ximena Polo)",
+      "supplierNit": "31320969-7",
+      "invoiceNumber": "0385",
+      "invoiceDate": "2024-07-23",
+      "total": 176500,
+      "lines": [
+        {
+          "description": "Paq café",
+          "quantity": 1,
+          "unitPriceNet": 145000,
+          "lineTotal": 145000,
+          "unit": "bag",
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Bolsas 1/2 libra",
+          "quantity": 10,
+          "unitPriceNet": 1500,
+          "lineTotal": 15000,
+          "unit": "unit",
+          "itemType": "packaging",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Bolsas 1 lb",
+          "quantity": 10,
+          "unitPriceNet": 1650,
+          "lineTotal": 16500,
+          "unit": "unit",
+          "itemType": "packaging",
+          "productCategory": "menaje"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071304856_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "Supermercados Rapimerque SAS",
+      "supplierNit": "900160512-1",
+      "invoiceNumber": "EC886449",
+      "invoiceDate": "2026-07-30",
+      "total": 2250,
+      "lines": [
+        {
+          "description": "Harina de trigo Farallones 50",
+          "quantity": 1,
+          "unitPriceNet": 2143,
+          "lineTotal": 2250,
+          "unit": "unit",
+          "itemType": "raw_material",
+          "taxCategory": "taxable_5",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071313671_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "Terminal Intermunicipal Cali (parqueadero)",
+      "supplierNit": "900001738-6",
+      "invoiceNumber": "SP-282160",
+      "invoiceDate": "2026-07-27",
+      "total": 6000,
+      "lines": [
+        {
+          "description": "Parqueadero vehículo HHO654",
+          "quantity": 1,
+          "unitPriceNet": 5042,
+          "lineTotal": 6000,
+          "unit": "unit",
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "operativo"
+        }
+      ],
+      "expenseCategory": "operational",
+      "productCategory": "operativo"
+    },
+    {
+      "image": "IMG_20260805_071500596_HDR.jpg",
+      "documentType": "factura_venta",
+      "supplierName": "Camilo Molina Repostería",
+      "supplierNit": "1113656433-2",
+      "invoiceNumber": "4261",
+      "invoiceDate": "2024-07-28",
+      "total": 171000,
+      "lines": [
+        {
+          "description": "Tarta de queso",
+          "quantity": 2,
+          "unitPriceNet": 82000,
+          "lineTotal": 164000,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Domicilio",
+          "quantity": 1,
+          "unitPriceNet": 7000,
+          "lineTotal": 7000,
+          "unit": "unit",
+          "itemType": "supply",
+          "expenseCategory": "delivery",
+          "productCategory": "operativo"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071601100_HDR.jpg",
+      "documentType": "remision",
+      "supplierName": "Contrast Hojaldre y Panadería Artesanal",
+      "supplierNit": "1144097562-8",
+      "invoiceNumber": "0429",
+      "invoiceDate": "2024-07-24",
+      "total": 56000,
+      "lines": [
+        {
+          "description": "Pan queso",
+          "quantity": 5,
+          "unitPriceNet": 1500,
+          "lineTotal": 7500,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Enrollado de queso",
+          "quantity": 5,
+          "unitPriceNet": 2100,
+          "lineTotal": 10500,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Croissant chocolate",
+          "quantity": 5,
+          "unitPriceNet": 2000,
+          "lineTotal": 10000,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Chicharrón guayaba",
+          "quantity": 5,
+          "unitPriceNet": 2200,
+          "lineTotal": 11000,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Chicharrón arequipe",
+          "quantity": 5,
+          "unitPriceNet": 2200,
+          "lineTotal": 11000,
+          "unit": "unit",
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Domicilio",
+          "quantity": 1,
+          "unitPriceNet": 6000,
+          "lineTotal": 6000,
+          "unit": "unit",
+          "itemType": "supply",
+          "expenseCategory": "delivery",
+          "productCategory": "operativo"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071604968_HDR.jpg",
+      "documentType": "remision",
+      "supplierName": "Empakar Empaques",
+      "invoiceNumber": "07862",
+      "invoiceDate": "2026-08-01",
+      "total": 59500,
+      "lines": [
+        {
+          "description": "Bolsa 500g blanca 1/2",
+          "quantity": 35,
+          "unitPriceNet": 1500,
+          "lineTotal": 52500,
+          "unit": "unit",
+          "itemType": "packaging",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Domicilio",
+          "quantity": 1,
+          "unitPriceNet": 7000,
+          "lineTotal": 7000,
+          "unit": "unit",
+          "itemType": "supply",
+          "expenseCategory": "delivery",
+          "productCategory": "operativo"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071813996_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "Supermercados Rapimerque SAS",
+      "supplierNit": "900160512-1",
+      "invoiceNumber": "EC888757",
+      "invoiceDate": "2026-08-03",
+      "total": 7200,
+      "lines": [
+        {
+          "description": "Hielo Kolbitos 5 kg bolsa",
+          "quantity": 1,
+          "unitPriceNet": 7200,
+          "lineTotal": 7200,
+          "unit": "bag",
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_072011435_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "Supermercados Rapimerque SAS",
+      "supplierNit": "900160512-1",
+      "invoiceNumber": "EC889663",
+      "invoiceDate": "2026-08-04",
+      "total": 22200,
+      "lines": [
+        {
+          "description": "Agua Brisa 600ml",
+          "quantity": 6,
+          "unitPriceNet": 1900,
+          "lineTotal": 11400,
+          "unit": "unit",
+          "itemType": "supply",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Agua Cristal gas 600ml",
+          "quantity": 6,
+          "unitPriceNet": 1800,
+          "lineTotal": 10800,
+          "unit": "unit",
+          "itemType": "supply",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071325498_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "D1 SAS",
+      "supplierNit": "900276962-1",
+      "invoiceNumber": "I6L1326409",
+      "invoiceDate": "2026-08-04",
+      "total": 10750,
+      "lines": [],
+      "notes": "4 artículos, líneas no legibles en foto"
+    },
+    {
+      "image": "IMG_20260805_071347659_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "Supermercado La Gran Colombia SA",
+      "supplierNit": "805027024-4",
+      "invoiceNumber": "03LS995077",
+      "invoiceDate": "2026-07-26",
+      "total": 88433,
+      "lines": [
+        {
+          "description": "Limón tahiti",
+          "quantity": 1.335,
+          "unit": "kg",
+          "unitPriceNet": 2380,
+          "lineTotal": 3177,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Zanahoria",
+          "quantity": 1.555,
+          "unit": "kg",
+          "unitPriceNet": 3380,
+          "lineTotal": 5256,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Aceite Diana 2000ml",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 17227,
+          "lineTotal": 20500,
+          "itemType": "raw_material",
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Leche Colanta 1000ml",
+          "quantity": 10,
+          "unit": "unit",
+          "unitPriceNet": 5950,
+          "lineTotal": 59500,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071402244_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "Supermercados Rapimerque SAS",
+      "supplierNit": "900160512-1",
+      "invoiceNumber": "ECO85526",
+      "invoiceDate": "2024-07-28",
+      "total": 7200,
+      "lines": [
+        {
+          "description": "Hielo Kolbitos 5 kg",
+          "quantity": 1,
+          "unit": "bag",
+          "unitPriceNet": 7200,
+          "lineTotal": 7200,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071417065_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "Supermercados Rapimerque SAS",
+      "supplierNit": "900160512-1",
+      "invoiceNumber": "ECBB8403",
+      "invoiceDate": "2026-08-02",
+      "total": 7200,
+      "lines": [
+        {
+          "description": "Hielo Kolbitos 5 kg",
+          "quantity": 1,
+          "unit": "bag",
+          "unitPriceNet": 7200,
+          "lineTotal": 7200,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071439486_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "Supermercados Rapimerque SAS",
+      "supplierNit": "900160512-1",
+      "invoiceNumber": "EC885531",
+      "invoiceDate": "2024-07-28",
+      "total": 10050,
+      "lines": [
+        {
+          "description": "Gaseosa Bretaña soda 1.5L",
+          "quantity": 2,
+          "unit": "unit",
+          "unitPriceNet": 4900,
+          "lineTotal": 9800,
+          "itemType": "supply",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Bolsa reciclada 8kg",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 250,
+          "lineTotal": 250,
+          "itemType": "packaging",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071451789_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "Supermercados Rapimerque SAS",
+      "supplierNit": "900160512-1",
+      "invoiceNumber": "EC887666",
+      "invoiceDate": "2026-08-01",
+      "total": 18600,
+      "lines": [
+        {
+          "description": "Agua Manantial 600ml",
+          "quantity": 5,
+          "unit": "unit",
+          "unitPriceNet": 3150,
+          "lineTotal": 15750,
+          "itemType": "supply",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Bolsa basura Charly 65x",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 2395,
+          "lineTotal": 2850,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071517050_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "D1 SAS",
+      "supplierNit": "900276962-1",
+      "invoiceNumber": "I6L1324685",
+      "invoiceDate": "2024-07-31",
+      "total": 58910,
+      "lines": [
+        {
+          "description": "Helado vainilla",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 15950,
+          "lineTotal": 15950,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Cerveza Bahia",
+          "quantity": 24,
+          "unit": "unit",
+          "unitPriceNet": 1790,
+          "lineTotal": 42960,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071523704_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "D1 SAS",
+      "supplierNit": "900276962-1",
+      "invoiceNumber": "I5L9216123",
+      "invoiceDate": "2026-07-31",
+      "total": 16000,
+      "lines": [
+        {
+          "description": "Leche entera",
+          "quantity": 3,
+          "unit": "unit",
+          "unitPriceNet": 3500,
+          "lineTotal": 10500,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Crema dental",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 4576,
+          "lineTotal": 5300,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "operativo"
+        },
+        {
+          "description": "Bolsa reciclada",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 200,
+          "lineTotal": 200,
+          "itemType": "packaging",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071533619_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "D1 SAS",
+      "supplierNit": "900276962-1",
+      "invoiceNumber": "I6L1324122",
+      "invoiceDate": "2026-07-29",
+      "total": 35500,
+      "lines": [
+        {
+          "description": "Papa criolla",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 8600,
+          "lineTotal": 8600,
+          "itemType": "raw_material",
+          "taxCategory": "excluded",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Aceite de soya",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 6630,
+          "lineTotal": 7890,
+          "itemType": "raw_material",
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Arroz Diana 5",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 1990,
+          "lineTotal": 1990,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Molida de res",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 17050,
+          "lineTotal": 17050,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071540945_HDR.jpg",
+      "documentType": "factura_talonario",
+      "supplierName": "D1 SAS",
+      "supplierNit": "900276962-1",
+      "invoiceNumber": "99FI34446",
+      "invoiceDate": "2024-08-01",
+      "total": 33650,
+      "lines": [
+        {
+          "description": "Servilleta",
+          "quantity": 2,
+          "unit": "unit",
+          "unitPriceNet": 4200,
+          "lineTotal": 8400,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Leche entera",
+          "quantity": 2,
+          "unit": "unit",
+          "unitPriceNet": 3500,
+          "lineTotal": 7000,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Leche deslactosada",
+          "quantity": 2,
+          "unit": "unit",
+          "unitPriceNet": 3700,
+          "lineTotal": 7400,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Leche condensada",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 4200,
+          "lineTotal": 4200,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Arroz Diana 5",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 1990,
+          "lineTotal": 1990,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Arequipe Latt",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 4700,
+          "lineTotal": 4700,
+          "itemType": "raw_material",
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071547508_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "D1 SAS",
+      "supplierNit": "900276962-1",
+      "invoiceNumber": "I6L1324122",
+      "invoiceDate": "2026-07-29",
+      "total": 35530,
+      "notes": "Reverso/misma transacción que 071533619",
+      "lines": []
+    },
+    {
+      "image": "IMG_20260805_071820594_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "D1 SAS",
+      "supplierNit": "900276962-1",
+      "invoiceNumber": "16L1325676",
+      "invoiceDate": "2026-08-03",
+      "total": 39810,
+      "lines": [
+        {
+          "description": "Leche entera",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 3500,
+          "lineTotal": 3500,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Leche deslactosada",
+          "quantity": 2,
+          "unit": "unit",
+          "unitPriceNet": 3450,
+          "lineTotal": 6900,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Finas hierbas",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 1990,
+          "lineTotal": 1990,
+          "itemType": "supply",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Arroz Diana 5",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 1990,
+          "lineTotal": 1990,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Bebida isotónica",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 1750,
+          "lineTotal": 1750,
+          "itemType": "supply",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Soda Izots",
+          "quantity": 2,
+          "unit": "unit",
+          "unitPriceNet": 2100,
+          "lineTotal": 4200,
+          "itemType": "supply",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Bolsa ecológica",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 1200,
+          "lineTotal": 1200,
+          "itemType": "packaging",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Trozos de pescado",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 9490,
+          "lineTotal": 9490,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Mix de verduras",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 5700,
+          "lineTotal": 5700,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071828511_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "D1 SAS",
+      "supplierNit": "900276962-1",
+      "invoiceNumber": "16L1325322",
+      "invoiceDate": "2026-08-02",
+      "total": 23900,
+      "lines": [
+        {
+          "description": "Leche entera",
+          "quantity": 5,
+          "unit": "unit",
+          "unitPriceNet": 3500,
+          "lineTotal": 17500,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Jugo de limón",
+          "quantity": 2,
+          "unit": "unit",
+          "unitPriceNet": 3200,
+          "lineTotal": 6400,
+          "itemType": "supply",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071838376_HDR.jpg",
+      "documentType": "ticket_compra",
+      "supplierName": "D1 SAS",
+      "supplierNit": "900276962-1",
+      "invoiceNumber": "I5L9217323",
+      "invoiceDate": "2026-08-02",
+      "total": 42550,
+      "lines": [],
+      "notes": "7 artículos, detalle no visible"
+    },
+    {
+      "image": "IMG_20260805_071855326_HDR.jpg",
+      "documentType": "comprobante",
+      "supplierName": "Dollarcity Pasoancho Cali",
+      "supplierNit": "900943243-4",
+      "invoiceNumber": "F131-2026320",
+      "invoiceDate": "2026-07-24",
+      "total": 148500,
+      "lines": [
+        {
+          "description": "Bolsa reciclada",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 500,
+          "lineTotal": 500,
+          "itemType": "packaging",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Frascos vidrio c/tapa",
+          "quantity": 4,
+          "unit": "unit",
+          "unitPriceNet": 18000,
+          "lineTotal": 72000,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Jarra decorativa con tapa",
+          "quantity": 2,
+          "unit": "unit",
+          "unitPriceNet": 18000,
+          "lineTotal": 36000,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Taza latte 10oz vidrio",
+          "quantity": 4,
+          "unit": "unit",
+          "unitPriceNet": 10000,
+          "lineTotal": 40000,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071905378_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "Almacenes La 14 SAS",
+      "supplierNit": "900212550-4",
+      "invoiceNumber": "BAL63392",
+      "invoiceDate": "2026-07-26",
+      "total": 203018,
+      "lines": [
+        {
+          "description": "Pinza panadería Royal inox",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 12500,
+          "lineTotal": 12500,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Tabla picar con agarradera",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 15668,
+          "lineTotal": 15668,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Pala torta acero inox",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 16808,
+          "lineTotal": 16808,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Juego cubiertos 16 pzas",
+          "quantity": 3,
+          "unit": "unit",
+          "unitPriceNet": 36894,
+          "lineTotal": 110682,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Juego cuchillo Condor x3",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 27160,
+          "lineTotal": 27160,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Cuchara lagrima 30cm cobre",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 19900,
+          "lineTotal": 19900,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Bolsa biodegradable",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 300,
+          "lineTotal": 300,
+          "itemType": "packaging",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        }
+      ],
+      "notes": "Comprador en factura: Ximena Polo — equipo/insumos cocina"
+    },
+    {
+      "image": "IMG_20260805_071917216_HDR.jpg",
+      "documentType": "ticket_compra",
+      "supplierName": "D1 SAS",
+      "supplierNit": "900276962-1",
+      "invoiceNumber": "I5L9215580",
+      "invoiceDate": "2026-07-30",
+      "total": 7800,
+      "lines": [],
+      "notes": "4 artículos, detalle no visible"
+    },
+    {
+      "image": "IMG_20260805_071925409_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "Supermercados Rapimerque SAS",
+      "supplierNit": "900160512-1",
+      "invoiceNumber": "ECB84082",
+      "invoiceDate": "2026-07-25",
+      "total": 14400,
+      "lines": [
+        {
+          "description": "Hielo Kolbitos 5 kg",
+          "quantity": 2,
+          "unit": "bag",
+          "unitPriceNet": 7200,
+          "lineTotal": 14400,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071935796_HDR.jpg",
+      "documentType": "factura",
+      "supplierName": "Jaime Salazar Gomez / Empastelarte",
+      "supplierNit": "10482266",
+      "invoiceNumber": "FE-063313",
+      "invoiceDate": "2026-07-25",
+      "total": 14400,
+      "lines": [
+        {
+          "description": "Base 33cm domo T circular",
+          "quantity": 2,
+          "unit": "unit",
+          "unitPriceNet": 5126,
+          "lineTotal": 10252,
+          "itemType": "packaging",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Bolsa PP sticker 10x20 x100",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 1848,
+          "lineTotal": 1848,
+          "itemType": "packaging",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071944304_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "Inversiones Tatiana GA SAS",
+      "supplierNit": "900954696-4",
+      "invoiceNumber": "CJE6815",
+      "invoiceDate": "2026-07-25",
+      "total": 41700,
+      "lines": [
+        {
+          "description": "Salsa Zafran 1000gr",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 22900,
+          "lineTotal": 22900,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Pitillo jumbo cuchara x200",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 16000,
+          "lineTotal": 16000,
+          "itemType": "packaging",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Salsero Mio 360ml",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 2800,
+          "lineTotal": 2800,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_071952886_HDR.jpg",
+      "documentType": "recibo",
+      "supplierName": "Santiago Salazar",
+      "supplierNit": "110283798-2",
+      "invoiceNumber": "2633",
+      "invoiceDate": "2026-07-25",
+      "total": 6400,
+      "lines": [
+        {
+          "description": "Banderas doradas",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 6400,
+          "lineTotal": 6400,
+          "itemType": "supply",
+          "taxCategory": "exempt",
+          "productCategory": "operativo"
+        }
+      ]
+    },
+    {
+      "image": "IMG_20260805_072000659_HDR.jpg",
+      "documentType": "factura_electronica",
+      "supplierName": "D1 SAS",
+      "supplierNit": "900276962-1",
+      "invoiceNumber": "I5L9213927",
+      "invoiceDate": "2026-07-25",
+      "total": 48700,
+      "lines": [
+        {
+          "description": "Soda Izots",
+          "quantity": 4,
+          "unit": "unit",
+          "unitPriceNet": 2100,
+          "lineTotal": 8400,
+          "itemType": "supply",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Jugo de limón",
+          "quantity": 4,
+          "unit": "unit",
+          "unitPriceNet": 3200,
+          "lineTotal": 12800,
+          "itemType": "supply",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Servilleta",
+          "quantity": 2,
+          "unit": "unit",
+          "unitPriceNet": 4200,
+          "lineTotal": 8400,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
+        },
+        {
+          "description": "Azúcar blanca",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 3150,
+          "lineTotal": 3150,
+          "itemType": "raw_material",
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
+        },
+        {
+          "description": "Helado vainilla",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPriceNet": 15950,
+          "lineTotal": 15950,
+          "itemType": "supply",
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
+        }
+      ]
+    }
+  ],
+  "importRules": {
+    "bootstrap": "Usar --bootstrap en la carga inicial: aplica bodega en facturas históricas, organiza insumos por clase (alimenticio/menaje), crea productos POS desde terminados y registra operativo sin bodega.",
+    "dailyCutoff": "Sin --bootstrap: fechas anteriores a hoy (Colombia) quedan como histórico sin movimiento de bodega.",
+    "operationalExpenses": [
+      "Domicilio",
+      "Parqueadero"
+    ],
+    "excludeFromInventory": [
+      "Domicilio",
+      "Parqueadero"
+    ]
+  },
+  "dedupNotes": [
+    "I6L1324122 aparece en 071533619 y 071547508 (anverso/reverso) — importar una sola vez"
+  ],
+  "productClassification": {
+    "alimenticio": "Comestibles, bebidas, materia prima y productos terminados para venta o consumo en cafetería.",
+    "menaje": "Utensilios, vajilla de servicio, empaques (bolsas, stickers, domos) y desechables operativos.",
+    "operativo": "Gastos fuera de bodega alimenticia/menaje (envío, parqueadero, aseo personal, decoración)."
+  },
+  "productCatalog": {
+    "alimenticio": [
+      {
+        "name": "Aceite de soya",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Aceite Diana 2000ml",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Agua Brisa 600ml",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Agua Cristal gas 600ml",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Agua Manantial 600ml",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Arequipe Latt",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Arroz Diana 5",
+        "productCategory": "alimenticio",
+        "invoices": 3
+      },
+      {
+        "name": "Azúcar blanca",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Bebida isotónica",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Brownies",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Cerveza Bahia",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Chicharrón arequipe",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Chicharrón guayaba",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Croissant chocolate",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Deshidratado limón",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Deshidratado naranja",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Enrollado de queso",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Finas hierbas",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Galletas avena",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Galletas chocolate",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Galletas red velvet",
+        "productCategory": "alimenticio",
+        "invoices": 3
+      },
+      {
+        "name": "Gaseosa Bretaña soda 1.5L",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Harina de trigo Farallones 50",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Helado vainilla",
+        "productCategory": "alimenticio",
+        "invoices": 2
+      },
+      {
+        "name": "Hielo Kolbitos 5 kg",
+        "productCategory": "alimenticio",
+        "invoices": 3
+      },
+      {
+        "name": "Hielo Kolbitos 5 kg bolsa",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Jugo de limón",
+        "productCategory": "alimenticio",
+        "invoices": 2
+      },
+      {
+        "name": "Leche Colanta 1000ml",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Leche condensada",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Leche deslactosada",
+        "productCategory": "alimenticio",
+        "invoices": 2
+      },
+      {
+        "name": "Leche entera",
+        "productCategory": "alimenticio",
+        "invoices": 4
+      },
+      {
+        "name": "Limón tahiti",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Mix de verduras",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Molida de res",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Pan queso",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Papa criolla",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Paq café",
+        "productCategory": "alimenticio",
+        "invoices": 3
+      },
+      {
+        "name": "Paq Café 2.5 kg",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Paq Café 2.5 kg regional",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Paq Café Competencia Marbella",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Paq café regional 2.5 kg",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Salsa Zafran 1000gr",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Soda Izots",
+        "productCategory": "alimenticio",
+        "invoices": 2
+      },
+      {
+        "name": "Tarro salsa",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Tarta de queso",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Torta zanahoria",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Trozos de pescado",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Zanahoria",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      }
+    ],
+    "menaje": [
+      {
+        "name": "Base 33cm domo T circular",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsa 500g blanca 1/2",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsa basura Charly 65x",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsa biodegradable",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsa ecológica",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsa PP sticker 10x20 x100",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsa reciclada",
+        "productCategory": "menaje",
+        "invoices": 2
+      },
+      {
+        "name": "Bolsa reciclada 8kg",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsas 1 lb",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsas 1/2 libra",
+        "productCategory": "menaje",
+        "invoices": 4
+      },
+      {
+        "name": "Bolsas libra",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Cuchara lagrima 30cm cobre",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Frascos vidrio c/tapa",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Jarra decorativa con tapa",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Juego cubiertos 16 pzas",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Juego cuchillo Condor x3",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Pala torta acero inox",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Pinza panadería Royal inox",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Pitillo jumbo cuchara x200",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Salsero Mio 360ml",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Servilleta",
+        "productCategory": "menaje",
+        "invoices": 2
+      },
+      {
+        "name": "Tabla picar con agarradera",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Taza latte 10oz vidrio",
+        "productCategory": "menaje",
+        "invoices": 1
+      }
+    ],
+    "operativo": [
+      {
+        "name": "Banderas doradas",
+        "productCategory": "operativo",
+        "invoices": 1
+      },
+      {
+        "name": "Crema dental",
+        "productCategory": "operativo",
+        "invoices": 1
+      },
+      {
+        "name": "Domicilio",
+        "productCategory": "operativo",
+        "invoices": 3
+      },
+      {
+        "name": "Parqueadero vehículo HHO654",
+        "productCategory": "operativo",
+        "invoices": 1
+      }
+    ]
+  }
+}
