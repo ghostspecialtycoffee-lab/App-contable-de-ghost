@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { RecipeYieldField } from "@/components/recipe-yield-field";
 import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
@@ -23,10 +24,11 @@ import {
   MENU_CATEGORIES,
   MENU_CATEGORY_LABELS,
   calculateCostMatrix,
-  calculateRecipeCost,
+  calculateRecipeCostPerPortion,
   getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
+  suggestRecipeYield,
   type BaseUnit,
   type CoTaxCategory,
   type KitchenStation,
@@ -55,6 +57,7 @@ export default function PosMenuPage() {
   const [station, setStation] = useState<KitchenStation>("counter");
   const [saleTaxCategory, setSaleTaxCategory] = useState<CoTaxCategory>("INC_8");
   const [recipeLines, setRecipeLines] = useState<RecipeLineInput[]>([emptyRecipeLine()]);
+  const [yieldQuantity, setYieldQuantity] = useState(1);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [seeding, setSeeding] = useState(false);
@@ -75,8 +78,18 @@ export default function PosMenuPage() {
     const validLines = recipeLines.filter(
       (line) => line.inventoryItemId && line.quantity > 0,
     );
-    return validLines.length > 0 ? calculateRecipeCost(validLines, itemProfiles) : 0;
-  }, [recipeLines, itemProfiles]);
+    return validLines.length > 0
+      ? calculateRecipeCostPerPortion(validLines, itemProfiles, yieldQuantity)
+      : 0;
+  }, [recipeLines, itemProfiles, yieldQuantity]);
+
+  useEffect(() => {
+    if (name.trim()) {
+      setYieldQuantity((current) =>
+        current <= 1 ? suggestRecipeYield(name) : current,
+      );
+    }
+  }, [name]);
 
   const suggestedTaxCategory = useMemo(() => {
     const containsCoffeeIngredient = recipeLines.some((line) => {
@@ -135,6 +148,11 @@ export default function PosMenuPage() {
       unit: item.baseUnit as BaseUnit,
       quantity: lineDefaultQuantity(item.baseUnit as BaseUnit),
     });
+
+    const suggested = suggestRecipeYield(item.name);
+    if (suggested > 1) {
+      setYieldQuantity((current) => (current <= 1 ? suggested : current));
+    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -160,6 +178,7 @@ export default function PosMenuPage() {
         await saveRecipe({
           menuProductId: result.productId,
           menuProductName: name.trim(),
+          yieldQuantity,
           lines: validLines,
         });
       }
@@ -176,6 +195,7 @@ export default function PosMenuPage() {
       setDescription("");
       setPrice("");
       setRecipeLines([emptyRecipeLine()]);
+      setYieldQuantity(1);
       setPhotoPreview(null);
       setPhotoPayload(null);
     } catch (cause) {
@@ -399,8 +419,17 @@ export default function PosMenuPage() {
             </div>
 
             <div className="space-y-2 border-t border-[var(--ghost-border)] pt-3">
+              <RecipeYieldField
+                productName={name || "Producto"}
+                value={yieldQuantity}
+                onChange={setYieldQuantity}
+                ingredientNames={recipeLines.map((line) => line.itemName).filter(Boolean)}
+              />
+            </div>
+
+            <div className="space-y-2 border-t border-[var(--ghost-border)] pt-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium">Receta (ingredientes)</span>
+                <span className="text-sm font-medium">Receta (lote completo)</span>
                 <Button
                   type="button"
                   variant="secondary"
