@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { InitialDataImportPanel } from "@/components/initial-data-import-panel";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
@@ -122,6 +123,8 @@ export default function InventoryItemsPage() {
           Compras
         </Link>
       </div>
+
+      {!loading && items.length === 0 ? <InitialDataImportPanel compact /> : null}
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         <Card title="Nuevo ítem">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { InitialDataImportPanel } from "@/components/initial-data-import-panel";
 import { Card } from "@ghost/ui";
 
 const modules = [
@@ -49,6 +50,8 @@ export default function InventoryPage() {
           Control de existencias por sucursal.
         </p>
       </div>
+
+      <InitialDataImportPanel compact />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {modules.map((module) => (
