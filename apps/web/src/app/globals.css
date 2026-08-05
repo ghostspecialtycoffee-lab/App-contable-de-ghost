@@ -324,6 +324,14 @@ a {
     @apply flex items-start gap-3 rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] px-3 py-2;
   }
 
+  .ghost-flow-step-done {
+    @apply border-[var(--ghost-brand-500)]/40 bg-[var(--ghost-brand-500)]/5;
+  }
+
+  .ghost-flow-step-done .ghost-flow-order {
+    @apply bg-[var(--ghost-brand-500)] text-white;
+  }
+
   .ghost-flow-order {
     @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--ghost-surface-2)] text-xs font-semibold;
   }
