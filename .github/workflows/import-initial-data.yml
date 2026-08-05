@@ -57,7 +57,7 @@ jobs:
             exit 1
           fi
 
-          CMD=(node scripts/import-initial-purchases.mjs --auto --confirm)
+          CMD=(node scripts/import-initial-purchases.mjs --auto --bootstrap --confirm)
           if [ "${{ inputs.reset_first }}" = "true" ]; then
             CMD+=(--reset-first)
           fi

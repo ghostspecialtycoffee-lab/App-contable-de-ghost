@@ -2,13 +2,14 @@
 /**
  * Carga inicial desde data/initial-load/purchase-invoices.manifest.json
  *
+ * Modo bootstrap (--bootstrap): carga facturas históricas a bodega, organiza insumos
+ * por clase (alimenticio/menaje), crea productos POS desde terminados y registra
+ * gastos operativos en compras sin movimiento de bodega.
+ *
  * GOOGLE_APPLICATION_CREDENTIALS=/path/serviceAccount.json \
  * node scripts/import-initial-purchases.mjs \
- *   --org <organizationId> \
- *   --actor <userId> \
- *   [--branch <branchId>] \
- *   [--reset-first] \
- *   --confirm
+ *   --org <organizationId> --actor <userId> \
+ *   [--branch <branchId>] [--reset-first] [--bootstrap] --confirm
  */
 
 import { readFileSync } from "node:fs";
@@ -44,13 +45,15 @@ const TYPE_MAP = {
 };
 
 const VALID_UNITS = new Set(["g", "kg", "ml", "l", "unit", "box", "bag"]);
+const TRACKS_INVENTORY = new Set(["alimenticio", "menaje"]);
 
 function parseArgs(argv) {
-  const args = { confirm: false, resetFirst: false };
+  const args = { confirm: false, resetFirst: false, bootstrap: false };
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--confirm") args.confirm = true;
     else if (arg === "--reset-first") args.resetFirst = true;
+    else if (arg === "--bootstrap") args.bootstrap = true;
     else if (arg === "--org") args.org = argv[++i];
     else if (arg === "--actor") args.actor = argv[++i];
     else if (arg === "--branch") args.branch = argv[++i];
@@ -69,8 +72,21 @@ function isoDateInTimezone(timeZone = "America/Bogota", referenceDate = new Date
   }).format(referenceDate);
 }
 
-function purchaseInvoiceAffectsInventory(invoiceDate, todayIso) {
+function purchaseInvoiceAffectsInventory(invoiceDate, todayIso, bootstrap) {
+  if (bootstrap) {
+    return true;
+  }
   return invoiceDate >= todayIso;
+}
+
+function lineAffectsInventory(line, bootstrap) {
+  if (line.productCategory === "operativo") {
+    return false;
+  }
+  if (bootstrap) {
+    return TRACKS_INVENTORY.has(line.productCategory ?? "alimenticio");
+  }
+  return true;
 }
 
 function mapTax(value) {
@@ -114,6 +130,101 @@ function invoiceKey(inv) {
   return `${inv.supplierName}|${inv.invoiceNumber}|${inv.invoiceDate}`;
 }
 
+function inferItemType(name, productCategory, explicitType) {
+  if (explicitType && TYPE_MAP[explicitType]) {
+    return explicitType;
+  }
+  if (productCategory === "menaje") {
+    if (/bolsa|sticker|domo|empaque|vaso|recicl/i.test(name)) {
+      return "packaging";
+    }
+    return "supply";
+  }
+  if (
+    /brownie|croissant|galleta|torta|tarta|pan |pan$|enrollado|chicharrón|arequipe/i.test(
+      name,
+    )
+  ) {
+    return "finished_product";
+  }
+  return "raw_material";
+}
+
+function inferMenuCategory(name) {
+  const normalized = name.toLowerCase();
+  if (/café|coffee|leche|agua|cerveza|bebida|jugo|latte|capuccino/.test(normalized)) {
+    return "beverage";
+  }
+  if (
+    /croissant|galleta|brownie|torta|tarta|pan |enrollado|chicharrón|repostería/.test(
+      normalized,
+    )
+  ) {
+    return "pastry";
+  }
+  return "food";
+}
+
+function inferMenuStation(menuCategory) {
+  if (menuCategory === "beverage") return "bar";
+  if (menuCategory === "pastry") return "counter";
+  return "kitchen";
+}
+
+function inferSaleTaxCategory(name, menuCategory) {
+  if (menuCategory === "beverage" && /café|coffee|latte|capuccino/.test(name.toLowerCase())) {
+    return "INC_8";
+  }
+  return "IVA_19";
+}
+
+function roundSalePrice(unitCostNet) {
+  const grossEstimate = unitCostNet * 2.5 * 1.19;
+  return Math.max(1000, Math.round(grossEstimate / 500) * 500);
+}
+
+function buildCatalog(manifest) {
+  const catalog = new Map();
+
+  if (manifest.productCatalog) {
+    for (const [category, entries] of Object.entries(manifest.productCatalog)) {
+      if (category === "operativo" || !Array.isArray(entries)) {
+        continue;
+      }
+      for (const entry of entries) {
+        const norm = normalizeName(entry.name);
+        if (!catalog.has(norm)) {
+          catalog.set(norm, {
+            name: entry.name.trim(),
+            productCategory: entry.productCategory ?? category,
+            itemType: inferItemType(entry.name, entry.productCategory ?? category),
+            unit: "unit",
+          });
+        }
+      }
+    }
+  }
+
+  for (const inv of manifest.invoices) {
+    for (const line of inv.lines ?? []) {
+      if (!line.description || line.productCategory === "operativo") {
+        continue;
+      }
+      const norm = normalizeName(line.description);
+      const existing = catalog.get(norm);
+      const productCategory = line.productCategory ?? existing?.productCategory ?? "alimenticio";
+      catalog.set(norm, {
+        name: line.description.trim(),
+        productCategory,
+        itemType: inferItemType(line.description, productCategory, line.itemType),
+        unit: VALID_UNITS.has(line.unit) ? line.unit : existing?.unit ?? "unit",
+      });
+    }
+  }
+
+  return catalog;
+}
+
 async function deleteCollection(db, path) {
   const snapshot = await db.collection(path).get();
   if (snapshot.empty) return 0;
@@ -136,7 +247,10 @@ async function deleteCollection(db, path) {
 
 async function resolveOwnerUserId(db, organizationId) {
   const members = await db.collection(`organizations/${organizationId}/members`).get();
-  const owner = members.docs.find((doc) => doc.data().role === "owner");
+  const owner = members.docs.find((doc) => {
+    const data = doc.data();
+    return data.role === "owner" || (Array.isArray(data.roles) && data.roles.includes("owner"));
+  });
   if (owner) return owner.id;
   if (members.docs[0]) return members.docs[0].id;
   throw new Error(`Sin miembros en la organización ${organizationId}`);
@@ -163,7 +277,7 @@ async function resolveAutoOrganization(db) {
   return { orgId: first.id, name: first.data()?.name ?? first.id };
 }
 
-async function resetOrganization(db, organizationId) {
+async function resetOrganization(db, organizationId, bootstrap) {
   const collections = [
     "inventoryItems",
     "warehouses",
@@ -176,6 +290,9 @@ async function resetOrganization(db, organizationId) {
     "recipes",
     "fixedExpenses",
   ];
+  if (bootstrap) {
+    collections.push("menuProducts");
+  }
   for (const name of collections) {
     const count = await deleteCollection(db, `organizations/${organizationId}/${name}`);
     console.log(`  reset ${name}: ${count}`);
@@ -326,25 +443,71 @@ async function registerEntry(db, organizationId, actorUserId, input) {
   });
 }
 
-function buildLines(rawLines, itemIdByName) {
+function buildLines(rawLines, itemIdByName, options = {}) {
+  const { includeOperativo = false } = options;
+
   return rawLines
-    .filter((line) => line.productCategory !== "operativo")
+    .filter((line) => includeOperativo || line.productCategory !== "operativo")
     .map((line) => {
       const taxCategory = mapTax(line.taxCategory ?? "IVA_19");
       const subtotal = Math.round(Number(line.unitPriceNet ?? 0) * Number(line.quantity ?? 0));
       const tax = calculateTaxLine(subtotal, taxCategory);
       const norm = normalizeName(line.description);
+      const isOperativo = line.productCategory === "operativo";
       return {
-        inventoryItemId: itemIdByName.get(norm) ?? "",
+        inventoryItemId: isOperativo ? "" : itemIdByName.get(norm) ?? "",
         description: line.description.trim(),
         quantity: Number(line.quantity ?? 0),
         unit: VALID_UNITS.has(line.unit) ? line.unit : "unit",
         unitPriceNet: Number(line.unitPriceNet ?? 0),
         taxCategory,
+        productCategory: line.productCategory ?? "alimenticio",
+        itemType: line.itemType ?? "supply",
         ...tax,
       };
     })
     .filter((line) => line.description && line.quantity > 0);
+}
+
+async function createMenuProductsFromFinished(
+  db,
+  organizationId,
+  actorUserId,
+  finishedProducts,
+) {
+  let created = 0;
+  let sortOrder = 0;
+
+  for (const [norm, entry] of finishedProducts.entries()) {
+    const menuCategory = inferMenuCategory(entry.name);
+    const station = inferMenuStation(menuCategory);
+    const saleTaxCategory = inferSaleTaxCategory(entry.name, menuCategory);
+    const price = roundSalePrice(entry.unitCostNet);
+    const ref = db.collection(`organizations/${organizationId}/menuProducts`).doc();
+    const now = FieldValue.serverTimestamp();
+
+    await ref.set({
+      organizationId,
+      name: entry.name,
+      price,
+      category: menuCategory,
+      station,
+      description: `Importado desde compras · costo ref. ${entry.unitCostNet}`,
+      status: "active",
+      sortOrder,
+      saleTaxCategory,
+      recipeCost: entry.unitCostNet,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: actorUserId,
+      updatedBy: actorUserId,
+    });
+
+    created += 1;
+    sortOrder += 1;
+  }
+
+  return created;
 }
 
 async function main() {
@@ -352,10 +515,12 @@ async function main() {
   if (!args.confirm) {
     console.error(`Uso:
   GOOGLE_APPLICATION_CREDENTIALS=... node scripts/import-initial-purchases.mjs \\
-    --org <organizationId> --actor <userId> [--branch <branchId>] [--reset-first] --confirm
+    --org <organizationId> --actor <userId> [--branch <branchId>] [--reset-first] [--bootstrap] --confirm
 
   Auto (detecta org y owner en Firestore):
-    ... --auto [--org <organizationId>] [--reset-first] --confirm`);
+    ... --auto [--org <organizationId>] [--reset-first] [--bootstrap] --confirm
+
+  Bootstrap: carga histórico a bodega, organiza insumos por clase y crea productos POS.`);
     process.exit(1);
   }
 
@@ -398,41 +563,35 @@ async function main() {
 
   if (args.resetFirst) {
     console.log("Reseteando datos operativos…");
-    await resetOrganization(db, args.org);
+    await resetOrganization(db, args.org, args.bootstrap);
   }
 
   const branchId = await resolveBranchId(db, args.org, args.branch);
   const warehouseId = await ensureWarehouse(db, args.org, branchId, args.actor);
 
-  const catalog = new Map();
-  for (const inv of manifest.invoices) {
-    for (const line of inv.lines ?? []) {
-      if (!line.description || line.productCategory === "operativo") continue;
-      const norm = normalizeName(line.description);
-      if (!catalog.has(norm)) {
-        catalog.set(norm, {
-          name: line.description.trim(),
-          productCategory: line.productCategory ?? "alimenticio",
-          itemType: line.itemType ?? "supply",
-          unit: line.unit ?? "unit",
-        });
-      }
-    }
-  }
-
+  const catalog = buildCatalog(manifest);
   const itemIdByName = new Map();
   let skuIndex = 1;
+  const categoryCounts = { alimenticio: 0, menaje: 0 };
+
   for (const [norm, entry] of catalog.entries()) {
     const itemId = await ensureInventoryItem(db, args.org, args.actor, entry, skuIndex);
     itemIdByName.set(norm, itemId);
+    categoryCounts[entry.productCategory] = (categoryCounts[entry.productCategory] ?? 0) + 1;
     skuIndex += 1;
   }
+
   console.log(`Insumos creados: ${itemIdByName.size}`);
+  console.log(
+    `  Alimenticio: ${categoryCounts.alimenticio ?? 0} · Menaje: ${categoryCounts.menaje ?? 0}`,
+  );
 
   const seen = new Set();
   let imported = 0;
   let skipped = 0;
   let movements = 0;
+  let operativoLines = 0;
+  const finishedProducts = new Map();
 
   for (const inv of manifest.invoices) {
     const key = invoiceKey(inv);
@@ -451,13 +610,15 @@ async function main() {
           unitPriceNet: inv.total,
           unit: "unit",
           itemType: "supply",
-          productCategory: "alimenticio",
+          productCategory: inv.productCategory ?? "alimenticio",
           taxCategory: "EXENTO",
         },
       ];
     }
 
-    const lines = buildLines(rawLines, itemIdByName);
+    const lines = buildLines(rawLines, itemIdByName, {
+      includeOperativo: args.bootstrap,
+    });
     if (lines.length === 0) {
       skipped += 1;
       continue;
@@ -466,7 +627,12 @@ async function main() {
     const subtotal = lines.reduce((sum, line) => sum + line.lineSubtotal, 0);
     const taxAmount = lines.reduce((sum, line) => sum + line.lineTax, 0);
     const total = subtotal + taxAmount;
-    const inventoryApplied = purchaseInvoiceAffectsInventory(inv.invoiceDate, todayIso);
+    const hasInventoryLines = lines.some(
+      (line) => line.inventoryItemId && line.productCategory !== "operativo",
+    );
+    const inventoryApplied =
+      hasInventoryLines &&
+      purchaseInvoiceAffectsInventory(inv.invoiceDate, todayIso, args.bootstrap);
     const now = FieldValue.serverTimestamp();
     const invoiceRef = db.collection(`organizations/${args.org}/purchaseInvoices`).doc();
 
@@ -478,7 +644,7 @@ async function main() {
       invoiceDate: inv.invoiceDate,
       status: "confirmed",
       inventoryApplied,
-      lines,
+      lines: lines.map(({ productCategory, itemType, ...line }) => line),
       subtotal,
       taxAmount,
       total,
@@ -493,10 +659,33 @@ async function main() {
 
     if (inventoryApplied) {
       for (const line of lines) {
-        if (!line.inventoryItemId || line.quantity <= 0) continue;
+        if (line.productCategory === "operativo") {
+          operativoLines += 1;
+          continue;
+        }
+        if (!lineAffectsInventory(line, args.bootstrap)) {
+          continue;
+        }
+        if (!line.inventoryItemId || line.quantity <= 0) {
+          continue;
+        }
+
         const qtyInBase = line.quantity;
         const unitCostNetPerBase =
           qtyInBase > 0 ? Math.round(line.lineSubtotal / qtyInBase) : 0;
+
+        if (
+          args.bootstrap &&
+          line.itemType === "finished_product" &&
+          line.productCategory === "alimenticio"
+        ) {
+          const norm = normalizeName(line.description);
+          finishedProducts.set(norm, {
+            name: line.description.trim(),
+            unitCostNet: unitCostNetPerBase,
+          });
+        }
+
         await registerEntry(db, args.org, args.actor, {
           branchId,
           warehouseId,
@@ -513,11 +702,27 @@ async function main() {
     imported += 1;
   }
 
+  let menuProductsCreated = 0;
+  if (args.bootstrap && finishedProducts.size > 0) {
+    menuProductsCreated = await createMenuProductsFromFinished(
+      db,
+      args.org,
+      args.actor,
+      finishedProducts,
+    );
+  }
+
   console.log(`\nResumen:`);
+  console.log(`  Modo: ${args.bootstrap ? "bootstrap (histórico → bodega)" : "operativo diario"}`);
   console.log(`  Facturas importadas: ${imported}`);
   console.log(`  Omitidas (duplicadas/vacías): ${skipped}`);
   console.log(`  Movimientos de bodega: ${movements}`);
-  console.log(`  Fecha corte bodega (Colombia): ${todayIso}`);
+  console.log(`  Líneas operativas (sin bodega): ${operativoLines}`);
+  if (args.bootstrap) {
+    console.log(`  Productos POS creados: ${menuProductsCreated}`);
+  } else {
+    console.log(`  Fecha corte bodega (Colombia): ${todayIso}`);
+  }
   console.log(`  Bodega: ${warehouseId}`);
 }
 
