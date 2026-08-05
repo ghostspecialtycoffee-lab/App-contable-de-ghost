@@ -12,9 +12,12 @@ import {
   BASE_UNIT_LABELS,
   INVENTORY_ITEM_TYPES,
   INVENTORY_ITEM_TYPE_LABELS,
+  PRODUCT_CATEGORIES,
+  PRODUCT_CATEGORY_LABELS,
   formatPresentationLabel,
   type BaseUnit,
   type InventoryItemType,
+  type ProductCategory,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
@@ -36,6 +39,7 @@ export default function InventoryItemsPage() {
   const [sku, setSku] = useState("");
   const [name, setName] = useState("");
   const [type, setType] = useState<InventoryItemType>("raw_material");
+  const [category, setCategory] = useState<ProductCategory>("alimenticio");
   const [baseUnit, setBaseUnit] = useState<BaseUnit>("g");
   const [purchaseUnit, setPurchaseUnit] = useState<BaseUnit>("kg");
   const [presentationQuantity, setPresentationQuantity] = useState("1000");
@@ -60,6 +64,7 @@ export default function InventoryItemsPage() {
         sku,
         name,
         type,
+        category,
         baseUnit,
         purchaseUnit,
         presentationQuantity: Number(presentationQuantity) || 1,
@@ -140,6 +145,24 @@ export default function InventoryItemsPage() {
                     {INVENTORY_ITEM_TYPE_LABELS[itemType]}
                   </option>
                 ))}
+              </select>
+            </label>
+            <label className="block space-y-1">
+              <span className="text-sm font-medium">Clase</span>
+              <select
+                value={category}
+                onChange={(event) =>
+                  setCategory(event.target.value as ProductCategory)
+                }
+                className="ghost-input"
+              >
+                {PRODUCT_CATEGORIES.filter((entry) => entry !== "operativo").map(
+                  (entry) => (
+                    <option key={entry} value={entry}>
+                      {PRODUCT_CATEGORY_LABELS[entry]}
+                    </option>
+                  ),
+                )}
               </select>
             </label>
             <label className="block space-y-1">
@@ -236,6 +259,7 @@ export default function InventoryItemsPage() {
                   <tr>
                     <th className="px-2 py-2 font-medium">SKU</th>
                     <th className="px-2 py-2 font-medium">Nombre</th>
+                    <th className="px-2 py-2 font-medium">Clase</th>
                     <th className="px-2 py-2 font-medium">Costeo</th>
                     <th className="px-2 py-2 font-medium">Presentación</th>
                     <th className="px-2 py-2 font-medium">Costo / base</th>
@@ -249,6 +273,13 @@ export default function InventoryItemsPage() {
                     >
                       <td className="px-2 py-2 font-mono text-xs">{item.sku}</td>
                       <td className="px-2 py-2">{item.name}</td>
+                      <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
+                        {item.category
+                          ? PRODUCT_CATEGORY_LABELS[
+                              item.category as ProductCategory
+                            ] ?? item.category
+                          : "—"}
+                      </td>
                       <td className="px-2 py-2">{item.baseUnit}</td>
                       <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
                         {formatPresentationLabel({
