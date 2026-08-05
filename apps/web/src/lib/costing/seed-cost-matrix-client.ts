@@ -1,20 +1,25 @@
 import type {
   BaseUnit,
-  CoTaxCategory,
   InventoryItemType,
-  KitchenStation,
-  MenuCategory,
   RecipeLineInput,
 } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 
+import {
+  findCatalogSpec,
+  GHOST_BEVERAGE_CATALOG,
+  GHOST_ESPRESSO_BASE,
+  isCatalogBeverage,
+  normalizeCatalogName,
+  type GhostBeverageSpec,
+} from "@/lib/costing/ghost-menu-catalog";
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 import { createMenuProductClient } from "@/lib/pos/pos-client";
 import { saveRecipeClient } from "@/lib/recipes/recipes-client";
 
-const COFFEE_BAG_GRAMS = 2500;
 const MILK_BOTTLE_ML = 1000;
+const WATER_BOTTLE_ML = 600;
 
 type InventoryRow = {
   id: string;
@@ -28,7 +33,6 @@ type InventoryRow = {
 type MenuProductRow = {
   id: string;
   name: string;
-  category: MenuCategory;
 };
 
 type RecipeRow = {
@@ -36,78 +40,47 @@ type RecipeRow = {
   lines: RecipeLineInput[];
 };
 
-const BEVERAGE_PRODUCT_TEMPLATES: Array<{
-  name: string;
-  price: number;
-  category: MenuCategory;
-  station: KitchenStation;
-  saleTaxCategory: CoTaxCategory;
-  coffeeGrams: number;
-  milkMl: number;
-}> = [
-  {
-    name: "Americano",
-    price: 6000,
-    category: "beverage",
-    station: "bar",
-    saleTaxCategory: "INC_8",
-    coffeeGrams: 18,
-    milkMl: 0,
-  },
-  {
-    name: "Latte",
-    price: 8000,
-    category: "beverage",
-    station: "bar",
-    saleTaxCategory: "INC_8",
-    coffeeGrams: 18,
-    milkMl: 200,
-  },
-  {
-    name: "Cappuccino",
-    price: 8000,
-    category: "beverage",
-    station: "bar",
-    saleTaxCategory: "INC_8",
-    coffeeGrams: 18,
-    milkMl: 150,
-  },
-];
-
 export interface SeedCostMatrixResult {
   productsCreated: number;
   recipesCreated: number;
+  recipesUpdated: number;
   recipesSkipped: number;
   warnings: string[];
 }
 
-function normalizeName(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ");
+function pickBestItem(
+  items: InventoryRow[],
+  matcher: (item: InventoryRow) => boolean,
+  scorer: (item: InventoryRow) => number,
+): InventoryRow | null {
+  const candidates = items.filter(matcher);
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  return [...candidates].sort((left, right) => scorer(right) - scorer(left))[0] ?? null;
 }
 
-function scoreCoffeeItem(item: InventoryRow): number {
+function scoreBlackCoffeeItem(item: InventoryRow): number {
   let score = 0;
-  const name = normalizeName(item.name);
+  const name = normalizeCatalogName(item.name);
 
   if (item.type === "raw_material") {
     score += 10;
   }
-  if (/2\.?5|2500/.test(name)) {
+  if (/paq.*caf|caf.*paq/.test(name)) {
     score += 8;
   }
-  if (/paq.*caf|caf.*paq/.test(name)) {
-    score += 6;
+  if (/marbella|competencia/.test(name)) {
+    score -= 20;
   }
-  if (item.averageCost > 0) {
+  if (/regional|2\.?5|2500|5 lb|5lb|libra/.test(name)) {
     score += 4;
   }
-  if (/marbella|competencia|regional/.test(name)) {
-    score -= 2;
+  if (item.averageCost >= 120_000 && item.averageCost <= 160_000) {
+    score += 6;
+  } else if (item.averageCost > 0) {
+    score += 2;
   }
 
   return score;
@@ -115,7 +88,7 @@ function scoreCoffeeItem(item: InventoryRow): number {
 
 function scoreMilkItem(item: InventoryRow): number {
   let score = 0;
-  const name = normalizeName(item.name);
+  const name = normalizeCatalogName(item.name);
 
   if (/leche entera/.test(name)) {
     score += 12;
@@ -134,24 +107,30 @@ function scoreMilkItem(item: InventoryRow): number {
   return score;
 }
 
-function pickBestItem(
-  items: InventoryRow[],
-  matcher: (item: InventoryRow) => boolean,
-  scorer: (item: InventoryRow) => number,
-): InventoryRow | null {
-  const candidates = items.filter(matcher);
-  if (candidates.length === 0) {
-    return null;
+function scoreWaterItem(item: InventoryRow): number {
+  let score = 0;
+  const name = normalizeCatalogName(item.name);
+
+  if (/agua manantial|agua brisa|agua cristal/.test(name)) {
+    score += 10;
+  } else if (/agua/.test(name)) {
+    score += 5;
+  }
+  if (/600|600ml/.test(name)) {
+    score += 3;
+  }
+  if (item.averageCost > 0) {
+    score += 2;
   }
 
-  return [...candidates].sort((left, right) => scorer(right) - scorer(left))[0] ?? null;
+  return score;
 }
 
-function findCoffeeItem(items: InventoryRow[]): InventoryRow | null {
+function findBlackCoffeeItem(items: InventoryRow[]): InventoryRow | null {
   return pickBestItem(
     items,
     (item) => /caf|cafe|coffee/i.test(item.name),
-    scoreCoffeeItem,
+    scoreBlackCoffeeItem,
   );
 }
 
@@ -159,25 +138,32 @@ function findMilkItem(items: InventoryRow[]): InventoryRow | null {
   return pickBestItem(items, (item) => /leche/i.test(item.name), scoreMilkItem);
 }
 
-function bagGramsForItem(item: InventoryRow): number {
+function findWaterItem(items: InventoryRow[]): InventoryRow | null {
+  return pickBestItem(items, (item) => /agua/i.test(item.name), scoreWaterItem);
+}
+
+function coffeeBagGramsForItem(item: InventoryRow): number {
   if (
     item.presentationQuantity &&
-    item.presentationQuantity > 100 &&
+    item.presentationQuantity > 500 &&
     item.presentationQuantity <= 10000
   ) {
     return item.presentationQuantity;
   }
-  return COFFEE_BAG_GRAMS;
+  return GHOST_ESPRESSO_BASE.blackCoffeeBagGrams;
 }
 
-function bottleMlForItem(item: InventoryRow): number {
+function bottleMlForItem(item: InventoryRow, fallback: number): number {
   if (item.presentationQuantity && item.presentationQuantity >= 200) {
     return item.presentationQuantity;
   }
-  if (/1000|1l|1 l|litro/.test(normalizeName(item.name))) {
+  if (/600|600ml/.test(normalizeCatalogName(item.name))) {
+    return WATER_BOTTLE_ML;
+  }
+  if (/1000|1l|1 l|litro/.test(normalizeCatalogName(item.name))) {
     return MILK_BOTTLE_ML;
   }
-  return MILK_BOTTLE_ML;
+  return fallback;
 }
 
 function buildGramLine(item: InventoryRow, grams: number): RecipeLineInput {
@@ -199,7 +185,7 @@ function buildGramLine(item: InventoryRow, grams: number): RecipeLineInput {
     };
   }
 
-  const bagGrams = bagGramsForItem(item);
+  const bagGrams = coffeeBagGramsForItem(item);
   return {
     inventoryItemId: item.id,
     itemName: item.name,
@@ -208,7 +194,11 @@ function buildGramLine(item: InventoryRow, grams: number): RecipeLineInput {
   };
 }
 
-function buildMilliliterLine(item: InventoryRow, milliliters: number): RecipeLineInput {
+function buildMilliliterLine(
+  item: InventoryRow,
+  milliliters: number,
+  fallbackBottleMl: number,
+): RecipeLineInput {
   if (item.baseUnit === "ml") {
     return {
       inventoryItemId: item.id,
@@ -227,7 +217,7 @@ function buildMilliliterLine(item: InventoryRow, milliliters: number): RecipeLin
     };
   }
 
-  const bottleMl = bottleMlForItem(item);
+  const bottleMl = bottleMlForItem(item, fallbackBottleMl);
   return {
     inventoryItemId: item.id,
     itemName: item.name,
@@ -249,17 +239,17 @@ function findFinishedInventoryMatch(
   productName: string,
   items: InventoryRow[],
 ): InventoryRow | null {
-  const normalizedProduct = normalizeName(productName);
+  const normalizedProduct = normalizeCatalogName(productName);
 
   const exactFinished = items.find(
     (item) =>
-      item.type === "finished_product" && normalizeName(item.name) === normalizedProduct,
+      item.type === "finished_product" && normalizeCatalogName(item.name) === normalizedProduct,
   );
   if (exactFinished) {
     return exactFinished;
   }
 
-  const exactAny = items.find((item) => normalizeName(item.name) === normalizedProduct);
+  const exactAny = items.find((item) => normalizeCatalogName(item.name) === normalizedProduct);
   if (exactAny) {
     return exactAny;
   }
@@ -268,7 +258,7 @@ function findFinishedInventoryMatch(
     if (item.type !== "finished_product") {
       return false;
     }
-    const normalizedItem = normalizeName(item.name);
+    const normalizedItem = normalizeCatalogName(item.name);
     return (
       normalizedItem.includes(normalizedProduct) || normalizedProduct.includes(normalizedItem)
     );
@@ -279,7 +269,7 @@ function findFinishedInventoryMatch(
 
   return (
     items.find((item) => {
-      const normalizedItem = normalizeName(item.name);
+      const normalizedItem = normalizeCatalogName(item.name);
       return (
         normalizedItem.includes(normalizedProduct) || normalizedProduct.includes(normalizedItem)
       );
@@ -287,28 +277,68 @@ function findFinishedInventoryMatch(
   );
 }
 
-function buildBeverageRecipeLines(
-  template: (typeof BEVERAGE_PRODUCT_TEMPLATES)[number],
+function resolveSpecAmounts(spec: GhostBeverageSpec): {
+  coffeeGrams: number;
+  waterMl: number;
+  milkMl: number;
+} {
+  if (spec.usesEspressoBase) {
+    return {
+      coffeeGrams: GHOST_ESPRESSO_BASE.coffeeGrams,
+      waterMl: GHOST_ESPRESSO_BASE.waterMl + (spec.extraWaterMl ?? 0),
+      milkMl: spec.milkMl ?? 0,
+    };
+  }
+
+  return {
+    coffeeGrams: spec.coffeeGrams ?? 0,
+    waterMl: spec.waterMl ?? 0,
+    milkMl: spec.milkMl ?? 0,
+  };
+}
+
+function buildCatalogRecipeLines(
+  spec: GhostBeverageSpec,
   items: InventoryRow[],
   warnings: string[],
 ): RecipeLineInput[] | null {
   const lines: RecipeLineInput[] = [];
-  const coffee = findCoffeeItem(items);
+  const { coffeeGrams, waterMl, milkMl } = resolveSpecAmounts(spec);
 
-  if (!coffee) {
-    warnings.push(`Sin insumo de café para ${template.name}.`);
+  if (coffeeGrams > 0) {
+    const coffee = findBlackCoffeeItem(items);
+    if (!coffee) {
+      warnings.push(`Sin café Black Coffee para ${spec.name}.`);
+      return null;
+    }
+    lines.push(buildGramLine(coffee, coffeeGrams));
+  }
+
+  if (waterMl > 0) {
+    const water = findWaterItem(items);
+    if (!water) {
+      warnings.push(`Sin agua en inventario para ${spec.name} (${waterMl} ml).`);
+    } else {
+      lines.push(buildMilliliterLine(water, waterMl, WATER_BOTTLE_ML));
+    }
+  }
+
+  if (milkMl > 0) {
+    const milk = findMilkItem(items);
+    if (!milk) {
+      warnings.push(`Sin leche en inventario para ${spec.name} (${milkMl} ml).`);
+    } else {
+      lines.push(buildMilliliterLine(milk, milkMl, MILK_BOTTLE_ML));
+    }
+  }
+
+  if (lines.length === 0) {
+    warnings.push(`${spec.name}: solo notas — faltan insumos en compras (${spec.description ?? "ver catálogo"}).`);
     return null;
   }
 
-  lines.push(buildGramLine(coffee, template.coffeeGrams));
-
-  if (template.milkMl > 0) {
-    const milk = findMilkItem(items);
-    if (!milk) {
-      warnings.push(`Sin leche en inventario para ${template.name}.`);
-      return null;
-    }
-    lines.push(buildMilliliterLine(milk, template.milkMl));
+  if (spec.description?.includes("cruzar")) {
+    warnings.push(`${spec.name}: receta parcial — ${spec.description}`);
   }
 
   return lines;
@@ -319,12 +349,9 @@ function buildRecipeLinesForProduct(
   items: InventoryRow[],
   warnings: string[],
 ): RecipeLineInput[] | null {
-  const beverageTemplate = BEVERAGE_PRODUCT_TEMPLATES.find(
-    (template) => normalizeName(template.name) === normalizeName(product.name),
-  );
-
-  if (beverageTemplate) {
-    return buildBeverageRecipeLines(beverageTemplate, items, warnings);
+  const catalogSpec = findCatalogSpec(product.name);
+  if (catalogSpec) {
+    return buildCatalogRecipeLines(catalogSpec, items, warnings);
   }
 
   const finishedMatch = findFinishedInventoryMatch(product.name, items);
@@ -362,14 +389,10 @@ async function loadMenuProducts(organizationId: string): Promise<MenuProductRow[
     ),
   );
 
-  return snapshot.docs.map((document) => {
-    const data = document.data();
-    return {
-      id: document.id,
-      name: String(data.name ?? ""),
-      category: (data.category ?? "food") as MenuCategory,
-    };
-  });
+  return snapshot.docs.map((document) => ({
+    id: document.id,
+    name: String(document.data().name ?? ""),
+  }));
 }
 
 async function loadRecipes(organizationId: string): Promise<RecipeRow[]> {
@@ -414,24 +437,24 @@ export async function seedCostMatrixClient(): Promise<SeedCostMatrixResult> {
   let productsCreated = 0;
 
   let products = await loadMenuProducts(organizationId);
-  const existingNames = new Set(products.map((product) => normalizeName(product.name)));
+  const existingNames = new Set(products.map((product) => normalizeCatalogName(product.name)));
 
-  for (const [index, template] of BEVERAGE_PRODUCT_TEMPLATES.entries()) {
-    if (existingNames.has(normalizeName(template.name))) {
+  for (const [index, spec] of GHOST_BEVERAGE_CATALOG.entries()) {
+    if (existingNames.has(normalizeCatalogName(spec.name))) {
       continue;
     }
 
     await createMenuProductClient({
-      name: template.name,
-      price: template.price,
-      category: template.category,
-      station: template.station,
-      saleTaxCategory: template.saleTaxCategory,
-      description: "Bebida base para matriz de costos",
-      sortOrder: products.length + index,
+      name: spec.name,
+      price: spec.price,
+      category: spec.category,
+      station: spec.station,
+      saleTaxCategory: spec.saleTaxCategory,
+      description: spec.description ?? "Carta Ghost Specialty Coffee",
+      sortOrder: index,
     });
     productsCreated += 1;
-    existingNames.add(normalizeName(template.name));
+    existingNames.add(normalizeCatalogName(spec.name));
   }
 
   if (productsCreated > 0) {
@@ -443,23 +466,40 @@ export async function seedCostMatrixClient(): Promise<SeedCostMatrixResult> {
     throw new Error("No hay insumos en inventario. Importa compras primero.");
   }
 
+  const coffee = findBlackCoffeeItem(inventoryItems);
+  if (!coffee) {
+    warnings.push(
+      "No se encontró Paq café Black Coffee en inventario. Confirma compras de Black Coffee (Ximena Polo).",
+    );
+  } else if (coffee.averageCost <= 0) {
+    warnings.push(
+      `El insumo "${coffee.name}" no tiene costo promedio. Confirma facturas Black Coffee ($145.000/paq 5 lb).`,
+    );
+  }
+
   const recipes = await loadRecipes(organizationId);
   const recipeByProductId = new Map(
     recipes.map((recipe) => [recipe.menuProductId, recipe] as const),
   );
 
   let recipesCreated = 0;
+  let recipesUpdated = 0;
   let recipesSkipped = 0;
 
   for (const product of products) {
     const existing = recipeByProductId.get(product.id);
-    if (existing && existing.lines.length > 0) {
+    const catalogBeverage = isCatalogBeverage(product.name);
+
+    if (existing && existing.lines.length > 0 && !catalogBeverage) {
       recipesSkipped += 1;
       continue;
     }
 
     const lines = buildRecipeLinesForProduct(product, inventoryItems, warnings);
     if (!lines || lines.length === 0) {
+      if (existing && existing.lines.length > 0) {
+        recipesSkipped += 1;
+      }
       continue;
     }
 
@@ -468,12 +508,18 @@ export async function seedCostMatrixClient(): Promise<SeedCostMatrixResult> {
       menuProductName: product.name,
       lines,
     });
-    recipesCreated += 1;
+
+    if (existing && existing.lines.length > 0) {
+      recipesUpdated += 1;
+    } else {
+      recipesCreated += 1;
+    }
   }
 
   return {
     productsCreated,
     recipesCreated,
+    recipesUpdated,
     recipesSkipped,
     warnings,
   };

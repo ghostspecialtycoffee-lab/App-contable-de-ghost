@@ -198,8 +198,11 @@ export default function CostingPage() {
         result.recipesCreated > 0
           ? `${result.recipesCreated} fichas creadas`
           : null,
+        result.recipesUpdated > 0
+          ? `${result.recipesUpdated} fichas actualizadas`
+          : null,
         result.recipesSkipped > 0
-          ? `${result.recipesSkipped} ya tenían receta`
+          ? `${result.recipesSkipped} sin cambios`
           : null,
       ].filter(Boolean);
 
@@ -318,8 +321,9 @@ export default function CostingPage() {
         </ol>
         <div className="mt-4 space-y-2 border-t border-[var(--ghost-border)] pt-4">
           <p className="text-sm text-[var(--ghost-text-muted)]">
-            Con compras e insumos cargados, puedes generar bebidas de café (Americano, Latte,
-            Cappuccino) y fichas 1:1 para productos terminados del catálogo.
+            Carga la carta Ghost (25 bebidas) con base espresso: 18 g café Black Coffee
+            (paq 5 lb · $145.000) + 40 ml agua. Las fichas se cruzan con compras; productos
+            Kiuegi y extras se irán completando al registrar facturas.
           </p>
           <Button
             type="button"
@@ -327,7 +331,7 @@ export default function CostingPage() {
             disabled={seeding || inventoryItems.length === 0}
             onClick={handleSeedCostMatrix}
           >
-            {seeding ? "Generando fichas..." : "Cargar productos y fichas base"}
+            {seeding ? "Generando carta..." : "Cargar carta Ghost y fichas base"}
           </Button>
           {seedMessage ? (
             <p className="text-sm text-[var(--ghost-brand-500)]">{seedMessage}</p>
