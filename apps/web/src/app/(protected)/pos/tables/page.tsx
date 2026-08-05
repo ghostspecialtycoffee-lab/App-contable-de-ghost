@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useTableSessions } from "@/hooks/use-table-sessions";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
-import { buildTableQrUrl, createDiningTable } from "@/lib/tables/tables";
+import { buildTableQrUrl, createDiningTable, syncTableQrLookupsClient } from "@/lib/tables/tables";
 import { cancelTableSession, clearWaiterAlert } from "@/lib/tables/table-sessions";
 import { TableServiceProcessLine } from "@/components/table-service-process";
 import { SalesAccessButtons } from "@/components/sales-access-buttons";
@@ -32,6 +32,23 @@ function PosTablesContent() {
   const [submitting, setSubmitting] = useState(false);
   const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
   const [clearingWaiterSessionId, setClearingWaiterSessionId] = useState<string | null>(null);
+  const syncedLookupRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (tables.length === 0 || loading) {
+      return;
+    }
+
+    const signature = tables.map((table) => `${table.id}:${table.status}`).join("|");
+    if (syncedLookupRef.current === signature) {
+      return;
+    }
+
+    syncedLookupRef.current = signature;
+    void syncTableQrLookupsClient(tables).catch(() => {
+      syncedLookupRef.current = null;
+    });
+  }, [loading, tables]);
 
   const sessionByTableId = useMemo(() => {
     const map = new Map<string, (typeof sessions)[number]>();

@@ -25,6 +25,7 @@ import {
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 import { consumeInventoryForSale } from "@/lib/inventory/sale-inventory-consumption";
 import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
+import { refreshTableQrLookupClient } from "./table-qr-lookup-client";
 
 function createLineId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -396,6 +397,11 @@ export async function checkoutTableSessionClient(input: {
     );
   });
 
+  await refreshTableQrLookupClient({
+    organizationId,
+    tableId: session.tableId as string,
+  }).catch(() => undefined);
+
   await consumeInventoryForSale({
     organizationId,
     branchId,
@@ -463,6 +469,11 @@ export async function cancelTableSessionClient(input: {
       { merge: true },
     );
   });
+
+  await refreshTableQrLookupClient({
+    organizationId,
+    tableId: session.tableId as string,
+  }).catch(() => undefined);
 }
 
 export async function requestWaiterGuestClient(input: {

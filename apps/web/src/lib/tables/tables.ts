@@ -16,4 +16,9 @@ export async function updateDiningTableStatus(
   return updateDiningTableStatusClient(input);
 }
 
-export { findDiningTableByTokenClient, buildGuestMenuUrl, buildTableQrUrl };
+export {
+  findDiningTableByTokenClient,
+  buildGuestMenuUrl,
+  buildTableQrUrl,
+  syncTableQrLookupsClient,
+} from "./tables-client";
