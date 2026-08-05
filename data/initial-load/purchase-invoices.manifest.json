@@ -152,7 +152,8 @@
           "unitPriceNet": 5000,
           "lineTotal": 50000,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Galletas avena",
@@ -160,7 +161,8 @@
           "unitPriceNet": 3500,
           "lineTotal": 21000,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Deshidratado naranja",
@@ -168,7 +170,8 @@
           "unitPriceNet": 15000,
           "lineTotal": 15000,
           "unit": "unit",
-          "itemType": "supply"
+          "itemType": "supply",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Deshidratado limón",
@@ -176,7 +179,8 @@
           "unitPriceNet": 15000,
           "lineTotal": 15000,
           "unit": "unit",
-          "itemType": "supply"
+          "itemType": "supply",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -195,7 +199,8 @@
           "unitPriceNet": 63000,
           "lineTotal": 63000,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -214,7 +219,8 @@
           "unitPriceNet": 145000,
           "lineTotal": 435000,
           "unit": "bag",
-          "itemType": "raw_material"
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Bolsas 1/2 libra",
@@ -222,7 +228,8 @@
           "unitPriceNet": 1500,
           "lineTotal": 31500,
           "unit": "unit",
-          "itemType": "packaging"
+          "itemType": "packaging",
+          "productCategory": "menaje"
         }
       ]
     },
@@ -241,7 +248,8 @@
           "unitPriceNet": 5300,
           "lineTotal": 63600,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Tarro salsa",
@@ -249,7 +257,8 @@
           "unitPriceNet": 8000,
           "lineTotal": 8000,
           "unit": "unit",
-          "itemType": "supply"
+          "itemType": "supply",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -268,7 +277,8 @@
           "unitPriceNet": 5000,
           "lineTotal": 45000,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Galletas chocolate",
@@ -276,7 +286,8 @@
           "unitPriceNet": 5000,
           "lineTotal": 45000,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -295,7 +306,8 @@
           "unitPriceNet": 145000,
           "lineTotal": 290000,
           "unit": "bag",
-          "itemType": "raw_material"
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Bolsas libra",
@@ -303,7 +315,8 @@
           "unitPriceNet": 1650,
           "lineTotal": 33000,
           "unit": "unit",
-          "itemType": "packaging"
+          "itemType": "packaging",
+          "productCategory": "menaje"
         },
         {
           "description": "Bolsas 1/2 libra",
@@ -311,7 +324,8 @@
           "unitPriceNet": 1500,
           "lineTotal": 25500,
           "unit": "unit",
-          "itemType": "packaging"
+          "itemType": "packaging",
+          "productCategory": "menaje"
         }
       ]
     },
@@ -330,7 +344,8 @@
           "unitPriceNet": 155000,
           "lineTotal": 310000,
           "unit": "bag",
-          "itemType": "raw_material"
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -349,7 +364,8 @@
           "unitPriceNet": 145000,
           "lineTotal": 145000,
           "unit": "bag",
-          "itemType": "raw_material"
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -368,7 +384,8 @@
           "unitPriceNet": 145000,
           "lineTotal": 290000,
           "unit": "bag",
-          "itemType": "raw_material"
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Bolsas 1/2 libra",
@@ -376,7 +393,8 @@
           "unitPriceNet": 1500,
           "lineTotal": 12000,
           "unit": "unit",
-          "itemType": "packaging"
+          "itemType": "packaging",
+          "productCategory": "menaje"
         }
       ]
     },
@@ -395,7 +413,8 @@
           "unitPriceNet": 5000,
           "lineTotal": 45000,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -414,7 +433,8 @@
           "unitPriceNet": 145000,
           "lineTotal": 290000,
           "unit": "bag",
-          "itemType": "raw_material"
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -433,7 +453,8 @@
           "unitPriceNet": 145000,
           "lineTotal": 145000,
           "unit": "bag",
-          "itemType": "raw_material"
+          "itemType": "raw_material",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Bolsas 1/2 libra",
@@ -441,7 +462,8 @@
           "unitPriceNet": 1500,
           "lineTotal": 15000,
           "unit": "unit",
-          "itemType": "packaging"
+          "itemType": "packaging",
+          "productCategory": "menaje"
         },
         {
           "description": "Bolsas 1 lb",
@@ -449,7 +471,8 @@
           "unitPriceNet": 1650,
           "lineTotal": 16500,
           "unit": "unit",
-          "itemType": "packaging"
+          "itemType": "packaging",
+          "productCategory": "menaje"
         }
       ]
     },
@@ -469,7 +492,8 @@
           "lineTotal": 2250,
           "unit": "unit",
           "itemType": "raw_material",
-          "taxCategory": "taxable_5"
+          "taxCategory": "taxable_5",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -489,10 +513,12 @@
           "lineTotal": 6000,
           "unit": "unit",
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "operativo"
         }
       ],
-      "expenseCategory": "operational"
+      "expenseCategory": "operational",
+      "productCategory": "operativo"
     },
     {
       "image": "IMG_20260805_071500596_HDR.jpg",
@@ -509,7 +535,8 @@
           "unitPriceNet": 82000,
           "lineTotal": 164000,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Domicilio",
@@ -518,7 +545,8 @@
           "lineTotal": 7000,
           "unit": "unit",
           "itemType": "supply",
-          "expenseCategory": "delivery"
+          "expenseCategory": "delivery",
+          "productCategory": "operativo"
         }
       ]
     },
@@ -537,7 +565,8 @@
           "unitPriceNet": 1500,
           "lineTotal": 7500,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Enrollado de queso",
@@ -545,7 +574,8 @@
           "unitPriceNet": 2100,
           "lineTotal": 10500,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Croissant chocolate",
@@ -553,7 +583,8 @@
           "unitPriceNet": 2000,
           "lineTotal": 10000,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Chicharrón guayaba",
@@ -561,7 +592,8 @@
           "unitPriceNet": 2200,
           "lineTotal": 11000,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Chicharrón arequipe",
@@ -569,7 +601,8 @@
           "unitPriceNet": 2200,
           "lineTotal": 11000,
           "unit": "unit",
-          "itemType": "finished_product"
+          "itemType": "finished_product",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Domicilio",
@@ -578,7 +611,8 @@
           "lineTotal": 6000,
           "unit": "unit",
           "itemType": "supply",
-          "expenseCategory": "delivery"
+          "expenseCategory": "delivery",
+          "productCategory": "operativo"
         }
       ]
     },
@@ -596,7 +630,8 @@
           "unitPriceNet": 1500,
           "lineTotal": 52500,
           "unit": "unit",
-          "itemType": "packaging"
+          "itemType": "packaging",
+          "productCategory": "menaje"
         },
         {
           "description": "Domicilio",
@@ -605,7 +640,8 @@
           "lineTotal": 7000,
           "unit": "unit",
           "itemType": "supply",
-          "expenseCategory": "delivery"
+          "expenseCategory": "delivery",
+          "productCategory": "operativo"
         }
       ]
     },
@@ -625,7 +661,8 @@
           "lineTotal": 7200,
           "unit": "bag",
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -645,7 +682,8 @@
           "lineTotal": 11400,
           "unit": "unit",
           "itemType": "supply",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Agua Cristal gas 600ml",
@@ -654,7 +692,8 @@
           "lineTotal": 10800,
           "unit": "unit",
           "itemType": "supply",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -685,7 +724,8 @@
           "unitPriceNet": 2380,
           "lineTotal": 3177,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Zanahoria",
@@ -694,7 +734,8 @@
           "unitPriceNet": 3380,
           "lineTotal": 5256,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Aceite Diana 2000ml",
@@ -703,7 +744,8 @@
           "unitPriceNet": 17227,
           "lineTotal": 20500,
           "itemType": "raw_material",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Leche Colanta 1000ml",
@@ -712,7 +754,8 @@
           "unitPriceNet": 5950,
           "lineTotal": 59500,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -732,7 +775,8 @@
           "unitPriceNet": 7200,
           "lineTotal": 7200,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -752,7 +796,8 @@
           "unitPriceNet": 7200,
           "lineTotal": 7200,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -772,7 +817,8 @@
           "unitPriceNet": 4900,
           "lineTotal": 9800,
           "itemType": "supply",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Bolsa reciclada 8kg",
@@ -781,7 +827,8 @@
           "unitPriceNet": 250,
           "lineTotal": 250,
           "itemType": "packaging",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         }
       ]
     },
@@ -801,7 +848,8 @@
           "unitPriceNet": 3150,
           "lineTotal": 15750,
           "itemType": "supply",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Bolsa basura Charly 65x",
@@ -810,7 +858,8 @@
           "unitPriceNet": 2395,
           "lineTotal": 2850,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         }
       ]
     },
@@ -830,7 +879,8 @@
           "unitPriceNet": 15950,
           "lineTotal": 15950,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Cerveza Bahia",
@@ -839,7 +889,8 @@
           "unitPriceNet": 1790,
           "lineTotal": 42960,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -859,7 +910,8 @@
           "unitPriceNet": 3500,
           "lineTotal": 10500,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Crema dental",
@@ -868,7 +920,8 @@
           "unitPriceNet": 4576,
           "lineTotal": 5300,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "operativo"
         },
         {
           "description": "Bolsa reciclada",
@@ -877,7 +930,8 @@
           "unitPriceNet": 200,
           "lineTotal": 200,
           "itemType": "packaging",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         }
       ]
     },
@@ -897,7 +951,8 @@
           "unitPriceNet": 8600,
           "lineTotal": 8600,
           "itemType": "raw_material",
-          "taxCategory": "excluded"
+          "taxCategory": "excluded",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Aceite de soya",
@@ -906,7 +961,8 @@
           "unitPriceNet": 6630,
           "lineTotal": 7890,
           "itemType": "raw_material",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Arroz Diana 5",
@@ -915,7 +971,8 @@
           "unitPriceNet": 1990,
           "lineTotal": 1990,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Molida de res",
@@ -924,7 +981,8 @@
           "unitPriceNet": 17050,
           "lineTotal": 17050,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -944,7 +1002,8 @@
           "unitPriceNet": 4200,
           "lineTotal": 8400,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Leche entera",
@@ -953,7 +1012,8 @@
           "unitPriceNet": 3500,
           "lineTotal": 7000,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Leche deslactosada",
@@ -962,7 +1022,8 @@
           "unitPriceNet": 3700,
           "lineTotal": 7400,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Leche condensada",
@@ -971,7 +1032,8 @@
           "unitPriceNet": 4200,
           "lineTotal": 4200,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Arroz Diana 5",
@@ -980,7 +1042,8 @@
           "unitPriceNet": 1990,
           "lineTotal": 1990,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Arequipe Latt",
@@ -989,7 +1052,8 @@
           "unitPriceNet": 4700,
           "lineTotal": 4700,
           "itemType": "raw_material",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -1020,7 +1084,8 @@
           "unitPriceNet": 3500,
           "lineTotal": 3500,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Leche deslactosada",
@@ -1029,7 +1094,8 @@
           "unitPriceNet": 3450,
           "lineTotal": 6900,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Finas hierbas",
@@ -1038,7 +1104,8 @@
           "unitPriceNet": 1990,
           "lineTotal": 1990,
           "itemType": "supply",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Arroz Diana 5",
@@ -1047,7 +1114,8 @@
           "unitPriceNet": 1990,
           "lineTotal": 1990,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Bebida isotónica",
@@ -1056,7 +1124,8 @@
           "unitPriceNet": 1750,
           "lineTotal": 1750,
           "itemType": "supply",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Soda Izots",
@@ -1065,7 +1134,8 @@
           "unitPriceNet": 2100,
           "lineTotal": 4200,
           "itemType": "supply",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Bolsa ecológica",
@@ -1074,7 +1144,8 @@
           "unitPriceNet": 1200,
           "lineTotal": 1200,
           "itemType": "packaging",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Trozos de pescado",
@@ -1083,7 +1154,8 @@
           "unitPriceNet": 9490,
           "lineTotal": 9490,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Mix de verduras",
@@ -1092,7 +1164,8 @@
           "unitPriceNet": 5700,
           "lineTotal": 5700,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -1112,7 +1185,8 @@
           "unitPriceNet": 3500,
           "lineTotal": 17500,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Jugo de limón",
@@ -1121,7 +1195,8 @@
           "unitPriceNet": 3200,
           "lineTotal": 6400,
           "itemType": "supply",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -1152,7 +1227,8 @@
           "unitPriceNet": 500,
           "lineTotal": 500,
           "itemType": "packaging",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Frascos vidrio c/tapa",
@@ -1161,7 +1237,8 @@
           "unitPriceNet": 18000,
           "lineTotal": 72000,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Jarra decorativa con tapa",
@@ -1170,7 +1247,8 @@
           "unitPriceNet": 18000,
           "lineTotal": 36000,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Taza latte 10oz vidrio",
@@ -1179,7 +1257,8 @@
           "unitPriceNet": 10000,
           "lineTotal": 40000,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         }
       ]
     },
@@ -1199,7 +1278,8 @@
           "unitPriceNet": 12500,
           "lineTotal": 12500,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Tabla picar con agarradera",
@@ -1208,7 +1288,8 @@
           "unitPriceNet": 15668,
           "lineTotal": 15668,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Pala torta acero inox",
@@ -1217,7 +1298,8 @@
           "unitPriceNet": 16808,
           "lineTotal": 16808,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Juego cubiertos 16 pzas",
@@ -1226,7 +1308,8 @@
           "unitPriceNet": 36894,
           "lineTotal": 110682,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Juego cuchillo Condor x3",
@@ -1235,7 +1318,8 @@
           "unitPriceNet": 27160,
           "lineTotal": 27160,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Cuchara lagrima 30cm cobre",
@@ -1244,7 +1328,8 @@
           "unitPriceNet": 19900,
           "lineTotal": 19900,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Bolsa biodegradable",
@@ -1253,7 +1338,8 @@
           "unitPriceNet": 300,
           "lineTotal": 300,
           "itemType": "packaging",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         }
       ],
       "notes": "Comprador en factura: Ximena Polo — equipo/insumos cocina"
@@ -1285,7 +1371,8 @@
           "unitPriceNet": 7200,
           "lineTotal": 14400,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         }
       ]
     },
@@ -1305,7 +1392,8 @@
           "unitPriceNet": 5126,
           "lineTotal": 10252,
           "itemType": "packaging",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Bolsa PP sticker 10x20 x100",
@@ -1314,7 +1402,8 @@
           "unitPriceNet": 1848,
           "lineTotal": 1848,
           "itemType": "packaging",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         }
       ]
     },
@@ -1334,7 +1423,8 @@
           "unitPriceNet": 22900,
           "lineTotal": 22900,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Pitillo jumbo cuchara x200",
@@ -1343,7 +1433,8 @@
           "unitPriceNet": 16000,
           "lineTotal": 16000,
           "itemType": "packaging",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Salsero Mio 360ml",
@@ -1352,7 +1443,8 @@
           "unitPriceNet": 2800,
           "lineTotal": 2800,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         }
       ]
     },
@@ -1372,7 +1464,8 @@
           "unitPriceNet": 6400,
           "lineTotal": 6400,
           "itemType": "supply",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "operativo"
         }
       ]
     },
@@ -1392,7 +1485,8 @@
           "unitPriceNet": 2100,
           "lineTotal": 8400,
           "itemType": "supply",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Jugo de limón",
@@ -1401,7 +1495,8 @@
           "unitPriceNet": 3200,
           "lineTotal": 12800,
           "itemType": "supply",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Servilleta",
@@ -1410,7 +1505,8 @@
           "unitPriceNet": 4200,
           "lineTotal": 8400,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "menaje"
         },
         {
           "description": "Azúcar blanca",
@@ -1419,7 +1515,8 @@
           "unitPriceNet": 3150,
           "lineTotal": 3150,
           "itemType": "raw_material",
-          "taxCategory": "exempt"
+          "taxCategory": "exempt",
+          "productCategory": "alimenticio"
         },
         {
           "description": "Helado vainilla",
@@ -1428,7 +1525,8 @@
           "unitPriceNet": 15950,
           "lineTotal": 15950,
           "itemType": "supply",
-          "taxCategory": "taxable_19"
+          "taxCategory": "taxable_19",
+          "productCategory": "alimenticio"
         }
       ]
     }
@@ -1446,5 +1544,393 @@
   },
   "dedupNotes": [
     "I6L1324122 aparece en 071533619 y 071547508 (anverso/reverso) — importar una sola vez"
-  ]
+  ],
+  "productClassification": {
+    "alimenticio": "Comestibles, bebidas, materia prima y productos terminados para venta o consumo en cafetería.",
+    "menaje": "Utensilios, vajilla de servicio, empaques (bolsas, stickers, domos) y desechables operativos.",
+    "operativo": "Gastos fuera de bodega alimenticia/menaje (envío, parqueadero, aseo personal, decoración)."
+  },
+  "productCatalog": {
+    "alimenticio": [
+      {
+        "name": "Aceite de soya",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Aceite Diana 2000ml",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Agua Brisa 600ml",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Agua Cristal gas 600ml",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Agua Manantial 600ml",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Arequipe Latt",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Arroz Diana 5",
+        "productCategory": "alimenticio",
+        "invoices": 3
+      },
+      {
+        "name": "Azúcar blanca",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Bebida isotónica",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Brownies",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Cerveza Bahia",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Chicharrón arequipe",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Chicharrón guayaba",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Croissant chocolate",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Deshidratado limón",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Deshidratado naranja",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Enrollado de queso",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Finas hierbas",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Galletas avena",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Galletas chocolate",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Galletas red velvet",
+        "productCategory": "alimenticio",
+        "invoices": 3
+      },
+      {
+        "name": "Gaseosa Bretaña soda 1.5L",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Harina de trigo Farallones 50",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Helado vainilla",
+        "productCategory": "alimenticio",
+        "invoices": 2
+      },
+      {
+        "name": "Hielo Kolbitos 5 kg",
+        "productCategory": "alimenticio",
+        "invoices": 3
+      },
+      {
+        "name": "Hielo Kolbitos 5 kg bolsa",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Jugo de limón",
+        "productCategory": "alimenticio",
+        "invoices": 2
+      },
+      {
+        "name": "Leche Colanta 1000ml",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Leche condensada",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Leche deslactosada",
+        "productCategory": "alimenticio",
+        "invoices": 2
+      },
+      {
+        "name": "Leche entera",
+        "productCategory": "alimenticio",
+        "invoices": 4
+      },
+      {
+        "name": "Limón tahiti",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Mix de verduras",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Molida de res",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Pan queso",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Papa criolla",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Paq café",
+        "productCategory": "alimenticio",
+        "invoices": 3
+      },
+      {
+        "name": "Paq Café 2.5 kg",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Paq Café 2.5 kg regional",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Paq Café Competencia Marbella",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Paq café regional 2.5 kg",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Salsa Zafran 1000gr",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Soda Izots",
+        "productCategory": "alimenticio",
+        "invoices": 2
+      },
+      {
+        "name": "Tarro salsa",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Tarta de queso",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Torta zanahoria",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Trozos de pescado",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      },
+      {
+        "name": "Zanahoria",
+        "productCategory": "alimenticio",
+        "invoices": 1
+      }
+    ],
+    "menaje": [
+      {
+        "name": "Base 33cm domo T circular",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsa 500g blanca 1/2",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsa basura Charly 65x",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsa biodegradable",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsa ecológica",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsa PP sticker 10x20 x100",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsa reciclada",
+        "productCategory": "menaje",
+        "invoices": 2
+      },
+      {
+        "name": "Bolsa reciclada 8kg",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsas 1 lb",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Bolsas 1/2 libra",
+        "productCategory": "menaje",
+        "invoices": 4
+      },
+      {
+        "name": "Bolsas libra",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Cuchara lagrima 30cm cobre",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Frascos vidrio c/tapa",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Jarra decorativa con tapa",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Juego cubiertos 16 pzas",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Juego cuchillo Condor x3",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Pala torta acero inox",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Pinza panadería Royal inox",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Pitillo jumbo cuchara x200",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Salsero Mio 360ml",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Servilleta",
+        "productCategory": "menaje",
+        "invoices": 2
+      },
+      {
+        "name": "Tabla picar con agarradera",
+        "productCategory": "menaje",
+        "invoices": 1
+      },
+      {
+        "name": "Taza latte 10oz vidrio",
+        "productCategory": "menaje",
+        "invoices": 1
+      }
+    ],
+    "operativo": [
+      {
+        "name": "Banderas doradas",
+        "productCategory": "operativo",
+        "invoices": 1
+      },
+      {
+        "name": "Crema dental",
+        "productCategory": "operativo",
+        "invoices": 1
+      },
+      {
+        "name": "Domicilio",
+        "productCategory": "operativo",
+        "invoices": 3
+      },
+      {
+        "name": "Parqueadero vehículo HHO654",
+        "productCategory": "operativo",
+        "invoices": 1
+      }
+    ]
+  }
 }
