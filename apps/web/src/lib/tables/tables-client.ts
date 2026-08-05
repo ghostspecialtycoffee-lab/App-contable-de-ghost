@@ -170,6 +170,10 @@ export async function findDiningTableByTokenClient(input: {
     return fromLookup;
   }
 
+  if (!getFirebaseAuth().currentUser) {
+    return null;
+  }
+
   const db = getFirestoreDb();
   const tablesQuery = query(
     collection(db, firestorePaths.organizationDiningTables(input.organizationId)),

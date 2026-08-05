@@ -67,6 +67,17 @@ async function syncOrganization(db, organizationId) {
   }
 
   await batch.commit();
+
+  if (count > 0) {
+    const sample = tables.docs.find((table) => table.data().qrToken);
+    if (sample) {
+      const token = sample.data().qrToken;
+      console.log(
+        `Ejemplo mesa: https://ghost-contable.web.app/mesa?o=${organizationId}&t=${token}`,
+      );
+    }
+  }
+
   return count;
 }
 
