@@ -21,6 +21,7 @@ import {
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
+import { consumeInventoryForSale } from "@/lib/inventory/sale-inventory-consumption";
 import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
 
 function requireUserId(): string {
@@ -266,6 +267,18 @@ export async function createSaleClient(input: {
 
       ticketCounter += 1;
     }
+  });
+
+  await consumeInventoryForSale({
+    organizationId,
+    branchId,
+    saleNumber,
+    lines: totals.lines.map((line) => ({
+      productId: line.productId,
+      quantity: line.quantity,
+    })),
+  }).catch(() => {
+    // Venta registrada; consumo de bodega opcional si falta stock o receta.
   });
 
   return {

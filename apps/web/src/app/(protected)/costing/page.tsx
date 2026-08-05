@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { RecipeYieldField } from "@/components/recipe-yield-field";
 import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
@@ -20,12 +21,14 @@ import {
   CO_TAX_CATEGORIES,
   CO_TAX_CATEGORY_LABELS,
   calculateCostMatrix,
-  calculateRecipeCost,
   calculateRecipeCostBreakdown,
+  calculateRecipeCostPerPortion,
+  calculateRecipeBatchCost,
   calculateRecipeLineCost,
   getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
+  suggestRecipeYield,
   type BaseUnit,
   type CoTaxCategory,
   type RecipeLineInput,
@@ -49,6 +52,7 @@ export default function CostingPage() {
   const [price, setPrice] = useState("");
   const [saleTaxCategory, setSaleTaxCategory] = useState<CoTaxCategory>("IVA_19");
   const [recipeLines, setRecipeLines] = useState<RecipeLineInput[]>([emptyRecipeLine()]);
+  const [yieldQuantity, setYieldQuantity] = useState(1);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -87,8 +91,10 @@ export default function CostingPage() {
           unit: line.unit,
         })),
       );
+      setYieldQuantity(selectedRecipe.yieldQuantity || 1);
     } else {
       setRecipeLines([emptyRecipeLine()]);
+      setYieldQuantity(suggestRecipeYield(selectedProduct.name));
     }
 
     setSubmitError(null);
@@ -110,9 +116,14 @@ export default function CostingPage() {
     [validRecipeLines, itemProfiles],
   );
 
+  const previewBatchCost = useMemo(
+    () => calculateRecipeBatchCost(validRecipeLines, itemProfiles),
+    [validRecipeLines, itemProfiles],
+  );
+
   const previewRecipeCost = useMemo(
-    () => recipeBreakdown.reduce((total, line) => total + line.lineCost, 0),
-    [recipeBreakdown],
+    () => calculateRecipeCostPerPortion(validRecipeLines, itemProfiles, yieldQuantity),
+    [validRecipeLines, itemProfiles, yieldQuantity],
   );
 
   const suggestedTaxCategory = useMemo(() => {
@@ -181,6 +192,11 @@ export default function CostingPage() {
       unit: item.baseUnit as BaseUnit,
       quantity: lineDefaultQuantity(item.baseUnit as BaseUnit),
     });
+
+    const suggested = suggestRecipeYield(item.name);
+    if (suggested > 1) {
+      setYieldQuantity((current) => (current <= 1 ? suggested : current));
+    }
   }
 
   async function handleSeedCostMatrix() {
@@ -252,11 +268,14 @@ export default function CostingPage() {
       const result = await saveRecipe({
         menuProductId: selectedProduct.id,
         menuProductName: selectedProduct.name,
+        yieldQuantity,
         lines: validLines,
       });
 
       setSaveMessage(
-        `Ficha guardada. Costo receta: ${formatMoney(result.recipeCost)}.`,
+        `Ficha guardada. Costo por porción: ${formatMoney(result.recipeCost)}` +
+          (yieldQuantity > 1 ? ` (lote ${formatMoney(previewBatchCost)} ÷ ${yieldQuantity})` : "") +
+          ".",
       );
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
@@ -270,7 +289,7 @@ export default function CostingPage() {
       const recipe = recipes.find((entry) => entry.menuProductId === product.id);
       const cost =
         recipe && recipe.lines.length > 0
-          ? calculateRecipeCost(recipe.lines, itemProfiles)
+          ? calculateRecipeCostPerPortion(recipe.lines, itemProfiles, recipe.yieldQuantity)
           : product.recipeCost ?? 0;
       const foodCostPct =
         product.price > 0 && cost > 0 ? cost / product.price : null;
@@ -431,9 +450,16 @@ export default function CostingPage() {
                   </label>
                 </div>
 
+                <RecipeYieldField
+                  productName={selectedProduct.name}
+                  value={yieldQuantity}
+                  onChange={setYieldQuantity}
+                  ingredientNames={validRecipeLines.map((line) => line.itemName).filter(Boolean)}
+                />
+
                 <div className="space-y-2 border-t border-[var(--ghost-border)] pt-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium">Receta (ingredientes)</span>
+                    <span className="text-sm font-medium">Receta (lote completo)</span>
                     <Button
                       type="button"
                       variant="secondary"
@@ -543,7 +569,14 @@ export default function CostingPage() {
                       value={formatMoney(matrix.netProfitAfterSaleTax)}
                       hint="Referencia operativa"
                     />
-                    <Metric label="Costo receta (COGS)" value={formatMoney(previewRecipeCost)} />
+                    <Metric label="Costo por porción (COGS)" value={formatMoney(previewRecipeCost)} />
+                    {yieldQuantity > 1 ? (
+                      <Metric
+                        label="Costo lote completo"
+                        value={formatMoney(previewBatchCost)}
+                        hint={`÷ ${yieldQuantity} porciones`}
+                      />
+                    ) : null}
                     <Metric label="Precio neto venta" value={formatMoney(matrix.salePriceNet)} />
                     <Metric
                       label={CO_TAX_CATEGORY_LABELS[saleTaxCategory]}

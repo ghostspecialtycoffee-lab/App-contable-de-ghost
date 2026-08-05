@@ -1,6 +1,6 @@
 import type { BaseUnit, InventoryCostProfile, RecipeLineInput } from "@ghost/domain";
 import {
-  calculateRecipeCost,
+  calculateRecipeCostPerPortion,
   type InventoryItem,
 } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -86,7 +86,11 @@ export async function saveRecipeClient(input: {
     };
   }
 
-  const recipeCost = calculateRecipeCost(lines, itemProfiles);
+  const recipeCost = calculateRecipeCostPerPortion(
+    lines,
+    itemProfiles,
+    input.yieldQuantity,
+  );
   const existingQuery = query(
     collection(db, firestorePaths.organizationRecipes(organizationId)),
     where("menuProductId", "==", input.menuProductId),
