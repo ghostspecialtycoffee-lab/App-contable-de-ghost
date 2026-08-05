@@ -41,7 +41,7 @@ function GuestTableContent() {
   const [sessionStatus, setSessionStatus] = useState<string>("open");
   const [waiterRequestedAt, setWaiterRequestedAt] = useState<string | null>(null);
   const [lines, setLines] = useState<Array<Record<string, unknown>>>([]);
-  const { products, loading: productsLoading } = useGuestMenuProducts(
+  const { products, loading: productsLoading, error: productsError } = useGuestMenuProducts(
     organizationId || null,
   );
   const [loading, setLoading] = useState(true);
@@ -288,6 +288,14 @@ function GuestTableContent() {
       </div>
 
       <Card title="Menú">
+        {productsError ? (
+          <p className="mb-3 text-sm text-[var(--ghost-danger)]">{productsError}</p>
+        ) : null}
+        {products.length === 0 && !productsLoading ? (
+          <p className="mb-3 text-sm text-[var(--ghost-text-muted)]">
+            El menú no está disponible en este momento. Pide ayuda a un mesero.
+          </p>
+        ) : null}
         <GuestMenuCatalog
           products={products}
           orderMode

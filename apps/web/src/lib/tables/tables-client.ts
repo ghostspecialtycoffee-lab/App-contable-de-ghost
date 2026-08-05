@@ -150,10 +150,11 @@ export async function findDiningTableByTokenClient(input: {
   const tablesQuery = query(
     collection(db, firestorePaths.organizationDiningTables(input.organizationId)),
     where("qrToken", "==", input.qrToken),
-    limit(5),
+    where("status", "in", ["available", "occupied"]),
+    limit(1),
   );
   const snapshot = await getDocs(tablesQuery);
-  const match = snapshot.docs.find((document) => document.data().status !== "closed");
+  const match = snapshot.docs[0];
 
   if (!match) {
     return null;
