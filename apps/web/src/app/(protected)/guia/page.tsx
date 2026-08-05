@@ -7,35 +7,35 @@ import { PageHeader } from "@/components/page-header";
 
 export default function GuiaPage() {
   return (
-    <div className="space-y-8 pb-8">
+    <div className="ghost-page-stack pb-8">
       <PageHeader
         title="Cómo funciona"
-        description="Lógica operativa de Ghost Contable: documentos, flujos y clases de producto."
+        description="Documentos, flujos y clases de producto."
         backHref="/dashboard"
         backLabel="Inicio"
       />
 
-      <nav className="flex flex-wrap gap-2 text-sm">
-        <a href="#zonas" className="ghost-pill-link">
+      <nav className="ghost-anchor-nav" aria-label="Secciones">
+        <a href="#zonas" className="ghost-pill-link shrink-0">
           Zonas
         </a>
-        <a href="#documentos" className="ghost-pill-link">
+        <a href="#documentos" className="ghost-pill-link shrink-0">
           Documentos
         </a>
-        <a href="#ventas" className="ghost-pill-link">
+        <a href="#ventas" className="ghost-pill-link shrink-0">
           Ventas
         </a>
-        <a href="#compras" className="ghost-pill-link">
+        <a href="#compras" className="ghost-pill-link shrink-0">
           Compras
         </a>
-        <a href="#productos" className="ghost-pill-link">
+        <a href="#productos" className="ghost-pill-link shrink-0">
           Productos
         </a>
       </nav>
 
       <OperationalModelPanel />
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2">
         <Link href="/ventas" className="ghost-pill-link">
           Centro de ventas
         </Link>

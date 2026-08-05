@@ -4,16 +4,14 @@ import Link from "next/link";
 import { useMemo } from "react";
 
 import { OperationalHint } from "@/components/operational-model-panel";
-import { OperationalFlowSteps } from "@/components/operational-flow-steps";
 import { PageHeader } from "@/components/page-header";
+import { PageSection } from "@/components/page-section";
 import { useSales } from "@/hooks/use-sales";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import {
-  PAYMENT_METHOD_LABELS,
   buildSalesReport,
   filterSalesByPeriod,
   getReportPeriod,
-  SALES_COUNTER_FLOW,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
@@ -52,68 +50,66 @@ export default function VentasPage() {
   }, [sales]);
 
   return (
-    <div className="space-y-8">
+    <div className="ghost-page-stack">
       <PageHeader
         title="Ventas"
-        description="Cobra, revisa el día y abre comprobantes."
+        description="Cobra primero; revisa el día después."
       />
 
-      <OperationalHint context="sales" />
-
-      <OperationalFlowSteps title="Flujo mostrador" steps={SALES_COUNTER_FLOW} compact />
-
-      <section className="ghost-stat-grid sm:grid-cols-2 xl:grid-cols-4" aria-label="Hoy">
-        <div className="ghost-stat">
-          <p className="ghost-stat-label">Total hoy</p>
-          <p className="ghost-stat-value">
-            {loading ? "—" : formatMoney(todayReport.totalSales)}
-          </p>
+      <div className="ghost-sticky-actions">
+        <div className="ghost-action-grid">
+          <Link href="/pos">
+            <Button fullWidth size="lg">
+              Cobrar mostrador
+            </Button>
+          </Link>
+          <Link href="/pos/tables">
+            <Button fullWidth size="lg" variant="secondary">
+              Abrir mesa
+            </Button>
+          </Link>
         </div>
-        <div className="ghost-stat">
-          <p className="ghost-stat-label">Mesas</p>
-          <p className="ghost-stat-value">
-            {loading ? "—" : formatMoney(todayReport.tableSalesTotal)}
-          </p>
-        </div>
-        <div className="ghost-stat">
-          <p className="ghost-stat-label">Mostrador</p>
-          <p className="ghost-stat-value">
-            {loading ? "—" : formatMoney(todayReport.counterSalesTotal)}
-          </p>
-        </div>
-        <div className="ghost-stat">
-          <p className="ghost-stat-label">Ticket</p>
-          <p className="ghost-stat-value">
-            {loading ? "—" : formatMoney(todayReport.averageTicket)}
-          </p>
-        </div>
-      </section>
+      </div>
 
-      <section className="ghost-action-grid" aria-label="Cobrar">
-        <Link href="/pos">
-          <Button fullWidth size="lg">
-            Cobrar mostrador
-          </Button>
-        </Link>
-        <Link href="/pos/tables">
-          <Button fullWidth size="lg" variant="secondary">
-            Abrir mesa
-          </Button>
-        </Link>
-      </section>
+      <PageSection title="Hoy">
+        <section className="ghost-stat-grid sm:grid-cols-2 xl:grid-cols-4" aria-label="Hoy">
+          <div className="ghost-stat">
+            <p className="ghost-stat-label">Total</p>
+            <p className="ghost-stat-value">
+              {loading ? "—" : formatMoney(todayReport.totalSales)}
+            </p>
+          </div>
+          <div className="ghost-stat">
+            <p className="ghost-stat-label">Mesas</p>
+            <p className="ghost-stat-value">
+              {loading ? "—" : formatMoney(todayReport.tableSalesTotal)}
+            </p>
+          </div>
+          <div className="ghost-stat">
+            <p className="ghost-stat-label">Mostrador</p>
+            <p className="ghost-stat-value">
+              {loading ? "—" : formatMoney(todayReport.counterSalesTotal)}
+            </p>
+          </div>
+          <div className="ghost-stat">
+            <p className="ghost-stat-label">Ticket</p>
+            <p className="ghost-stat-value">
+              {loading ? "—" : formatMoney(todayReport.averageTicket)}
+            </p>
+          </div>
+        </section>
+      </PageSection>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="ghost-secondary-actions">
         <Link href="/kds">
-          <Button size="sm" variant="secondary">
-            Comandas
-          </Button>
+          <Button variant="secondary">Comandas</Button>
         </Link>
         <Link href="/billing">
-          <Button size="sm" variant="secondary">
-            Registros
-          </Button>
+          <Button variant="secondary">Registros</Button>
         </Link>
       </div>
+
+      <OperationalHint context="sales" />
 
       <Card title="Últimos comprobantes">
         {loading ? (
@@ -122,12 +118,12 @@ export default function VentasPage() {
           <p className="text-sm text-[var(--ghost-danger)]">{error}</p>
         ) : recentSales.length === 0 ? (
           <p className="text-sm text-[var(--ghost-text-muted)]">
-            Sin ventas hoy. Usa mostrador o mesas.
+            Sin ventas recientes. Usa los botones de arriba para cobrar.
           </p>
         ) : (
           <ul className="divide-y divide-[var(--ghost-border)] text-sm">
             {recentSales.map((sale) => (
-              <li key={sale.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+              <li key={sale.id} className="ghost-list-row">
                 <div className="min-w-0">
                   <p className="font-mono text-xs">{sale.saleNumber}</p>
                   <p className="truncate text-[var(--ghost-text-muted)]">
@@ -144,7 +140,7 @@ export default function VentasPage() {
             ))}
           </ul>
         )}
-        <Link href="/billing" className="mt-4 inline-block text-sm text-[var(--ghost-text-muted)] underline">
+        <Link href="/billing" className="mt-3 inline-flex min-h-[2.5rem] items-center text-sm text-[var(--ghost-text-muted)] underline">
           Ver todos
         </Link>
       </Card>

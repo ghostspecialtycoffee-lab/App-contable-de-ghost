@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { NAV_SECTIONS, isNavActive } from "@/lib/navigation/app-navigation";
-
-const OPERATION_SECTION = NAV_SECTIONS.find((section) => section.id === "operacion");
 
 interface MobileMoreMenuProps {
   open: boolean;
@@ -49,7 +47,7 @@ export function MobileMoreMenu({ open, onClose }: MobileMoreMenuProps) {
       />
       <div className="ghost-more-sheet">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-base font-semibold">Más</p>
+          <p className="text-base font-semibold">Menú</p>
           <button
             type="button"
             className="ghost-icon-button"
@@ -61,67 +59,42 @@ export function MobileMoreMenu({ open, onClose }: MobileMoreMenuProps) {
         </div>
 
         <nav className="space-y-5">
-          {NAV_SECTIONS.slice(1).map((section) => (
+          {NAV_SECTIONS.map((section) => (
             <div key={section.id}>
               <p className="ghost-sidebar-section-label">{section.label}</p>
               <ul className="mt-2 space-y-1">
-                {section.items.map((item) => {
-                  const active = isNavActive(pathname, item.href);
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        onClick={onClose}
-                        className={[
-                          "ghost-more-link",
-                          active ? "ghost-more-link-active" : "",
-                        ].join(" ")}
-                      >
-                        <span className="font-medium">{item.label}</span>
-                        {item.description ? (
-                          <span className="block text-xs text-[var(--ghost-text-muted)]">
-                            {item.description}
-                          </span>
-                        ) : null}
-                      </Link>
-                    </li>
-                  );
-                })}
+                {section.items
+                  .filter((item) => {
+                    if (section.id !== "operacion") {
+                      return true;
+                    }
+                    return !["/dashboard", "/ventas", "/pos/tables"].includes(item.href);
+                  })
+                  .map((item) => {
+                    const active = isNavActive(pathname, item.href);
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          onClick={onClose}
+                          className={[
+                            "ghost-more-link",
+                            active ? "ghost-more-link-active" : "",
+                          ].join(" ")}
+                        >
+                          <span className="font-medium">{item.label}</span>
+                          {item.description ? (
+                            <span className="block text-xs text-[var(--ghost-text-muted)]">
+                              {item.description}
+                            </span>
+                          ) : null}
+                        </Link>
+                      </li>
+                    );
+                  })}
               </ul>
             </div>
           ))}
-
-          {OPERATION_SECTION ? (
-          <div>
-            <p className="ghost-sidebar-section-label">Operación</p>
-            <ul className="mt-2 space-y-1">
-              {OPERATION_SECTION.items
-                .filter((item) => !["/dashboard", "/ventas", "/pos/tables"].includes(item.href))
-                .map((item) => {
-                  const active = isNavActive(pathname, item.href);
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        onClick={onClose}
-                        className={[
-                          "ghost-more-link",
-                          active ? "ghost-more-link-active" : "",
-                        ].join(" ")}
-                      >
-                        <span className="font-medium">{item.label}</span>
-                        {item.description ? (
-                          <span className="block text-xs text-[var(--ghost-text-muted)]">
-                            {item.description}
-                          </span>
-                        ) : null}
-                      </Link>
-                    </li>
-                  );
-                })}
-            </ul>
-          </div>
-          ) : null}
         </nav>
       </div>
     </div>

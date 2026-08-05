@@ -66,21 +66,28 @@ export default function BillingPage() {
     sales.find((sale) => sale.id === selectedSaleId) ?? invoicesInPeriod[0];
 
   return (
-    <div className="space-y-4 pb-4">
+    <div className="ghost-page-stack pb-4">
       <PageHeader
         title="Registros"
-        description="Comprobantes de venta e informes. Las compras van en Compras."
+        description="Comprobantes de venta e informes."
       />
+
+      <div className="ghost-sticky-actions">
+        <div className="ghost-secondary-actions">
+          <Link href="/pos">
+            <Button size="lg">Mostrador</Button>
+          </Link>
+          <Link href="/pos/tables">
+            <Button size="lg" variant="secondary">
+              Mesas
+            </Button>
+          </Link>
+        </div>
+      </div>
 
       <OperationalHint context="billing" />
 
-      <div className="flex flex-wrap gap-2">
-        <Link href="/pos">
-          <Button>Mostrador</Button>
-        </Link>
-        <Link href="/pos/tables">
-          <Button variant="secondary">Nueva cuenta de mesa</Button>
-        </Link>
+      <div className="ghost-secondary-actions">
         <Link href="/settings/fiscal">
           <Button variant="secondary">Datos fiscales</Button>
         </Link>

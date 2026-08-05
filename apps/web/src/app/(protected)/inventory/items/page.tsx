@@ -92,7 +92,7 @@ export default function InventoryItemsPage() {
   });
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="ghost-page-stack pb-4">
       <PageHeader
         title="Insumos"
         description="Catálogo de bodega: alimenticio entra al food cost; menaje no. El costo promedio se guarda por unidad base."

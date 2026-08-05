@@ -5,6 +5,7 @@ import { useMemo } from "react";
 
 import { DocumentTypesPanel } from "@/components/document-types-panel";
 import { PageHeader } from "@/components/page-header";
+import { PageSection } from "@/components/page-section";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useSales } from "@/hooks/use-sales";
 import { formatMoney } from "@/lib/format";
@@ -39,50 +40,18 @@ export default function DashboardPage() {
   }, [sales, todayPeriod.from, todayPeriod.to]);
 
   return (
-    <div className="space-y-8">
+    <div className="ghost-page-stack">
       <PageHeader
         title="Inicio"
-        description="Resumen de hoy y accesos directos."
+        description="Accesos rápidos y resumen del día."
+        action={
+          <Link href="/guia" className="ghost-pill-link">
+            Guía
+          </Link>
+        }
       />
 
-      <Link href="/guia" className="ghost-pill-link">
-        Cómo funciona la app →
-      </Link>
-
-      <DocumentTypesPanel />
-
-      <section className="ghost-stat-grid" aria-label="Resumen de hoy">
-        <div className="ghost-stat">
-          <p className="ghost-stat-label">Ventas hoy</p>
-          <p className="ghost-stat-value">
-            {salesLoading ? "—" : formatMoney(todayReport.totalSales)}
-          </p>
-          <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
-            {todayReport.invoiceCount} comprobante(s)
-          </p>
-        </div>
-        <div className="ghost-stat">
-          <p className="ghost-stat-label">Mesas</p>
-          <p className="ghost-stat-value">
-            {salesLoading ? "—" : formatMoney(todayReport.tableSalesTotal)}
-          </p>
-          <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
-            {todayReport.tableSalesCount} cuenta(s)
-          </p>
-        </div>
-        <div className="ghost-stat">
-          <p className="ghost-stat-label">Ticket promedio</p>
-          <p className="ghost-stat-value">
-            {salesLoading ? "—" : formatMoney(todayReport.averageTicket)}
-          </p>
-          <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
-            {productsLoading ? "—" : `${products.length} productos en catálogo`}
-          </p>
-        </div>
-      </section>
-
-      <section aria-label="Acciones principales">
-        <p className="mb-3 text-sm font-medium">Operación</p>
+      <PageSection title="Operación" description="Lo que usas cada día">
         <div className="ghost-action-grid">
           <Link href="/ventas" className="ghost-action-tile ghost-action-tile-primary">
             <span className="text-base font-semibold">Centro de ventas</span>
@@ -109,10 +78,51 @@ export default function DashboardPage() {
             </span>
           </Link>
         </div>
-      </section>
+      </PageSection>
 
-      <section aria-label="Contabilidad">
-        <p className="mb-3 text-sm font-medium">Contabilidad</p>
+      <PageSection title="Hoy" description="Ventas del día">
+        <section className="ghost-stat-grid" aria-label="Resumen de hoy">
+          <div className="ghost-stat">
+            <p className="ghost-stat-label">Ventas</p>
+            <p className="ghost-stat-value">
+              {salesLoading ? "—" : formatMoney(todayReport.totalSales)}
+            </p>
+            <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
+              {todayReport.invoiceCount} comprobante(s)
+            </p>
+          </div>
+          <div className="ghost-stat">
+            <p className="ghost-stat-label">Mesas</p>
+            <p className="ghost-stat-value">
+              {salesLoading ? "—" : formatMoney(todayReport.tableSalesTotal)}
+            </p>
+            <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
+              {todayReport.tableSalesCount} cuenta(s)
+            </p>
+          </div>
+          <div className="ghost-stat col-span-2 sm:col-span-1">
+            <p className="ghost-stat-label">Ticket</p>
+            <p className="ghost-stat-value">
+              {salesLoading ? "—" : formatMoney(todayReport.averageTicket)}
+            </p>
+            <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
+              {productsLoading ? "—" : `${products.length} productos`}
+            </p>
+          </div>
+        </section>
+      </PageSection>
+
+      <details className="ghost-hint">
+        <summary className="ghost-hint-summary">
+          <span>Compra vs venta</span>
+          <span className="text-xs text-[var(--ghost-text-muted)]">Ver</span>
+        </summary>
+        <div className="ghost-hint-body">
+          <DocumentTypesPanel />
+        </div>
+      </details>
+
+      <PageSection title="Contabilidad">
         <div className="ghost-link-grid">
           <Link href="/purchases" className="ghost-link-row">
             <span>Compras</span>
@@ -139,7 +149,7 @@ export default function DashboardPage() {
             <span className="text-[var(--ghost-text-muted)]">→</span>
           </Link>
         </div>
-      </section>
+      </PageSection>
     </div>
   );
 }

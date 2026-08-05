@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 
 import { OperationalHint } from "@/components/operational-model-panel";
-import { OperationalFlowSteps } from "@/components/operational-flow-steps";
 import { PageHeader } from "@/components/page-header";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { usePurchaseInvoices } from "@/hooks/use-purchase-invoices";
@@ -30,7 +29,6 @@ import {
   purchaseInvoiceAffectsInventory,
   resolvePurchaseInventoryEntry,
   summarizePurchaseInvoice,
-  PURCHASE_INVENTORY_FLOW,
   type BaseUnit,
   type CoTaxCategory,
   type InventoryItem,
@@ -318,17 +316,15 @@ export default function PurchasesPage() {
   }
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="ghost-page-stack pb-4">
       <PageHeader
         title="Compras"
-        description={`Facturas de proveedor. Solo las de hoy en adelante (${formatDate(operationalToday)}) mueven bodega al confirmar.`}
+        description={`Facturas de proveedor. Desde ${formatDate(operationalToday)} mueven bodega al confirmar.`}
         backHref="/inventory"
         backLabel="Inventario"
       />
 
       <OperationalHint context="purchases" />
-
-      <OperationalFlowSteps title="Flujo compra" steps={PURCHASE_INVENTORY_FLOW} compact />
 
       <Card title="Regla de bodega">
         <p className="text-sm text-[var(--ghost-text-muted)]">
