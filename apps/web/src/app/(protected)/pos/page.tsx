@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { SalesAccessButtons } from "@/components/sales-access-buttons";
+import { CashSessionGate } from "@/components/cash-session-gate";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
@@ -157,7 +158,9 @@ export default function PosPage() {
         <p className="text-sm text-[var(--ghost-text-muted)]">Cargando menú...</p>
       ) : error ? (
         <p className="text-sm text-[var(--ghost-danger)]">{error}</p>
-      ) : products.length === 0 ? (
+      ) : (
+        <CashSessionGate>
+          {products.length === 0 ? (
         <Card title="Sin catálogo">
           <p className="text-sm text-[var(--ghost-text-muted)]">
             Agrega ítems al catálogo antes de registrar operaciones en mostrador.
@@ -343,6 +346,8 @@ export default function PosPage() {
             )}
           </Card>
         </div>
+          )}
+        </CashSessionGate>
       )}
     </div>
   );

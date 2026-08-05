@@ -21,6 +21,7 @@ import {
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
+import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
 
 function requireUserId(): string {
   const uid = getFirebaseAuth().currentUser?.uid;
@@ -192,6 +193,7 @@ export async function createSaleClient(input: {
 }> {
   const userId = requireUserId();
   const { organizationId, branchId } = await getActiveContext();
+  const { sessionId: cashSessionId } = await requireOpenCashSessionClient();
 
   const linesResult = validateSaleLines(input.lines);
   if (!linesResult.ok) {
@@ -214,6 +216,7 @@ export async function createSaleClient(input: {
     transaction.set(saleRef, {
       organizationId,
       branchId,
+      cashSessionId,
       saleNumber,
       status: "paid",
       lines: totals.lines,

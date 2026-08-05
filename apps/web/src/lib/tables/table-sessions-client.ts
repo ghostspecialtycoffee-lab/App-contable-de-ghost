@@ -23,6 +23,7 @@ import {
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
+import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
 
 function createLineId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -305,6 +306,7 @@ export async function checkoutTableSessionClient(input: {
   customerName?: string;
 }): Promise<{ saleId: string; saleNumber: string; total: number }> {
   const { userId, organizationId, branchId } = await getStaffContext();
+  const { sessionId: cashSessionId } = await requireOpenCashSessionClient();
   const db = getFirestoreDb();
   const sessionRef = doc(
     db,
@@ -349,6 +351,7 @@ export async function checkoutTableSessionClient(input: {
     transaction.set(saleRef, {
       organizationId,
       branchId,
+      cashSessionId,
       saleNumber,
       status: "paid",
       lines: totals.lines,
