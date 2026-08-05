@@ -71,10 +71,16 @@ export default function DashboardPage() {
               Apertura y movimientos
             </span>
           </Link>
+          <Link href="/reports" className="ghost-action-tile">
+            <span className="text-base font-semibold">Informes</span>
+            <span className="mt-0.5 text-sm text-[var(--ghost-text-muted)]">
+              Ventas, compras y caja
+            </span>
+          </Link>
           <Link href="/billing" className="ghost-action-tile">
             <span className="text-base font-semibold">Registros</span>
             <span className="mt-0.5 text-sm text-[var(--ghost-text-muted)]">
-              Informes del día
+              Comprobantes del día
             </span>
           </Link>
         </div>

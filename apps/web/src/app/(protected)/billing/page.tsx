@@ -66,7 +66,10 @@ export default function BillingPage() {
 
   return (
     <div className="ghost-page-stack pb-4">
-      <PageHeader title="Registros" />
+      <PageHeader
+        title="Registros"
+        description="Comprobantes de venta · informes completos en Informes"
+      />
 
       <div className="ghost-sticky-actions">
         <div className="ghost-secondary-actions">
@@ -82,6 +85,9 @@ export default function BillingPage() {
       </div>
 
       <div className="ghost-secondary-actions">
+        <Link href="/reports">
+          <Button variant="secondary">Informes financieros</Button>
+        </Link>
         <Link href="/settings/fiscal">
           <Button variant="secondary">Datos fiscales</Button>
         </Link>

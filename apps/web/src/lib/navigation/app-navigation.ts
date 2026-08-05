@@ -22,7 +22,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/pos", label: "Mostrador", description: "Venta directa" },
       { href: "/pos/tables", label: "Mesas", description: "Cuenta y QR" },
       { href: "/kds", label: "Comandas", description: "Barra y cocina" },
-      { href: "/billing", label: "Registros", description: "Comprobantes" },
+      { href: "/billing", label: "Registros", description: "Comprobantes de venta" },
+      { href: "/reports", label: "Informes", description: "Ventas, compras y caja" },
     ],
   },
   {
@@ -53,7 +54,7 @@ export const MOBILE_PRIMARY_TABS = [
   {
     href: "/ventas",
     label: "Ventas",
-    match: ["/ventas", "/pos", "/billing", "/kds", "/cash"],
+    match: ["/ventas", "/pos", "/billing", "/kds", "/cash", "/reports"],
   },
   { href: "/pos/tables", label: "Mesas", match: ["/pos/tables", "/mesa"] },
 ] as const;
