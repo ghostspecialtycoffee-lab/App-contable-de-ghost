@@ -1,5 +1,6 @@
 export * from "./purchases-report.js";
 export * from "./financial-summary.js";
+export * from "./expenses-report.js";
 export {
   buildSalesReport,
   filterSalesByPeriod,
