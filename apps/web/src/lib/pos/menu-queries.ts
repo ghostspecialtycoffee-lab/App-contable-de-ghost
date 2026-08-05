@@ -1,6 +1,6 @@
 import { MENU_CATEGORIES, type MenuCategory } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
-import { collection, orderBy, query, where, type Query } from "firebase/firestore";
+import { collection, query, where, type Query } from "firebase/firestore";
 
 import { getFirestoreDb } from "@/lib/firebase/client";
 
@@ -11,11 +11,10 @@ export function normalizeMenuCategory(category: string | undefined): MenuCategor
   return "other";
 }
 
-/** Consulta compatible con reglas públicas: solo productos activos. */
+/** Consulta compatible con reglas públicas: solo productos activos (sin orderBy para evitar índice compuesto). */
 export function buildActiveMenuProductsQuery(organizationId: string): Query {
   return query(
     collection(getFirestoreDb(), firestorePaths.organizationMenuProducts(organizationId)),
     where("status", "==", "active"),
-    orderBy("sortOrder", "asc"),
   );
 }
