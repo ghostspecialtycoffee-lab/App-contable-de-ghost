@@ -9,8 +9,14 @@ export function formatMoney(
   });
 }
 
-export function formatDateTime(value: string | Date): string {
-  const date = typeof value === "string" ? new Date(value) : value;
+export function formatDateTime(value: string | Date | unknown): string {
+  const iso =
+    value instanceof Date
+      ? value.toISOString()
+      : typeof value === "string"
+        ? value
+        : parseFirestoreDate(value);
+  const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {
     return "—";
   }

@@ -5,6 +5,7 @@ import { collection, limit, onSnapshot, query } from "firebase/firestore";
 
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { getFirestoreDb } from "@/lib/firebase/client";
+import { parseFirestoreDate } from "@/lib/format";
 import { useActiveMembership } from "@/providers/auth-provider";
 import type { CashMovement, CashMovementType } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -46,7 +47,7 @@ export function useCashMovements(limitCount = 300) {
                 amount: data.amount ?? 0,
                 reason: data.reason ?? "",
                 reference: data.reference ?? "",
-                occurredAt: data.occurredAt ?? "",
+                occurredAt: parseFirestoreDate(data.occurredAt),
                 actorUserId: data.actorUserId ?? "",
                 createdAt: "",
                 updatedAt: "",
@@ -56,7 +57,8 @@ export function useCashMovements(limitCount = 300) {
             })
             .sort(
               (left, right) =>
-                new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime(),
+                new Date(right.occurredAt || 0).getTime() -
+                new Date(left.occurredAt || 0).getTime(),
             ),
         );
         setLoading(false);
