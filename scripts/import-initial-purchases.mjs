@@ -54,6 +54,7 @@ function parseArgs(argv) {
     else if (arg === "--org") args.org = argv[++i];
     else if (arg === "--actor") args.actor = argv[++i];
     else if (arg === "--branch") args.branch = argv[++i];
+    else if (arg === "--auto") args.auto = true;
     else if (arg === "--manifest") args.manifest = argv[++i];
   }
   return args;
@@ -131,6 +132,35 @@ async function deleteCollection(db, path) {
   }
   if (ops > 0) await batch.commit();
   return deleted;
+}
+
+async function resolveOwnerUserId(db, organizationId) {
+  const members = await db.collection(`organizations/${organizationId}/members`).get();
+  const owner = members.docs.find((doc) => doc.data().role === "owner");
+  if (owner) return owner.id;
+  if (members.docs[0]) return members.docs[0].id;
+  throw new Error(`Sin miembros en la organización ${organizationId}`);
+}
+
+async function resolveAutoOrganization(db) {
+  const orgs = await db.collection("organizations").limit(20).get();
+  if (orgs.empty) {
+    throw new Error("No hay organizaciones en Firestore. Completa onboarding primero.");
+  }
+  if (orgs.size === 1) {
+    const org = orgs.docs[0];
+    return { orgId: org.id, name: org.data()?.name ?? org.id };
+  }
+
+  const ghost = orgs.docs.find((doc) =>
+    String(doc.data()?.name ?? "").toLowerCase().includes("ghost"),
+  );
+  if (ghost) {
+    return { orgId: ghost.id, name: ghost.data()?.name ?? ghost.id };
+  }
+
+  const first = orgs.docs[0];
+  return { orgId: first.id, name: first.data()?.name ?? first.id };
 }
 
 async function resetOrganization(db, organizationId) {
@@ -319,21 +349,45 @@ function buildLines(rawLines, itemIdByName) {
 
 async function main() {
   const args = parseArgs(process.argv);
-  if (!args.confirm || !args.org || !args.actor) {
+  if (!args.confirm) {
     console.error(`Uso:
   GOOGLE_APPLICATION_CREDENTIALS=... node scripts/import-initial-purchases.mjs \\
-    --org <organizationId> --actor <userId> [--branch <branchId>] [--reset-first] --confirm`);
+    --org <organizationId> --actor <userId> [--branch <branchId>] [--reset-first] --confirm
+
+  Auto (detecta org y owner en Firestore):
+    ... --auto [--org <organizationId>] [--reset-first] --confirm`);
     process.exit(1);
   }
 
   const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  const projectId =
+    process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || "ghost-contable";
+
   initializeApp({
+    projectId,
     credential: credentialsPath
       ? cert(JSON.parse(readFileSync(credentialsPath, "utf8")))
       : applicationDefault(),
   });
 
   const db = getFirestore();
+
+  if (args.auto && !args.org) {
+    const resolved = await resolveAutoOrganization(db);
+    args.org = resolved.orgId;
+    console.log(`Organización detectada: ${resolved.name} (${resolved.orgId})`);
+  }
+
+  if (!args.org) {
+    console.error("Falta --org o usa --auto");
+    process.exit(1);
+  }
+
+  if (!args.actor) {
+    args.actor = await resolveOwnerUserId(db, args.org);
+    console.log(`Actor (owner): ${args.actor}`);
+  }
+
   const manifest = JSON.parse(readFileSync(args.manifest ?? MANIFEST_PATH, "utf8"));
   const todayIso = isoDateInTimezone();
 
