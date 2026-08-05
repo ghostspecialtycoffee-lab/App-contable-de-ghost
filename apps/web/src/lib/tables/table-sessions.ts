@@ -4,8 +4,10 @@ import {
   checkoutTableSessionClient,
   findOpenTableSessionClient,
   openTableSessionClient,
+  clearWaiterAlertClient,
   requestTableBillClient,
   requestTableBillGuestClient,
+  requestWaiterGuestClient,
   sendTableSessionToKitchenClient,
 } from "./table-sessions-client";
 
@@ -39,6 +41,16 @@ export async function requestTableBillGuest(
   input: Parameters<typeof requestTableBillGuestClient>[0],
 ) {
   return requestTableBillGuestClient(input);
+}
+
+export async function requestWaiterGuest(
+  input: Parameters<typeof requestWaiterGuestClient>[0],
+) {
+  return requestWaiterGuestClient(input);
+}
+
+export async function clearWaiterAlert(input: Parameters<typeof clearWaiterAlertClient>[0]) {
+  return clearWaiterAlertClient(input);
 }
 
 export { findOpenTableSessionClient };

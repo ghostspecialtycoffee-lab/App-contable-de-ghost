@@ -2,6 +2,7 @@ import {
   createDiningTableClient,
   findDiningTableByTokenClient,
   updateDiningTableStatusClient,
+  buildGuestMenuUrl,
   buildTableQrUrl,
 } from "./tables-client";
 
@@ -15,4 +16,4 @@ export async function updateDiningTableStatus(
   return updateDiningTableStatusClient(input);
 }
 
-export { findDiningTableByTokenClient, buildTableQrUrl };
+export { findDiningTableByTokenClient, buildGuestMenuUrl, buildTableQrUrl };

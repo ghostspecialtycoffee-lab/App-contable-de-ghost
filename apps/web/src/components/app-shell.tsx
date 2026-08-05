@@ -21,13 +21,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { firebaseUser, organization } = useAuth();
   const { primaryLogo } = useBrandAssets();
-  const isGuestTableRoute = pathname.startsWith("/mesa");
+  const isGuestRoute = pathname.startsWith("/mesa") || pathname.startsWith("/menu");
 
-  if (isGuestTableRoute) {
+  if (isGuestRoute) {
+    const title = pathname.startsWith("/menu") ? "Menú digital" : "Menú · mesa";
     return (
       <div className="min-h-screen bg-[var(--ghost-surface-0)]">
         <header className="border-b border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] px-4 py-3 text-center">
-          <p className="text-sm font-medium">Menú · mesa</p>
+          <p className="text-sm font-medium">{title}</p>
         </header>
         <main>{children}</main>
       </div>

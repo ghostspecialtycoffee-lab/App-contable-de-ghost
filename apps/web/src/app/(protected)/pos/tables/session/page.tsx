@@ -25,6 +25,7 @@ import {
   addTableSessionLines,
   cancelTableSession,
   checkoutTableSession,
+  clearWaiterAlert,
   openTableSession,
   sendTableSessionToKitchen,
 } from "@/lib/tables/table-sessions";
@@ -262,6 +263,32 @@ function TableSessionContent() {
           <p className="mt-1 text-sm text-[var(--ghost-brand-500)]">
             {TABLE_SESSION_STATUS_LABELS[session.status]}
           </p>
+        ) : null}
+        {session?.waiterRequestedAt ? (
+          <div className="mt-3 rounded-xl border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-2)] px-4 py-3">
+            <p className="text-sm font-medium text-[var(--ghost-brand-500)]">
+              El cliente pidió mesero
+            </p>
+            <Button
+              size="sm"
+              className="mt-2"
+              disabled={working}
+              onClick={async () => {
+                setWorking(true);
+                setSubmitError(null);
+                try {
+                  await clearWaiterAlert({ sessionId: session.id });
+                  setSuccess("Alerta de mesero atendida.");
+                } catch (cause) {
+                  setSubmitError(getCallableErrorMessage(cause));
+                } finally {
+                  setWorking(false);
+                }
+              }}
+            >
+              Marcar atendido
+            </Button>
+          </div>
         ) : null}
         <div className="mt-3">
           <TableServiceProcessLine currentStep={processStep} compact />

@@ -61,6 +61,7 @@ export function useTableSessions(options?: { openOnly?: boolean }) {
                 openedAt: data.openedAt ?? parseFirestoreDate(data.createdAt),
                 closedAt: data.closedAt,
                 cancelReason: data.cancelReason ?? "",
+                waiterRequestedAt: data.waiterRequestedAt,
               } satisfies TableSession;
             })
             .sort((left, right) => left.tableNumber - right.tableNumber),
@@ -122,6 +123,7 @@ export function useTableSession(sessionId: string | null) {
           openedAt: data.openedAt ?? "",
           closedAt: data.closedAt,
           cancelReason: data.cancelReason ?? "",
+          waiterRequestedAt: data.waiterRequestedAt,
         });
         setLoading(false);
         setError(null);

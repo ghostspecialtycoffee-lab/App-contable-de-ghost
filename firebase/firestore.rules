@@ -53,6 +53,12 @@ service cloud.firestore {
         && (
           (resource.data.status == 'open' && request.resource.data.status == 'open')
           || (resource.data.status == 'open' && request.resource.data.status == 'requested_bill')
+          || (
+            request.resource.data.status == resource.data.status
+            && (resource.data.status == 'open' || resource.data.status == 'requested_bill')
+            && request.resource.data.waiterRequestedAt is string
+            && request.resource.data.waiterRequestedAt.size() > 0
+          )
         );
     }
 

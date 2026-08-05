@@ -8,7 +8,7 @@ import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useTableSessions } from "@/hooks/use-table-sessions";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { buildTableQrUrl, createDiningTable } from "@/lib/tables/tables";
-import { cancelTableSession } from "@/lib/tables/table-sessions";
+import { cancelTableSession, clearWaiterAlert } from "@/lib/tables/table-sessions";
 import { TableServiceProcessLine } from "@/components/table-service-process";
 import { SalesAccessButtons } from "@/components/sales-access-buttons";
 import {
@@ -31,6 +31,7 @@ function PosTablesContent() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
+  const [clearingWaiterSessionId, setClearingWaiterSessionId] = useState<string | null>(null);
 
   const sessionByTableId = useMemo(() => {
     const map = new Map<string, (typeof sessions)[number]>();
@@ -67,6 +68,19 @@ function PosTablesContent() {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
       setClosingSessionId(null);
+    }
+  }
+
+  async function handleClearWaiterAlert(sessionId: string) {
+    setClearingWaiterSessionId(sessionId);
+    setSubmitError(null);
+
+    try {
+      await clearWaiterAlert({ sessionId });
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setClearingWaiterSessionId(null);
     }
   }
 
@@ -196,6 +210,21 @@ function PosTablesContent() {
                     ) : (
                       <p className="mt-2 text-sm text-[var(--ghost-text-muted)]">Sin cuenta abierta</p>
                     )}
+
+                    {session?.waiterRequestedAt ? (
+                      <div className="mt-2 rounded-lg border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-2)] px-3 py-2 text-sm">
+                        <p className="font-medium text-[var(--ghost-brand-500)]">Cliente pide mesero</p>
+                        <Button
+                          fullWidth
+                          size="sm"
+                          className="mt-2"
+                          disabled={clearingWaiterSessionId === session.id}
+                          onClick={() => handleClearWaiterAlert(session.id)}
+                        >
+                          {clearingWaiterSessionId === session.id ? "Marcando..." : "Atendido"}
+                        </Button>
+                      </div>
+                    ) : null}
 
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrUrl)}`}
