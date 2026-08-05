@@ -54,6 +54,11 @@ export default function VentasPage() {
 
       <div className="ghost-sticky-actions">
         <div className="ghost-action-grid">
+          <Link href="/cash">
+            <Button fullWidth size="lg" variant="secondary">
+              Abrir caja
+            </Button>
+          </Link>
           <Link href="/pos">
             <Button fullWidth size="lg">
               Cobrar mostrador

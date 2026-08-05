@@ -9,6 +9,7 @@ import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useTableSessions } from "@/hooks/use-table-sessions";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
+import { CashSessionGate } from "@/components/cash-session-gate";
 import { TableServiceProcessLine, type TableServiceStepId } from "@/components/table-service-process";
 import {
   activeSessionLines,
@@ -401,24 +402,28 @@ function TableSessionContent() {
                 Los pedidos del QR quedan pendientes hasta enviar comanda.
               </p>
 
-              <label className="block space-y-1">
-                <span className="text-sm font-medium">Medio de pago</span>
-                <select
-                  value={paymentMethod}
-                  onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
-                  className="ghost-input"
-                >
-                  {PAYMENT_METHODS.map((method) => (
-                    <option key={method} value={method}>
-                      {PAYMENT_METHOD_LABELS[method]}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <CashSessionGate>
+                <>
+                  <label className="block space-y-1">
+                    <span className="text-sm font-medium">Medio de pago</span>
+                    <select
+                      value={paymentMethod}
+                      onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
+                      className="ghost-input"
+                    >
+                      {PAYMENT_METHODS.map((method) => (
+                        <option key={method} value={method}>
+                          {PAYMENT_METHOD_LABELS[method]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-              <Button fullWidth disabled={working || activeLines.length === 0} onClick={handleCheckout}>
-                Cobrar cuenta
-              </Button>
+                  <Button fullWidth disabled={working || activeLines.length === 0} onClick={handleCheckout}>
+                    Cobrar cuenta
+                  </Button>
+                </>
+              </CashSessionGate>
 
               <Button
                 fullWidth

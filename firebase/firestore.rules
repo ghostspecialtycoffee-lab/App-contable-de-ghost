@@ -282,6 +282,33 @@ service cloud.firestore {
           || validGuestSessionUpdate(organizationId);
         allow delete: if false;
       }
+
+      match /cashSessions/{sessionId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.status == 'open'
+          && request.resource.data.openedBy == request.auth.uid
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.openingAmount >= 0;
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId
+          && resource.data.status == 'open'
+          && request.resource.data.status == 'closed'
+          && request.resource.data.closedBy == request.auth.uid;
+        allow delete: if false;
+      }
+
+      match /cashMovements/{movementId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.actorUserId == request.auth.uid
+          && request.resource.data.amount > 0
+          && request.resource.data.reason is string
+          && request.resource.data.reason.size() >= 2;
+        allow update, delete: if false;
+      }
     }
   }
 }
