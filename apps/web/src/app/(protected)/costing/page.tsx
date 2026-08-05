@@ -11,6 +11,7 @@ import { useRecipes } from "@/hooks/use-recipes";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
 import { buildInventoryCostProfiles } from "@/lib/costing/recipe-costing";
+import { seedCostMatrix } from "@/lib/costing/seed-cost-matrix";
 import { updateMenuProduct } from "@/lib/pos/pos";
 import { saveRecipe } from "@/lib/recipes/recipes";
 import {
@@ -51,6 +52,9 @@ export default function CostingPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+  const [seedMessage, setSeedMessage] = useState<string | null>(null);
+  const [seedWarnings, setSeedWarnings] = useState<string[]>([]);
 
   const selectedProduct = products.find((product) => product.id === productId) ?? products[0];
   const selectedRecipe = selectedProduct
@@ -179,6 +183,39 @@ export default function CostingPage() {
     });
   }
 
+  async function handleSeedCostMatrix() {
+    setSeedMessage(null);
+    setSeedWarnings([]);
+    setSubmitError(null);
+    setSeeding(true);
+
+    try {
+      const result = await seedCostMatrix();
+      const parts = [
+        result.productsCreated > 0
+          ? `${result.productsCreated} productos nuevos`
+          : null,
+        result.recipesCreated > 0
+          ? `${result.recipesCreated} fichas creadas`
+          : null,
+        result.recipesSkipped > 0
+          ? `${result.recipesSkipped} ya tenían receta`
+          : null,
+      ].filter(Boolean);
+
+      setSeedMessage(
+        parts.length > 0
+          ? `Listo: ${parts.join(" · ")}.`
+          : "No hubo cambios: revisa el catálogo e inventario.",
+      );
+      setSeedWarnings(result.warnings);
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedProduct) {
@@ -279,6 +316,30 @@ export default function CostingPage() {
           <li>3. Armar receta del producto en cantidades de consumo</li>
           <li>4. Guardar ficha y revisar utilidad bruta / food cost</li>
         </ol>
+        <div className="mt-4 space-y-2 border-t border-[var(--ghost-border)] pt-4">
+          <p className="text-sm text-[var(--ghost-text-muted)]">
+            Con compras e insumos cargados, puedes generar bebidas de café (Americano, Latte,
+            Cappuccino) y fichas 1:1 para productos terminados del catálogo.
+          </p>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={seeding || inventoryItems.length === 0}
+            onClick={handleSeedCostMatrix}
+          >
+            {seeding ? "Generando fichas..." : "Cargar productos y fichas base"}
+          </Button>
+          {seedMessage ? (
+            <p className="text-sm text-[var(--ghost-brand-500)]">{seedMessage}</p>
+          ) : null}
+          {seedWarnings.length > 0 ? (
+            <ul className="space-y-1 text-xs text-[var(--ghost-text-muted)]">
+              {seedWarnings.map((warning) => (
+                <li key={warning}>· {warning}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
