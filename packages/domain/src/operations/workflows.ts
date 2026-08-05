@@ -31,7 +31,7 @@ export const DAILY_OPERATION_FLOW: OperationalStep[] = [
     order: 4,
     label: "Informes",
     description: "Ventas, ticket y productos top del día",
-    href: "/billing",
+    href: "/reports",
   },
   {
     order: 5,
@@ -171,15 +171,15 @@ export const PURCHASE_INVENTORY_FLOW: OperationalStep[] = [
 export const REPORTS_FLOW: OperationalStep[] = [
   {
     order: 1,
-    label: "Ventas del periodo",
-    description: "Total, IVA, canal y medio de pago",
-    href: "/billing",
+    label: "Panel financiero",
+    description: "Ventas, compras, caja y bodega",
+    href: "/reports",
   },
   {
     order: 2,
     label: "Productos top",
     description: "Ítems con más movimiento",
-    href: "/billing",
+    href: "/reports",
   },
   {
     order: 3,
@@ -189,6 +189,12 @@ export const REPORTS_FLOW: OperationalStep[] = [
   },
   {
     order: 4,
+    label: "Comprobantes",
+    description: "Detalle de ventas",
+    href: "/billing",
+  },
+  {
+    order: 5,
     label: "Caja",
     description: "Movimientos y arqueo del día",
     href: "/cash",

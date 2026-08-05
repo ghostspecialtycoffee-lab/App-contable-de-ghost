@@ -140,8 +140,8 @@ export default function VentasPage() {
             ))}
           </ul>
         )}
-        <Link href="/billing" className="mt-3 inline-flex min-h-[2.5rem] items-center text-sm text-[var(--ghost-text-muted)] underline">
-          Ver todos
+        <Link href="/reports" className="mt-3 inline-flex min-h-[2.5rem] items-center text-sm text-[var(--ghost-text-muted)] underline">
+          Ver informes completos
         </Link>
       </Card>
     </div>
