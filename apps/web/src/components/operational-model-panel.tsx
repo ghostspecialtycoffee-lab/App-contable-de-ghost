@@ -65,8 +65,10 @@ export function OperationalModelPanel({ compact = false }: { compact?: boolean }
       </section>
 
       <p className="text-sm text-[var(--ghost-text-muted)]">
-        Regla de fechas en compras: facturas con fecha anterior a hoy (Colombia) quedan
-        como histórico sin mover bodega al confirmar.
+        Regla diaria en compras: facturas con fecha anterior a hoy (Colombia) quedan como
+        histórico sin mover bodega al confirmar. La carga inicial desde GitHub Actions usa
+        modo bootstrap: aplica bodega, insumos por clase y productos POS desde el manifiesto
+        de facturas.
       </p>
     </div>
   );

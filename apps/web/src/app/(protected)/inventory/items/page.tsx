@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { InitialDataImportPanel } from "@/components/initial-data-import-panel";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
@@ -90,6 +91,25 @@ export default function InventoryItemsPage() {
     baseUnit,
   });
 
+  const groupedItems = useMemo(() => {
+    const groups = new Map<ProductCategory, typeof items>();
+
+    for (const category of PRODUCT_CATEGORIES.filter((entry) => entry !== "operativo")) {
+      groups.set(category, []);
+    }
+
+    for (const item of items) {
+      const category = (item.category as ProductCategory) ?? "alimenticio";
+      if (category === "operativo") {
+        continue;
+      }
+      const bucket = groups.get(category) ?? groups.get("alimenticio")!;
+      bucket.push(item);
+    }
+
+    return [...groups.entries()].filter(([, groupItems]) => groupItems.length > 0);
+  }, [items]);
+
   return (
     <div className="ghost-page-stack pb-4">
       <PageHeader
@@ -103,6 +123,10 @@ export default function InventoryItemsPage() {
           Compras
         </Link>
       </div>
+
+      {!loading && items.length === 0 ? (
+        <InitialDataImportPanel compact warehouseId={undefined} />
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         <Card title="Nuevo ítem">
@@ -247,49 +271,54 @@ export default function InventoryItemsPage() {
               reales.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-[var(--ghost-border)] text-[var(--ghost-text-muted)]">
-                  <tr>
-                    <th className="px-2 py-2 font-medium">SKU</th>
-                    <th className="px-2 py-2 font-medium">Nombre</th>
-                    <th className="px-2 py-2 font-medium">Clase</th>
-                    <th className="px-2 py-2 font-medium">Costeo</th>
-                    <th className="px-2 py-2 font-medium">Presentación</th>
-                    <th className="px-2 py-2 font-medium">Costo / base</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="border-b border-[var(--ghost-border)] last:border-0"
-                    >
-                      <td className="px-2 py-2 font-mono text-xs">{item.sku}</td>
-                      <td className="px-2 py-2">{item.name}</td>
-                      <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
-                        {item.category
-                          ? PRODUCT_CATEGORY_LABELS[
-                              item.category as ProductCategory
-                            ] ?? item.category
-                          : "—"}
-                      </td>
-                      <td className="px-2 py-2">{item.baseUnit}</td>
-                      <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
-                        {formatPresentationLabel({
-                          presentationLabel: item.presentationLabel,
-                          purchaseUnit: item.purchaseUnit,
-                          presentationQuantity: item.presentationQuantity,
-                          baseUnit: item.baseUnit,
-                        })}
-                      </td>
-                      <td className="px-2 py-2">
-                        {formatMoney(item.averageCost || item.lastCost)}/{item.baseUnit}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-6">
+              {groupedItems.map(([groupCategory, groupItems]) => (
+                <section key={groupCategory} className="space-y-2">
+                  <h3 className="text-sm font-semibold">
+                    {PRODUCT_CATEGORY_LABELS[groupCategory]}
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-left text-sm">
+                      <thead className="border-b border-[var(--ghost-border)] text-[var(--ghost-text-muted)]">
+                        <tr>
+                          <th className="px-2 py-2 font-medium">SKU</th>
+                          <th className="px-2 py-2 font-medium">Nombre</th>
+                          <th className="px-2 py-2 font-medium">Tipo</th>
+                          <th className="px-2 py-2 font-medium">Costeo</th>
+                          <th className="px-2 py-2 font-medium">Presentación</th>
+                          <th className="px-2 py-2 font-medium">Costo / base</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {groupItems.map((item) => (
+                          <tr
+                            key={item.id}
+                            className="border-b border-[var(--ghost-border)] last:border-0"
+                          >
+                            <td className="px-2 py-2 font-mono text-xs">{item.sku}</td>
+                            <td className="px-2 py-2">{item.name}</td>
+                            <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
+                              {INVENTORY_ITEM_TYPE_LABELS[item.type]}
+                            </td>
+                            <td className="px-2 py-2">{item.baseUnit}</td>
+                            <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
+                              {formatPresentationLabel({
+                                presentationLabel: item.presentationLabel,
+                                purchaseUnit: item.purchaseUnit,
+                                presentationQuantity: item.presentationQuantity,
+                                baseUnit: item.baseUnit,
+                              })}
+                            </td>
+                            <td className="px-2 py-2">
+                              {formatMoney(item.averageCost || item.lastCost)}/{item.baseUnit}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              ))}
             </div>
           )}
         </Card>

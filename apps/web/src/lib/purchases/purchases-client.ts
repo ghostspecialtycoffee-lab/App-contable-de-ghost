@@ -175,6 +175,7 @@ export async function updatePurchaseInvoiceClient(input: {
 
 export async function confirmPurchaseInvoiceClient(input: {
   invoiceId: string;
+  bootstrapInventory?: boolean;
 }): Promise<{ movements: number; inventoryApplied: boolean }> {
   const userId = requireUserId();
   const { organizationId } = await getActiveContext();
@@ -198,7 +199,9 @@ export async function confirmPurchaseInvoiceClient(input: {
   const branchId = invoice.branchId as string;
   const invoiceDate = invoice.invoiceDate as string;
   const lines = (invoice.lines ?? []) as PurchaseInvoiceLine[];
-  const inventoryApplied = purchaseInvoiceAffectsInventory(invoiceDate);
+  const inventoryApplied = purchaseInvoiceAffectsInventory(invoiceDate, {
+    bootstrap: input.bootstrapInventory,
+  });
 
   if (inventoryApplied && !warehouseId) {
     throw new Error("Selecciona una bodega antes de confirmar.");

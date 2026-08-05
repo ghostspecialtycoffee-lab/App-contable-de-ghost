@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { InitialDataImportPanel } from "@/components/initial-data-import-panel";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { usePurchaseInvoices } from "@/hooks/use-purchase-invoices";
 import { useWarehouses } from "@/hooks/use-warehouses";
@@ -345,6 +346,14 @@ export default function PurchasesPage() {
         </Card>
       ) : null}
 
+      {!loading && invoices.length === 0 ? (
+        <InitialDataImportPanel
+          compact
+          warehouseId={selectedWarehouseId || undefined}
+          hasExistingData={inventoryItems.length > 0}
+        />
+      ) : null}
+
       <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
         <Card title={editingInvoiceId ? "Editar borrador" : "Nueva factura de compra"}>
           {editingInvoiceId ? (
@@ -598,7 +607,8 @@ export default function PurchasesPage() {
             <p className="text-sm text-[var(--ghost-danger)]">{error}</p>
           ) : invoices.length === 0 ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">
-              Aún no hay facturas de compra.
+              Aún no hay facturas de compra. Usa la carga inicial arriba o registra una factura
+              manualmente.
             </p>
           ) : (
             <div className="space-y-3">

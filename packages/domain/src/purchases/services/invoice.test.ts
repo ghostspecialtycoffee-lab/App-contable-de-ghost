@@ -91,6 +91,15 @@ describe("purchaseInvoiceAffectsInventory", () => {
       purchaseInvoiceAffectsInventory("2026-08-10", { todayIso: "2026-08-04" }),
     ).toBe(true);
   });
+
+  it("bootstrap aplica bodega en fechas históricas", () => {
+    expect(
+      purchaseInvoiceAffectsInventory("2024-07-22", {
+        todayIso: "2026-08-04",
+        bootstrap: true,
+      }),
+    ).toBe(true);
+  });
 });
 
 describe("isoDateInTimezone", () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { OperationalModelPanel } from "@/components/operational-model-panel";
+import { InitialDataImportPanel } from "@/components/initial-data-import-panel";
 import { PageHeader } from "@/components/page-header";
 
 export default function GuiaPage() {
@@ -29,7 +30,14 @@ export default function GuiaPage() {
         <a href="#productos" className="ghost-pill-link shrink-0">
           Productos
         </a>
+        <a href="#carga-inicial" className="ghost-pill-link shrink-0">
+          Carga inicial
+        </a>
       </nav>
+
+      <div id="carga-inicial" className="scroll-mt-20">
+        <InitialDataImportPanel showGuiaLink={false} />
+      </div>
 
       <OperationalModelPanel />
     </div>

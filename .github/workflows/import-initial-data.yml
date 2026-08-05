@@ -11,6 +11,10 @@ on:
         description: "Borrar data operativa antes de importar"
         type: boolean
         default: true
+      bootstrap:
+        description: "Carga inicial completa (bodega histórica + catálogo POS)"
+        type: boolean
+        default: true
 
 concurrency:
   group: import-initial-data
@@ -58,6 +62,9 @@ jobs:
           fi
 
           CMD=(node scripts/import-initial-purchases.mjs --auto --confirm)
+          if [ "${{ inputs.bootstrap }}" = "true" ]; then
+            CMD+=(--bootstrap)
+          fi
           if [ "${{ inputs.reset_first }}" = "true" ]; then
             CMD+=(--reset-first)
           fi
