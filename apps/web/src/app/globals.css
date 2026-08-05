@@ -325,7 +325,8 @@ a {
   }
 
   .ghost-flow-step-done {
-    @apply border-[var(--ghost-brand-500)]/40 bg-[var(--ghost-brand-500)]/5;
+    border-color: color-mix(in srgb, var(--ghost-brand-500) 40%, transparent);
+    background-color: color-mix(in srgb, var(--ghost-brand-500) 5%, transparent);
   }
 
   .ghost-flow-step-done .ghost-flow-order {
