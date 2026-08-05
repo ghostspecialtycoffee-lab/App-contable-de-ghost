@@ -37,7 +37,15 @@ function PublicMenuContent() {
         </p>
       </div>
 
-      {error ? <p className="text-sm text-[var(--ghost-danger)]">{error}</p> : null}
+      {error ? (
+        <p className="text-sm text-[var(--ghost-danger)]">
+          {error}
+          <span className="mt-1 block text-xs text-[var(--ghost-text-muted)]">
+            Si eres staff, inicia sesión. Si eres cliente, pide al equipo que active productos en el
+            catálogo.
+          </span>
+        </p>
+      ) : null}
 
       <GuestMenuCatalog products={products} />
     </div>

@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { formatMoney } from "@/lib/format";
+import { normalizeCatalogName } from "@/lib/costing/ghost-menu-catalog";
+import { normalizeMenuCategory } from "@/lib/pos/menu-queries";
 import {
   MENU_CATEGORIES,
   MENU_CATEGORY_LABELS,
@@ -15,6 +17,7 @@ interface GuestMenuCatalogProps {
   cartQty?: Record<string, number>;
   onQtyChange?: (productId: string, quantity: number) => void;
   orderMode?: boolean;
+  showSearch?: boolean;
 }
 
 export function GuestMenuCatalog({
@@ -22,7 +25,26 @@ export function GuestMenuCatalog({
   cartQty = {},
   onQtyChange,
   orderMode = false,
+  showSearch = true,
 }: GuestMenuCatalogProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const visibleProducts = useMemo(() => {
+    const normalizedQuery = normalizeCatalogName(searchQuery);
+    if (!normalizedQuery) {
+      return products;
+    }
+
+    return products.filter((product) => {
+      const haystack = normalizeCatalogName(
+        [product.name, product.description ?? "", MENU_CATEGORY_LABELS[normalizeMenuCategory(product.category)]].join(
+          " ",
+        ),
+      );
+      return haystack.includes(normalizedQuery);
+    });
+  }, [products, searchQuery]);
+
   const productsByCategory = useMemo(() => {
     const grouped = new Map<MenuCategory, MenuProduct[]>();
 
@@ -30,9 +52,9 @@ export function GuestMenuCatalog({
       grouped.set(category, []);
     }
 
-    for (const product of products) {
-      const bucket = grouped.get(product.category) ?? grouped.get("other")!;
-      bucket.push(product);
+    for (const product of visibleProducts) {
+      const category = normalizeMenuCategory(product.category);
+      grouped.get(category)!.push(product);
     }
 
     return MENU_CATEGORIES.map((category) => ({
@@ -40,7 +62,7 @@ export function GuestMenuCatalog({
       label: MENU_CATEGORY_LABELS[category],
       products: grouped.get(category) ?? [],
     })).filter((section) => section.products.length > 0);
-  }, [products]);
+  }, [visibleProducts]);
 
   if (products.length === 0) {
     return (
@@ -51,9 +73,27 @@ export function GuestMenuCatalog({
   }
 
   return (
-    <div className="space-y-6">
-      {productsByCategory.map((section) => (
-        <section key={section.category} className="space-y-3">
+    <div className="space-y-4">
+      {showSearch ? (
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          className="ghost-input"
+          placeholder="Buscar en el menú..."
+          autoComplete="off"
+        />
+      ) : null}
+
+      {productsByCategory.length === 0 ? (
+        <p className="text-sm text-[var(--ghost-text-muted)]">
+          {searchQuery.trim()
+            ? `Sin resultados para "${searchQuery.trim()}".`
+            : "No hay productos en esta sección."}
+        </p>
+      ) : (
+        productsByCategory.map((section) => (
+          <section key={section.category} className="space-y-3">
           <h2 className="text-lg font-semibold">{section.label}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {section.products.map((product) => (
@@ -115,8 +155,9 @@ export function GuestMenuCatalog({
               </article>
             ))}
           </div>
-        </section>
-      ))}
+          </section>
+        ))
+      )}
     </div>
   );
 }
