@@ -27,7 +27,12 @@ function renderGhostText(text: string): React.ReactNode {
   });
 }
 
-export function GhostChatPanel() {
+interface GhostChatPanelProps {
+  variant?: "page" | "floating";
+  onClose?: () => void;
+}
+
+export function GhostChatPanel({ variant = "page", onClose }: GhostChatPanelProps) {
   const { messages, quickReplies, processing, sendMessage, resetChat } = useGhostChat();
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -46,8 +51,13 @@ export function GhostChatPanel() {
     await sendMessage(value);
   }
 
+  const panelClassName =
+    variant === "floating"
+      ? "flex h-[min(60vh,520px)] flex-col overflow-hidden bg-[var(--ghost-surface-1)]"
+      : "flex h-[min(72vh,720px)] flex-col overflow-hidden rounded-xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)]";
+
   return (
-    <div className="flex h-[min(72vh,720px)] flex-col overflow-hidden rounded-xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)]">
+    <div className={panelClassName}>
       <div className="flex items-center justify-between gap-3 border-b border-[var(--ghost-border)] px-4 py-3">
         <div>
           <p className="text-sm font-semibold">{GHOST_ASSISTANT_NAME}</p>
@@ -55,9 +65,16 @@ export function GhostChatPanel() {
             Asistente operativo · compras, costos, ventas y comandas
           </p>
         </div>
-        <Button type="button" variant="secondary" size="sm" onClick={resetChat}>
-          Reiniciar
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button type="button" variant="secondary" size="sm" onClick={resetChat}>
+            Reiniciar
+          </Button>
+          {onClose ? (
+            <Button type="button" variant="secondary" size="sm" onClick={onClose} aria-label="Cerrar chat">
+              ✕
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
