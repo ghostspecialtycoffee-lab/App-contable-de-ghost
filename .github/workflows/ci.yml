@@ -16,16 +16,21 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git fetch --depth=1 origin "${{ github.sha }}"
+          git checkout FETCH_HEAD
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.6.5
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
+      - name: Setup pnpm
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@10.6.5 --activate
+          node --version
+          pnpm --version
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
