@@ -266,6 +266,10 @@ export default function InventoryItemsPage() {
         </Card>
 
         <Card title="Catálogo de insumos">
+          <p className="mb-4 text-sm text-[var(--ghost-text-muted)]">
+            Define aquí cada insumo con su presentación (g/ml por unidad). Las facturas de compra solo
+            vinculan a estos ítems; no crean ni configuran el inventario.
+          </p>
           {loading ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">Cargando ítems...</p>
           ) : error ? (
