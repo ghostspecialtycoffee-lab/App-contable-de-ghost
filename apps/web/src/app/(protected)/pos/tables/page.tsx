@@ -11,6 +11,7 @@ import { buildTableQrUrl, createDiningTable, syncTableQrLookupsClient } from "@/
 import { cancelTableSession, clearWaiterAlert } from "@/lib/tables/table-sessions";
 import { TableServiceProcessLine } from "@/components/table-service-process";
 import { SalesAccessButtons } from "@/components/sales-access-buttons";
+import { useSalesPaths } from "@/hooks/use-sales-paths";
 import {
   activeSessionLines,
   DINING_TABLE_STATUS_LABELS,
@@ -21,6 +22,7 @@ import { Button, Card } from "@ghost/ui";
 
 function PosTablesContent() {
   const router = useRouter();
+  const { path } = useSalesPaths();
   const searchParams = useSearchParams();
   const paidSaleNumber = searchParams.get("paid");
   const { tables, loading, error } = useDiningTables();
@@ -113,7 +115,7 @@ function PosTablesContent() {
       });
       setTableNumber("");
       setTableLabel("");
-      router.push(`/pos/tables/session?id=${result.tableId}`);
+      router.push(`${path("tables")}/session?id=${result.tableId}`);
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -126,7 +128,7 @@ function PosTablesContent() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm text-[var(--ghost-text-muted)]">
-            <Link href="/pos" className="underline">
+            <Link href={path("counter")} className="underline">
               Mostrador
             </Link>
           </p>
@@ -147,7 +149,7 @@ function PosTablesContent() {
           <div className="rounded-xl border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-1)] px-4 py-3 text-sm">
             Cuenta cobrada · comprobante{" "}
             <span className="font-mono font-medium">{paidSaleNumber}</span> registrado en{" "}
-            <Link href="/billing" className="underline">
+            <Link href={path("records")} className="underline">
               Registros
             </Link>
           </div>
@@ -251,7 +253,7 @@ function PosTablesContent() {
 
                     <p className="break-all text-[10px] text-[var(--ghost-text-muted)]">{qrUrl}</p>
 
-                    <Link href={`/pos/tables/session?id=${table.id}`} className="mt-3 block">
+                    <Link href={`${path("tables")}/session?id=${table.id}`} className="mt-3 block">
                       <Button fullWidth variant={session ? "primary" : "secondary"}>
                         {session ? "Ver cuenta" : "Abrir cuenta"}
                       </Button>

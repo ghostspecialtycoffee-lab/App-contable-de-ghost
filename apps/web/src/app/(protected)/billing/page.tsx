@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { SaleReceipt } from "@/components/sale-receipt";
 import { SalesAccessButtons } from "@/components/sales-access-buttons";
+import { useSalesPaths } from "@/hooks/use-sales-paths";
 import { useSales } from "@/hooks/use-sales";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { useAuth } from "@/providers/auth-provider";
@@ -23,6 +24,7 @@ type ReportPreset = "today" | "week" | "month";
 
 export default function BillingPage() {
   const { organization } = useAuth();
+  const { path, inSalesExtension } = useSalesPaths();
   const { sales, loading, error } = useSales();
   const [tab, setTab] = useState<BillingTab>("reports");
   const [preset, setPreset] = useState<ReportPreset>("today");
@@ -73,10 +75,10 @@ export default function BillingPage() {
 
       <div className="ghost-sticky-actions">
         <div className="ghost-secondary-actions">
-          <Link href="/pos">
+          <Link href={path("counter")}>
             <Button size="lg">Mostrador</Button>
           </Link>
-          <Link href="/pos/tables">
+          <Link href={path("tables")}>
             <Button size="lg" variant="secondary">
               Mesas
             </Button>
@@ -84,14 +86,16 @@ export default function BillingPage() {
         </div>
       </div>
 
-      <div className="ghost-secondary-actions">
-        <Link href="/reports">
-          <Button variant="secondary">Informes financieros</Button>
-        </Link>
-        <Link href="/settings/fiscal">
-          <Button variant="secondary">Datos fiscales</Button>
-        </Link>
-      </div>
+      {!inSalesExtension ? (
+        <div className="ghost-secondary-actions">
+          <Link href="/reports">
+            <Button variant="secondary">Informes financieros</Button>
+          </Link>
+          <Link href="/settings/fiscal">
+            <Button variant="secondary">Datos fiscales</Button>
+          </Link>
+        </div>
+      ) : null}
 
       <SalesAccessButtons compact />
 
@@ -250,7 +254,7 @@ export default function BillingPage() {
           <p className="text-sm text-[var(--ghost-text-muted)]">
             No hay comprobantes en {period.label.toLowerCase()}. Crea uno desde mostrador.
           </p>
-          <Link href="/pos" className="mt-4 inline-block">
+          <Link href={path("counter")} className="mt-4 inline-block">
             <Button>Ir al mostrador</Button>
           </Link>
         </Card>

@@ -19,6 +19,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard", label: "Inicio", description: "Resumen del día" },
       { href: "/cash", label: "Caja", description: "Apertura y movimientos" },
       { href: "/ventas", label: "Ventas", description: "Cobros y accesos" },
+      { href: "/caja", label: "Modo caja", description: "Solo registro de ventas" },
       { href: "/pos", label: "Mostrador", description: "Venta directa" },
       { href: "/pos/tables", label: "Mesas", description: "Cuenta y QR" },
       { href: "/kds", label: "Comandas", description: "Barra y cocina" },
