@@ -18,10 +18,17 @@ export interface AgentKnowledgeSource {
   snippet?: string;
 }
 
+export interface GhostAgentHistoryMessage {
+  role: "user" | "ghost";
+  text: string;
+}
+
 export interface GhostAgentRequest {
   message: string;
   sessionId?: string;
   allowWebSearch?: boolean;
+  contextSummary?: string;
+  history?: GhostAgentHistoryMessage[];
 }
 
 export interface GhostAgentResponse {

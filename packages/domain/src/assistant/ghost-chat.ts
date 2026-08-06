@@ -19,6 +19,10 @@ export interface GhostChatSession {
   /** Respuestas acumuladas del flujo actual */
   draft: Record<string, string>;
   role: GhostChatRole | null;
+  /** Acción operativa en curso (modo conversacional) */
+  pendingIntent?: string | null;
+  /** Sesión del agente para continuidad */
+  agentSessionId?: string;
 }
 
 export interface GhostChatMenuOption {
@@ -33,10 +37,11 @@ export const GHOST_CHAT_GLOBAL_COMMANDS = ["menu", "inicio", "ayuda", "cancelar"
 
 export function createEmptyGhostChatSession(): GhostChatSession {
   return {
-    flowPath: ["root"],
+    flowPath: ["conversation"],
     stepIndex: 0,
     draft: {},
     role: null,
+    pendingIntent: null,
   };
 }
 
@@ -141,9 +146,10 @@ export function ghostChatGreeting(orgName?: string): string {
   const place = orgName?.trim() ? ` en ${orgName.trim()}` : "";
   return (
     `Hola, soy ${GHOST_ASSISTANT_NAME}${place}. ` +
-    "Te guío con preguntas estándar para configurar y operar la plataforma: " +
-    "insumos, facturas, recetas SCA, ventas y comandas.\n\n" +
-    "Elige tu rol o escribe **menu** en cualquier momento para volver aquí."
+    "Háblame con naturalidad: registro compras, reviso inventario, abro mesas, cobro en mostrador, " +
+    "costos de café o lo que necesites. Leo el contexto y ejecuto en la plataforma.\n\n" +
+    "Ejemplos: «¿cómo va la operación?», «registra factura de Distritcafé por 2 kg de café», " +
+    "«abre caja con 200000», «vende un latte en efectivo»."
   );
 }
 

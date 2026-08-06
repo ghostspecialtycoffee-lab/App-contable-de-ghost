@@ -136,7 +136,7 @@ export function GhostChatPanel({ variant = "page", onClose }: GhostChatPanelProp
               event.currentTarget.form?.requestSubmit();
             }
           }}
-          placeholder="Escribe tu respuesta… (Enter envía · Shift+Enter nueva línea)"
+          placeholder="Cuéntame qué necesitas… (compras, ventas, mesas, costos)"
           className="ghost-input min-h-[44px] flex-1 resize-none"
           disabled={processing}
         />

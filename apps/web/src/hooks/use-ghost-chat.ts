@@ -201,7 +201,14 @@ export function useGhostChat() {
       setProcessing(true);
 
       try {
-        const turn = processGhostChatTurn(trimmed, session, context);
+        const history = [...messages, userMessage]
+          .slice(-10)
+          .map((entry) => ({
+            speaker: entry.speaker,
+            text: entry.text,
+          }));
+
+        const turn = processGhostChatTurn(trimmed, session, context, history);
         setSession(turn.session);
         setQuickReplies(turn.quickReplies);
 

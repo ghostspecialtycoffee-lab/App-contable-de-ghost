@@ -116,6 +116,8 @@ export async function callGhostAgent(input: {
   message: string;
   sessionId?: string;
   allowWebSearch?: boolean;
+  contextSummary?: string;
+  history?: Array<{ role: "user" | "ghost"; text: string }>;
 }): Promise<{
   answer: string;
   usedWebSearch: boolean;
@@ -128,6 +130,8 @@ export async function callGhostAgent(input: {
       message: string;
       sessionId?: string;
       allowWebSearch?: boolean;
+      contextSummary?: string;
+      history?: Array<{ role: "user" | "ghost"; text: string }>;
     },
     {
       answer: string;

@@ -5,20 +5,26 @@ import {
   type BeverageAdvancedSetupQuestion,
 } from "@ghost/domain";
 import {
+  buildConversationContextSummary,
   createEmptyGhostChatSession,
+  createInitialConversationTurn,
+  flowPathForIntent,
   formatGhostChatMenu,
   ghostChatGreeting,
   GHOST_ASSISTANT_NAME,
   GHOST_ROLE_MENUS,
   GHOST_ROOT_MENU,
-  isGhostChatGlobalCommand,
   parseKitchenOrderStatus,
   parsePaymentMethod,
+  processConversationTurn,
   resolveMenuSelection,
   type GhostChatMessage,
   type GhostChatMenuOption,
   type GhostChatRole,
   type GhostChatSession,
+  type GhostConversationContext,
+  type GhostConversationHistoryMessage,
+  type GhostConversationIntent,
 } from "@ghost/domain";
 
 export interface GhostChatInventoryItem {
@@ -91,7 +97,7 @@ export type GhostChatAction =
   | { type: "add-table-order"; payload: Record<string, string> }
   | { type: "send-kitchen"; payload: { sessionId: string } }
   | { type: "update-kitchen-order"; payload: { orderId: string; status: string } }
-  | { type: "ghost-agent-query"; payload: { message: string; sessionId: string } };
+  | { type: "ghost-agent-query"; payload: { message: string; sessionId: string; contextSummary?: string; history?: GhostConversationHistoryMessage[] } };
 
 export interface GhostChatTurnResult {
   session: GhostChatSession;
@@ -968,181 +974,81 @@ export function processGhostChatTurn(
   input: string,
   session: GhostChatSession,
   context: GhostChatContext,
+  history: GhostConversationHistoryMessage[] = [],
 ): GhostChatTurnResult {
-  const trimmed = input.trim();
+  const result = processConversationTurn({
+    message: input,
+    session,
+    context: context as GhostConversationContext,
+    history,
+  });
 
-  if (!trimmed) {
+  if (result.kind === "reply") {
     return {
-      session,
-      ghostMessages: ["Escribe una respuesta o elige una opción de la lista."],
-      quickReplies: [],
+      session: result.session,
+      ghostMessages: result.messages,
+      quickReplies: result.suggestions ?? [],
     };
   }
 
-  if (isGhostChatGlobalCommand(trimmed)) {
-    if (trimmed === "ayuda") {
-      return {
-        session: createEmptyGhostChatSession(),
-        ghostMessages: [
-          ghostChatGreeting(context.organizationName),
-          "\nComandos: **menu**, **inicio**, **cancelar**, **ayuda**.",
-          "\nRoles disponibles:\n" + formatGhostChatMenu(GHOST_ROOT_MENU),
-        ],
-        quickReplies: GHOST_ROOT_MENU.map((option) => option.label),
-      };
-    }
-    return resetToRoot(context);
-  }
-
-  if (session.flowPath[0] === "root" || session.flowPath.length === 0) {
-    return handleRootInput(trimmed, session, context);
-  }
-
-  if (session.flowPath[0] === "role-menu") {
-    return handleRoleMenuInput(trimmed, session, context);
-  }
-
-  if (flowKey(session.flowPath) === "agent/free-question") {
+  if (result.kind === "agent") {
     return {
-      session: createEmptyGhostChatSession(),
-      ghostMessages: ["Consultando conocimiento y web…"],
-      quickReplies: ["menu"],
+      session: result.session,
+      ghostMessages: result.messages,
+      quickReplies: [],
       action: {
         type: "ghost-agent-query",
-        payload: { message: trimmed, sessionId: `chat-${Date.now()}` },
+        payload: {
+          message: result.message,
+          sessionId: result.session.agentSessionId ?? `chat-${Date.now()}`,
+          contextSummary: buildConversationContextSummary(context as GhostConversationContext),
+          history,
+        },
       },
     };
   }
 
-  const step = activeStep(session, context);
-  if (!step) {
-    return resetToRoot(context);
-  }
-
-  const validationError = step.validate?.(trimmed, context);
-  if (validationError) {
-    const prompt =
-      typeof step.prompt === "function" ? step.prompt(session.draft, context) : step.prompt;
+  if (result.intent === "seed-ghost-menu") {
     return {
-      session,
-      ghostMessages: [`${validationError}\n\n${prompt}`],
-      quickReplies: step.options?.(context).map((option) => option.label) ?? [],
+      session: result.session,
+      ghostMessages: result.messages,
+      quickReplies: [],
+      action: { type: "seed-ghost-menu" },
     };
   }
 
-  let storedValue = trimmed;
-  const key = flowKey(session.flowPath);
-
-  if (key === "admin/confirm-beverage-setup" && step.field !== "productId" && step.field !== "confirm") {
-    const product = context.menuProducts.find((entry) => entry.id === session.draft.productId);
-    const spec = product ? getBeverageAdvancedSetupSpec(product.name) : null;
-    const question = spec?.questions.find((entry) => entry.id === step.field);
-    if (question) {
-      storedValue = normalizeBeverageAnswer(question, trimmed);
-    }
-  }
-
-  if (step.field === "productId" && key === "admin/confirm-beverage-setup") {
-    const product =
-      resolveProductById(trimmed, context) ??
-      (resolveMenuSelection(trimmed, beveragePendingOptions(context))
-        ? context.menuProducts.find(
-            (entry) =>
-              entry.id ===
-              resolveMenuSelection(trimmed, beveragePendingOptions(context))!.id,
-          )
-        : null);
-    if (product) {
-      storedValue = product.id;
-    }
-  }
-
-  if (step.options) {
-    const selected = resolveMenuSelection(trimmed, step.options(context));
-    if (selected) {
-      storedValue = selected.id;
-    }
-  }
-
-  const nextDraft = { ...session.draft, [step.field]: storedValue };
-
-  if (step.field === "confirm") {
-    if (/^(no|n|cancelar|2)$/i.test(trimmed)) {
-      return {
-        session: createEmptyGhostChatSession(),
-        ghostMessages: ["Listo, cancelé la operación. ¿Qué más hacemos?\n" + formatGhostChatMenu(GHOST_ROOT_MENU)],
-        quickReplies: GHOST_ROOT_MENU.map((option) => option.label),
-      };
-    }
-
-    const action = buildAction({ ...session, draft: nextDraft }, context);
-    return {
-      session: createEmptyGhostChatSession(),
-      ghostMessages: action
-        ? ["Perfecto, lo registro en la plataforma…"]
-        : ["No pude completar la acción."],
-      quickReplies: ["menu"],
-      action,
-    };
-  }
-
-  const nextSession: GhostChatSession = {
-    ...session,
-    draft: nextDraft,
-    stepIndex: session.stepIndex + 1,
+  const actionSession: GhostChatSession = {
+    flowPath: flowPathForIntent(result.intent),
+    stepIndex: 999,
+    draft: result.draft,
+    role: (flowPathForIntent(result.intent)[0] as GhostChatRole | undefined) ?? null,
+    pendingIntent: null,
+    agentSessionId: session.agentSessionId,
   };
-
-  if (key === "admin/confirm-beverage-setup" && step.field === "productId") {
-    const product = context.menuProducts.find((entry) => entry.id === storedValue);
-    if (product) {
-      nextSession.draft.productName = product.name;
-      const spec = getBeverageAdvancedSetupSpec(product.name);
-      nextSession.stepIndex = 0;
-      return {
-        session: nextSession,
-        ghostMessages: [
-          `Vamos con **${product.name}**.\n${spec?.contextNote ?? ""}${
-            spec?.defaultAssumption ? `\nSupuesto actual: ${spec.defaultAssumption}` : ""
-          }`,
-          formatBeverageQuestion(spec!.questions.find((q) => isBeverageQuestionVisible(q, nextDraft))!),
-        ],
-        quickReplies: [],
-      };
-    }
-  }
-
-  const nextStep = activeStep(nextSession, context);
-  if (!nextStep) {
-    const action = buildAction(nextSession, context);
-    return {
-      session: createEmptyGhostChatSession(),
-      ghostMessages: ["Procesando…"],
-      quickReplies: ["menu"],
-      action,
-    };
-  }
-
-  const prompt =
-    typeof nextStep.prompt === "function"
-      ? nextStep.prompt(nextSession.draft, context)
-      : nextStep.prompt;
-
-  if (key === "cashier/open-cash" && nextStep.field === "confirm" && context.cashSessionOpen) {
-    return resetToRoot(context);
-  }
+  const action = buildAction(actionSession, context);
 
   return {
-    session: nextSession,
-    ghostMessages: [prompt],
-    quickReplies: nextStep.options?.(context).map((option) => option.label) ?? [],
+    session: result.session,
+    ghostMessages: result.messages,
+    quickReplies: [],
+    action,
   };
 }
 
 export function createInitialGhostChatTurn(context: GhostChatContext): GhostChatTurnResult {
+  const initial = createInitialConversationTurn(context as GhostConversationContext);
+  if (initial.kind !== "reply") {
+    return {
+      session: createEmptyGhostChatSession(),
+      ghostMessages: [ghostChatGreeting(context.organizationName)],
+      quickReplies: [],
+    };
+  }
+
   return {
-    session: createEmptyGhostChatSession(),
-    ghostMessages: [ghostChatGreeting(context.organizationName)],
-    quickReplies: GHOST_ROOT_MENU.map((option) => option.label),
+    session: initial.session,
+    ghostMessages: initial.messages,
+    quickReplies: initial.suggestions ?? [],
   };
 }
 
