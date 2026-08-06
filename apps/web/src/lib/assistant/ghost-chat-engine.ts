@@ -90,7 +90,8 @@ export type GhostChatAction =
   | { type: "open-table"; payload: Record<string, string> }
   | { type: "add-table-order"; payload: Record<string, string> }
   | { type: "send-kitchen"; payload: { sessionId: string } }
-  | { type: "update-kitchen-order"; payload: { orderId: string; status: string } };
+  | { type: "update-kitchen-order"; payload: { orderId: string; status: string } }
+  | { type: "ghost-agent-query"; payload: { message: string; sessionId: string } };
 
 export interface GhostChatTurnResult {
   session: GhostChatSession;
@@ -751,6 +752,34 @@ function handleRootInput(
   context: GhostChatContext,
 ): GhostChatTurnResult {
   const selection = resolveMenuSelection(input, GHOST_ROOT_MENU);
+  if (selection?.id === "free-question") {
+    return {
+      session: {
+        flowPath: ["agent", "free-question"],
+        stepIndex: 0,
+        draft: {},
+        role: null,
+      },
+      ghostMessages: [
+        "Modo **pregunta libre**. Pregúntame lo que necesites sobre café, costos, proveedores o operación.\n" +
+          "Buscaré en la web cuando haga falta y guardaré el conocimiento para evolucionar.",
+      ],
+      quickReplies: [],
+    };
+  }
+
+  if (!selection && input.includes("?") && input.trim().length >= 12) {
+    return {
+      session: createEmptyGhostChatSession(),
+      ghostMessages: ["Consultando conocimiento y web…"],
+      quickReplies: ["menu"],
+      action: {
+        type: "ghost-agent-query",
+        payload: { message: input.trim(), sessionId: `chat-${Date.now()}` },
+      },
+    };
+  }
+
   if (!selection) {
     return {
       session,
@@ -973,6 +1002,18 @@ export function processGhostChatTurn(
     return handleRoleMenuInput(trimmed, session, context);
   }
 
+  if (flowKey(session.flowPath) === "agent/free-question") {
+    return {
+      session: createEmptyGhostChatSession(),
+      ghostMessages: ["Consultando conocimiento y web…"],
+      quickReplies: ["menu"],
+      action: {
+        type: "ghost-agent-query",
+        payload: { message: trimmed, sessionId: `chat-${Date.now()}` },
+      },
+    };
+  }
+
   const step = activeStep(session, context);
   if (!step) {
     return resetToRoot(context);
@@ -1129,6 +1170,8 @@ export function formatGhostActionSuccess(action: GhostChatAction, result?: strin
       return "Comanda enviada a barra/cocina.";
     case "update-kitchen-order":
       return `Comanda actualizada a **${action.payload.status}**.`;
+    case "ghost-agent-query":
+      return result ?? "Aquí está lo que encontré.";
     default:
       return "Listo.";
   }

@@ -54,6 +54,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/pos/menu", label: "Catálogo", description: "Productos del menú" },
       { href: "/brand", label: "Identidad", description: "Logo y marca" },
       { href: "/settings/fiscal", label: "Facturación", description: "Datos fiscales" },
+      { href: "/settings/notifications", label: "Notificaciones", description: "Alertas por correo" },
+      { href: "/settings/operations", label: "Horarios y turnos", description: "Atención y personal" },
       { href: "/settings/costing", label: "Matriz costos", description: "Metas food cost" },
       { href: "/guia", label: "Guía operativa", description: "Documentos, flujos y reglas" },
     ],

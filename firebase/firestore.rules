@@ -317,6 +317,44 @@ service cloud.firestore {
           && request.resource.data.reason.size() >= 2;
         allow update, delete: if false;
       }
+
+      match /notificationOutbox/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId;
+        allow update, delete: if false;
+      }
+
+      match /notificationPreferences/{userId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.auth.uid == userId
+          && request.resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
+      match /workShifts/{shiftId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid;
+        allow delete: if false;
+      }
+
+      match /agentKnowledge/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId);
+        allow update: if canAccessOrg(organizationId);
+        allow delete: if false;
+      }
+
+      match /agentSessions/{sessionId} {
+        allow read: if canAccessOrg(organizationId)
+          && resource.data.userId == request.auth.uid;
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.userId == request.auth.uid;
+        allow delete: if false;
+      }
     }
   }
 }

@@ -26,6 +26,7 @@ import {
   openTableSession,
   sendTableSessionToKitchen,
 } from "@/lib/tables/table-sessions";
+import { callGhostAgent } from "@/lib/firebase/functions";
 import type { GhostChatAction } from "@/lib/assistant/ghost-chat-engine";
 
 type RecipeSnapshot = {
@@ -248,6 +249,19 @@ export async function executeGhostChatAction(
           | "delivered",
       });
       return undefined;
+    }
+
+    case "ghost-agent-query": {
+      const response = await callGhostAgent({
+        message: action.payload.message,
+        sessionId: action.payload.sessionId,
+        allowWebSearch: true,
+      });
+      const sources =
+        response.sources.length > 0
+          ? `\n\nFuentes:\n${response.sources.map((source) => `· ${source.title}: ${source.url}`).join("\n")}`
+          : "";
+      return `${response.answer}${sources}`;
     }
 
     default:

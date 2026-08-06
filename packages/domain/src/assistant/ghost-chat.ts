@@ -116,6 +116,11 @@ export const GHOST_ROLE_MENUS: Record<GhostChatRole, GhostChatMenuOption[]> = {
 
 export const GHOST_ROOT_MENU: GhostChatMenuOption[] = [
   {
+    id: "free-question",
+    label: "Pregunta libre (búsqueda web)",
+    description: "Agente Ghost con conocimiento evolutivo",
+  },
+  {
     id: "admin",
     label: "Financiero / administrador",
     description: "Compras, inventario, costos y catálogo",

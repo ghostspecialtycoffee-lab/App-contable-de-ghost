@@ -22,7 +22,7 @@ describe("ghost-chat", () => {
   });
 
   it("resolves menu by number or label", () => {
-    const selected = resolveMenuSelection("1", GHOST_ROOT_MENU);
+    const selected = resolveMenuSelection("2", GHOST_ROOT_MENU);
     expect(selected?.id).toBe("admin");
 
     const byLabel = resolveMenuSelection("cajero", GHOST_ROOT_MENU);
@@ -36,7 +36,7 @@ describe("ghost-chat", () => {
   });
 
   it("formats menu options", () => {
-    const text = formatGhostChatMenu(GHOST_ROOT_MENU.slice(0, 1));
+    const text = formatGhostChatMenu(GHOST_ROOT_MENU.slice(1, 2));
     expect(text).toContain("1.");
     expect(text).toContain("Financiero");
   });

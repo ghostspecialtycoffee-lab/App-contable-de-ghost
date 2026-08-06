@@ -77,4 +77,24 @@ export const firestorePaths = {
     `organizations/${organizationId}/cashMovements`,
   organizationCashMovement: (organizationId: string, movementId: string) =>
     `organizations/${organizationId}/cashMovements/${movementId}`,
+  organizationNotificationOutbox: (organizationId: string) =>
+    `organizations/${organizationId}/notificationOutbox`,
+  organizationNotificationOutboxEntry: (organizationId: string, entryId: string) =>
+    `organizations/${organizationId}/notificationOutbox/${entryId}`,
+  organizationNotificationPreferences: (organizationId: string) =>
+    `organizations/${organizationId}/notificationPreferences`,
+  organizationNotificationPreference: (organizationId: string, userId: string) =>
+    `organizations/${organizationId}/notificationPreferences/${userId}`,
+  organizationWorkShifts: (organizationId: string) =>
+    `organizations/${organizationId}/workShifts`,
+  organizationWorkShift: (organizationId: string, shiftId: string) =>
+    `organizations/${organizationId}/workShifts/${shiftId}`,
+  organizationAgentKnowledge: (organizationId: string) =>
+    `organizations/${organizationId}/agentKnowledge`,
+  organizationAgentKnowledgeEntry: (organizationId: string, entryId: string) =>
+    `organizations/${organizationId}/agentKnowledge/${entryId}`,
+  organizationAgentSessions: (organizationId: string) =>
+    `organizations/${organizationId}/agentSessions`,
+  organizationAgentSession: (organizationId: string, sessionId: string) =>
+    `organizations/${organizationId}/agentSessions/${sessionId}`,
 } as const;
