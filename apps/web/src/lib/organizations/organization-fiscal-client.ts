@@ -1,25 +1,9 @@
 import type { OrganizationFiscalProfile } from "@ghost/domain";
-import { validateFiscalProfile } from "@ghost/domain";
+import { serializeFiscalProfileForFirestore, validateFiscalProfile } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
-
-function stripUndefinedValues<T>(value: T): T {
-  if (Array.isArray(value)) {
-    return value.map((item) => stripUndefinedValues(item)) as T;
-  }
-
-  if (value !== null && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value)
-        .filter(([, fieldValue]) => fieldValue !== undefined)
-        .map(([key, fieldValue]) => [key, stripUndefinedValues(fieldValue)]),
-    ) as T;
-  }
-
-  return value;
-}
 
 function requireUserId(): string {
   const uid = getFirebaseAuth().currentUser?.uid;
@@ -45,13 +29,11 @@ export async function updateOrganizationFiscalProfileClient(input: {
     firestorePaths.organization(input.organizationId),
   );
 
-  await setDoc(
-    organizationRef,
-    stripUndefinedValues({
-      fiscalProfile: validation.value,
-      updatedAt: serverTimestamp(),
-      updatedBy: userId,
-    }),
-    { merge: true },
-  );
+  const fiscalProfile = serializeFiscalProfileForFirestore(validation.value);
+
+  await updateDoc(organizationRef, {
+    fiscalProfile,
+    updatedAt: serverTimestamp(),
+    updatedBy: userId,
+  });
 }

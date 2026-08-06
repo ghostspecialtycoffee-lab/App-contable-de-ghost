@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   formatOrganizationNit,
   isFiscalProfileComplete,
+  normalizeFiscalProfile,
+  serializeFiscalProfileForFirestore,
   validateFiscalProfile,
 } from "./organization-fiscal.js";
 
@@ -30,6 +32,27 @@ describe("validateFiscalProfile", () => {
       expect(result.value.tradeName).toBe("");
     }
     expect(isFiscalProfileComplete(result.ok ? result.value : null)).toBe(true);
+  });
+
+  it("serializa sin undefined para Firestore", () => {
+    const serialized = serializeFiscalProfileForFirestore({
+      legalName: "Ghost Specialty Coffee SAS",
+      nit: "900123456",
+      address: {
+        line1: "Calle 10 #20-30",
+        city: "Bogotá",
+        country: "CO",
+      },
+      legalRepresentative: {
+        fullName: "Juan Pérez",
+        documentType: "CC",
+        documentNumber: "1234567890",
+      },
+    });
+
+    expect(JSON.stringify(serialized)).not.toContain("undefined");
+    expect(serialized.address.line2).toBe("");
+    expect(normalizeFiscalProfile(serialized)).toEqual(serialized);
   });
 });
 
