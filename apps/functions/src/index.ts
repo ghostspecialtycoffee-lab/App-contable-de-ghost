@@ -4,6 +4,7 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 
 initializeApp();
 
+export { sendSaleDocument } from "./sales/sendSaleDocument.js";
 export { onAuthUserCreate } from "./auth/onUserCreated.js";
 export { ghostAgent } from "./ai/ghostAgent.js";
 export { createInventoryItem } from "./inventory/createItem.js";

@@ -68,6 +68,8 @@ export interface GhostChatTableSession {
   tableId: string;
   tableNumber: number;
   guestToken: string;
+  lines?: Array<{ name: string; quantity: number; lineTotal: number }>;
+  total?: number;
 }
 
 export interface GhostChatContext {
@@ -95,6 +97,7 @@ export type GhostChatAction =
   | { type: "create-counter-sale"; payload: Record<string, string> }
   | { type: "open-table"; payload: Record<string, string> }
   | { type: "add-table-order"; payload: Record<string, string> }
+  | { type: "checkout-table"; payload: Record<string, string> }
   | { type: "send-kitchen"; payload: { sessionId: string } }
   | { type: "update-kitchen-order"; payload: { orderId: string; status: string } }
   | { type: "ghost-agent-query"; payload: { message: string; sessionId: string; contextSummary?: string; history?: GhostConversationHistoryMessage[] } };
@@ -951,12 +954,27 @@ function buildAction(
         type: "add-table-order",
         payload: {
           sessionId: tableSession?.sessionId ?? draft.sessionId ?? "",
-          guestToken: tableSession?.guestToken ?? "",
+          guestToken: tableSession?.guestToken ?? draft.guestToken ?? "",
+          tableId: draft.tableId ?? tableSession?.tableId ?? "",
+          tableNumber: draft.tableNumber ?? String(tableSession?.tableNumber ?? ""),
+          qrToken: draft.qrToken ?? "",
           productId: product?.id ?? "",
-          productName: product?.name ?? "",
+          productName: product?.name ?? draft.productName ?? "",
           unitPrice: String(product?.price ?? 0),
           quantity: draft.quantity ?? "1",
           station: product?.station ?? "bar",
+        },
+      };
+    }
+    case "cashier/checkout-table": {
+      return {
+        type: "checkout-table",
+        payload: {
+          sessionId: draft.sessionId ?? "",
+          tableNumber: draft.tableNumber ?? "",
+          paymentMethod: draft.paymentMethod ?? "cash",
+          documentType: draft.documentType ?? "factura",
+          customerEmail: draft.customerEmail ?? "skip",
         },
       };
     }
@@ -1071,7 +1089,9 @@ export function formatGhostActionSuccess(action: GhostChatAction, result?: strin
     case "open-table":
       return `Mesa **${action.payload.tableNumber}** abierta.`;
     case "add-table-order":
-      return `Pedido agregado: **${action.payload.productName}** × ${action.payload.quantity}.`;
+      return `Pedido anotado: **${action.payload.productName}** × ${action.payload.quantity}. Comanda enviada.`;
+    case "checkout-table":
+      return result ?? "Mesa cobrada y comprobante generado.";
     case "send-kitchen":
       return "Comanda enviada a barra/cocina.";
     case "update-kitchen-order":

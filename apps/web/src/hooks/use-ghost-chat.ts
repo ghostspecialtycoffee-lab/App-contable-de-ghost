@@ -93,12 +93,24 @@ export function useGhostChat() {
   const [initialized, setInitialized] = useState(false);
 
   const context = useMemo<GhostChatContext>(() => {
-    const openTableSessions = tableSessions.map((entry) => ({
-      sessionId: entry.id,
-      tableId: entry.tableId,
-      tableNumber: entry.tableNumber,
-      guestToken: entry.guestToken,
-    }));
+    const openTableSessions = tableSessions.map((entry) => {
+      const billableLines = entry.lines.filter((line) => line.status !== "cancelled");
+      return {
+        sessionId: entry.id,
+        tableId: entry.tableId,
+        tableNumber: entry.tableNumber,
+        guestToken: entry.guestToken,
+        lines: billableLines.map((line) => ({
+          name: line.name,
+          quantity: line.quantity,
+          lineTotal: Math.round(line.unitPrice * line.quantity),
+        })),
+        total: billableLines.reduce(
+          (sum, line) => sum + Math.round(line.unitPrice * line.quantity),
+          0,
+        ),
+      };
+    });
 
     return {
       organizationName: organization?.name,

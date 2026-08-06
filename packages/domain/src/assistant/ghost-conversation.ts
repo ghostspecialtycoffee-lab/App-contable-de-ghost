@@ -16,6 +16,7 @@ export type GhostConversationIntent =
   | "create-counter-sale"
   | "open-table"
   | "add-table-order"
+  | "checkout-table"
   | "send-kitchen"
   | "update-kitchen-order"
   | "seed-ghost-menu"
@@ -52,11 +53,19 @@ export interface GhostConversationKitchenOrder {
   tableNumber?: number;
 }
 
+export interface GhostConversationTableSessionLine {
+  name: string;
+  quantity: number;
+  lineTotal: number;
+}
+
 export interface GhostConversationTableSession {
   sessionId: string;
   tableId: string;
   tableNumber: number;
   guestToken: string;
+  lines?: GhostConversationTableSessionLine[];
+  total?: number;
 }
 
 export interface GhostConversationContext {
@@ -106,6 +115,7 @@ const INTENT_FLOW_KEY: Record<Exclude<GhostConversationIntent, "org-status" | "a
   "create-counter-sale": "cashier/counter-sale",
   "open-table": "waiter/open-table",
   "add-table-order": "waiter/add-table-order",
+  "checkout-table": "cashier/checkout-table",
   "send-kitchen": "waiter/send-kitchen",
   "update-kitchen-order": "cashier/update-kitchen-order",
   "seed-ghost-menu": "admin/seed-ghost-menu",
@@ -118,7 +128,8 @@ const REQUIRED_FIELDS: Record<string, string[]> = {
   "open-cash-session": ["openingAmount"],
   "create-counter-sale": ["productId"],
   "open-table": ["tableId"],
-  "add-table-order": ["sessionId", "productId"],
+  "add-table-order": ["productId"],
+  "checkout-table": ["sessionId", "documentType", "paymentMethod", "customerEmail"],
   "send-kitchen": ["sessionId"],
   "update-kitchen-order": ["orderId", "status"],
 };
@@ -136,6 +147,10 @@ const FIELD_PROMPTS: Record<string, string> = {
   sessionId: "¿En qué mesa va el pedido?",
   orderId: "¿Qué comanda actualizamos?",
   status: "¿La marco como preparando, lista o entregada?",
+  documentType:
+    "¿Lo emito como **factura de venta** o como **cuenta de cobro**?",
+  customerEmail:
+    "¿A qué correo envío el comprobante en PDF? Si no hace falta, di **no**.",
 };
 
 function normalizeText(value: string): string {
@@ -162,6 +177,151 @@ function extractTableNumber(value: string): number | null {
   }
   const parsed = Number(match[1]);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+const WORD_QUANTITIES: Record<string, number> = {
+  un: 1,
+  una: 1,
+  uno: 1,
+  dos: 2,
+  tres: 3,
+  cuatro: 4,
+  cinco: 5,
+  seis: 6,
+  siete: 7,
+  ocho: 8,
+  nueve: 9,
+  diez: 10,
+};
+
+function extractQuantity(message: string): string | null {
+  const stripped = message.replace(/mesa\s*#?\s*\d+/gi, " ");
+  const digitMatch = stripped.match(/\b(\d+)\s*(?:x|unidades|uds)?\b/i);
+  if (digitMatch?.[1]) {
+    return digitMatch[1];
+  }
+
+  const normalized = normalizeText(stripped);
+  for (const [word, quantity] of Object.entries(WORD_QUANTITIES)) {
+    if (new RegExp(`\\b${word}\\b`).test(normalized)) {
+      return String(quantity);
+    }
+  }
+
+  return null;
+}
+
+function mentionsTable(message: string): boolean {
+  return extractTableNumber(message) !== null || /mesa/i.test(message);
+}
+
+function isTableCheckoutMessage(normalized: string, message: string): boolean {
+  if (!mentionsTable(message)) {
+    return false;
+  }
+
+  if (/(proveedor|compra|registr|llego)/.test(normalized)) {
+    return false;
+  }
+
+  return /(cuenta|cobrar|cerrar cuenta|la cuenta|pagar mesa|factura de venta|cuenta de cobro)/.test(
+    normalized,
+  );
+}
+
+function isTableOrderMessage(
+  normalized: string,
+  message: string,
+  context: GhostConversationContext,
+): boolean {
+  if (!mentionsTable(message)) {
+    return false;
+  }
+
+  if (isTableCheckoutMessage(normalized, message)) {
+    return false;
+  }
+
+  const mentionedProduct = findByName(message, context.menuProducts);
+  if (mentionedProduct) {
+    return true;
+  }
+
+  return /(dame|pon|trae|anota|agrega|quiero|sirve|manda|para la mesa|en la mesa)/.test(
+    normalized,
+  );
+}
+
+function isExplicitOpenTable(normalized: string): boolean {
+  return /(abrir mesa|abre la mesa|abre mesa)/.test(normalized);
+}
+
+function parseDocumentType(message: string): string | null {
+  const normalized = normalizeText(message);
+  if (/(cuenta de cobro|cuenta cobro)/.test(normalized)) {
+    return "cuenta_cobro";
+  }
+  if (/(factura de venta|factura|comprobante)/.test(normalized)) {
+    return "factura";
+  }
+  return null;
+}
+
+function extractEmail(message: string): string | null {
+  const match = message.match(/[\w.+-]+@[\w.-]+\.\w+/);
+  return match?.[0] ?? null;
+}
+
+function resolveTableSession(
+  message: string,
+  context: GhostConversationContext,
+): GhostConversationTableSession | null {
+  const tableNumber = extractTableNumber(message);
+  if (tableNumber) {
+    return context.openTableSessions.find((entry) => entry.tableNumber === tableNumber) ?? null;
+  }
+
+  return context.openTableSessions[0] ?? null;
+}
+
+function resolveTableByMessage(
+  message: string,
+  context: GhostConversationContext,
+): GhostConversationContext["tables"][number] | null {
+  const tableNumber = extractTableNumber(message);
+  if (tableNumber) {
+    return context.tables.find((entry) => entry.number === tableNumber) ?? null;
+  }
+
+  return (
+    findByName(
+      message,
+      context.tables.map((table) => ({ ...table, name: `mesa ${table.number}` })),
+    ) ?? null
+  );
+}
+
+function buildTableBillPreview(
+  context: GhostConversationContext,
+  sessionId: string,
+): string | null {
+  const session = context.openTableSessions.find((entry) => entry.sessionId === sessionId);
+  if (!session?.lines?.length) {
+    return null;
+  }
+
+  const lines = session.lines
+    .map(
+      (line) =>
+        `· ${line.quantity} × ${line.name} — **$${line.lineTotal.toLocaleString("es-CO")}**`,
+    )
+    .join("\n");
+  const total = session.total ?? session.lines.reduce((sum, line) => sum + line.lineTotal, 0);
+
+  return (
+    `Cuenta **mesa ${session.tableNumber}**:\n${lines}\n\n` +
+    `**Total: $${total.toLocaleString("es-CO")}**`
+  );
 }
 
 function findByName<T extends { name: string }>(query: string, items: T[]): T | null {
@@ -226,7 +386,16 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
   if (/(abrir caja|abre caja|fondo inicial)/.test(normalized)) {
     return "open-cash-session";
   }
-  if (/(factura|proveedor|registr.*compra|compre|llego.*compra)/.test(normalized)) {
+  if (isTableCheckoutMessage(normalized, message)) {
+    return "checkout-table";
+  }
+  if (isTableOrderMessage(normalized, message, context)) {
+    return "add-table-order";
+  }
+  if (
+    /(factura|proveedor|registr.*compra|compre|llego.*compra)/.test(normalized) &&
+    !mentionsTable(message)
+  ) {
     return "create-purchase-invoice";
   }
   if (
@@ -234,7 +403,7 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
     (/(agrega|crea|anota)\s+/i.test(message) &&
       mentionedInventory &&
       !mentionedProduct &&
-      !/mesa/.test(normalized))
+      !mentionsTable(message))
   ) {
     return "create-inventory-item";
   }
@@ -242,17 +411,15 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
     return "create-menu-product";
   }
   if (
-    /(vend|cobra|cobro|mostrador|venta de)/.test(normalized) ||
-    (mentionedProduct &&
-      /(quiero|dame|un |una |dos |tres |cobr|vend|para llevar)/.test(normalized))
+    (/(vend|cobra|cobro|mostrador|venta de)/.test(normalized) ||
+      (mentionedProduct &&
+        /(quiero|dame|un |una |dos |tres |cobr|vend|para llevar)/.test(normalized))) &&
+    !mentionsTable(message)
   ) {
     return "create-counter-sale";
   }
-  if (/(abrir mesa)/.test(normalized) || extractTableNumber(message)) {
+  if (isExplicitOpenTable(normalized)) {
     return "open-table";
-  }
-  if (/(pedido|anota|agrega).*(mesa)/.test(normalized)) {
-    return "add-table-order";
   }
   if (/(enviar comanda|mandar comanda|a barra|a cocina)/.test(normalized)) {
     return "send-kitchen";
@@ -374,21 +541,58 @@ function extractDraftForIntent(
   }
 
   if (intent === "add-table-order") {
-    const tableNumber = extractTableNumber(message);
-    const session =
-      (tableNumber
-        ? context.openTableSessions.find((entry) => entry.tableNumber === tableNumber)
-        : null) ?? context.openTableSessions[0];
+    const table = resolveTableByMessage(message, context);
+    const session = resolveTableSession(message, context);
     if (session) {
       draft.sessionId = session.sessionId;
       draft.guestToken = session.guestToken;
+      draft.tableNumber = String(session.tableNumber);
+      draft.tableId = session.tableId;
+    } else if (table) {
+      draft.tableId = table.id;
+      draft.tableNumber = String(table.number);
+      draft.qrToken = table.qrToken;
     }
+
     const product = findByName(message, context.menuProducts);
     if (product) {
       draft.productId = product.id;
       draft.productName = product.name;
     }
+
+    const quantity = extractQuantity(message);
+    if (quantity) {
+      draft.quantity = quantity;
+    }
     draft.quantity = draft.quantity || "1";
+  }
+
+  if (intent === "checkout-table") {
+    const session = resolveTableSession(message, context);
+    if (session) {
+      draft.sessionId = session.sessionId;
+      draft.tableNumber = String(session.tableNumber);
+      draft.guestToken = session.guestToken;
+    }
+
+    const documentType = parseDocumentType(message);
+    if (documentType) {
+      draft.documentType = documentType;
+    }
+
+    const payment = parsePaymentMethod(message);
+    if (payment) {
+      draft.paymentMethod = payment;
+    }
+
+    if (/(^|\s)(no|sin correo|no enviar)(\s|$)/i.test(normalized)) {
+      draft.customerEmail = "skip";
+    }
+
+    const email = extractEmail(message);
+    if (email) {
+      draft.customerEmail = email;
+    }
   }
 
   if (intent === "send-kitchen") {
@@ -425,6 +629,34 @@ function extractDraftForIntent(
 }
 
 function missingFields(intent: string, draft: Record<string, string>): string[] {
+  if (intent === "add-table-order") {
+    const missing: string[] = [];
+    if (!String(draft.productId ?? "").trim()) {
+      missing.push("productId");
+    }
+    if (!String(draft.sessionId ?? "").trim() && !String(draft.tableId ?? "").trim()) {
+      missing.push("sessionId");
+    }
+    return missing;
+  }
+
+  if (intent === "checkout-table") {
+    const missing: string[] = [];
+    if (!String(draft.sessionId ?? "").trim()) {
+      missing.push("sessionId");
+    }
+    if (!String(draft.documentType ?? "").trim()) {
+      missing.push("documentType");
+    }
+    if (!String(draft.paymentMethod ?? "").trim()) {
+      missing.push("paymentMethod");
+    }
+    if (!String(draft.customerEmail ?? "").trim()) {
+      missing.push("customerEmail");
+    }
+    return missing;
+  }
+
   const required = REQUIRED_FIELDS[intent] ?? [];
   return required.filter((field) => !String(draft[field] ?? "").trim());
 }
@@ -436,8 +668,17 @@ function followUpForField(intent: string, field: string, context: GhostConversat
   if (field === "productId" && context.menuProducts.length === 0) {
     return "Tu catálogo está vacío. Puedes decirme «carga la carta Ghost» o el nombre del producto a crear.";
   }
+  if (field === "sessionId" && intent === "add-table-order") {
+    return "No encontré esa mesa abierta. Dime «abre la mesa 1» o el número correcto.";
+  }
+  if (field === "sessionId" && intent === "checkout-table") {
+    return "No hay cuenta abierta en esa mesa. ¿Seguro que tiene pedidos activos?";
+  }
   if (field === "sessionId" && context.openTableSessions.length === 0) {
     return "No hay mesas abiertas. Dime «abre la mesa 3» (o el número que sea).";
+  }
+  if (intent === "checkout-table" && !context.cashSessionOpen) {
+    return "Primero abre caja para cobrar la mesa. Por ejemplo: «abre caja con 200000».";
   }
   if (field === "tableId" && context.tables.length === 0) {
     return "No hay mesas configuradas en el sistema.";
@@ -483,7 +724,9 @@ function acknowledgeExecution(intent: GhostConversationIntent, draft: Record<str
     case "open-table":
       return `Abro la **mesa ${draft.tableNumber}**.`;
     case "add-table-order":
-      return `Anoto **${draft.productName ?? "pedido"}** en la mesa.`;
+      return `Anoto **${draft.quantity ?? "1"} × ${draft.productName ?? "pedido"}** en la **mesa ${draft.tableNumber ?? ""}** y mando comanda.`;
+    case "checkout-table":
+      return `Cierro la **mesa ${draft.tableNumber ?? ""}** y genero el comprobante.`;
     case "send-kitchen":
       return "Envío la comanda a barra/cocina.";
     case "update-kitchen-order":
@@ -533,6 +776,36 @@ export function buildConversationContextSummary(context: GhostConversationContex
     `Mesas abiertas: ${openTables}`,
     `Comandas activas: ${context.kitchenOrders.length}`,
   ].join("\n");
+}
+
+function buildPendingReply(
+  intent: GhostConversationIntent,
+  draft: Record<string, string>,
+  missingField: string,
+  context: GhostConversationContext,
+): string {
+  const question = followUpForField(intent, missingField, context);
+
+  if (intent === "checkout-table" && draft.sessionId) {
+    const preview = buildTableBillPreview(context, draft.sessionId);
+    if (preview) {
+      return `${preview}\n\n${question}`;
+    }
+  }
+
+  if (intent === "add-table-order") {
+    return `Entendido. ${question}`;
+  }
+
+  if (intent === "create-purchase-invoice") {
+    return `Entendido, vamos con esa compra. ${question}`;
+  }
+
+  if (intent === "create-counter-sale") {
+    return `Te ayudo con la venta. ${question}`;
+  }
+
+  return `Perfecto. ${question}`;
 }
 
 export function createInitialConversationTurn(
@@ -585,13 +858,22 @@ export function processConversationTurn(input: {
       ...session.draft,
       ...extractDraftForIntent(intent, trimmed, context, session.draft),
     });
+
+    if (intent === "checkout-table" && !context.cashSessionOpen) {
+      return {
+        kind: "reply",
+        session: sessionWithPending(session, intent, draft),
+        messages: [followUpForField(intent, "paymentMethod", context)],
+      };
+    }
+
     const missing = missingFields(intent, draft);
 
     if (missing.length > 0) {
       return {
         kind: "reply",
         session: sessionWithPending(session, intent, draft),
-        messages: [followUpForField(intent, missing[0]!, context)],
+        messages: [buildPendingReply(intent, draft, missing[0]!, context)],
       };
     }
 
@@ -638,18 +920,19 @@ export function processConversationTurn(input: {
   const draft = extractDraftForIntent(intent, trimmed, context, {});
   const missing = missingFields(intent, draft);
 
-  if (missing.length > 0) {
-    const partialAck =
-      intent === "create-purchase-invoice"
-        ? "Entendido, vamos con esa compra."
-        : intent === "create-counter-sale"
-          ? "Te ayudo con la venta."
-          : "Perfecto.";
-
+  if (intent === "checkout-table" && !context.cashSessionOpen) {
     return {
       kind: "reply",
       session: sessionWithPending(session, intent, draft),
-      messages: [`${partialAck} ${followUpForField(intent, missing[0]!, context)}`],
+      messages: [followUpForField(intent, "paymentMethod", context)],
+    };
+  }
+
+  if (missing.length > 0) {
+    return {
+      kind: "reply",
+      session: sessionWithPending(session, intent, draft),
+      messages: [buildPendingReply(intent, draft, missing[0]!, context)],
     };
   }
 
