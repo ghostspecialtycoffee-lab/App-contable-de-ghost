@@ -113,6 +113,34 @@ export const GHOST_BRAIN_SKILLS: GhostBrainSkill[] = [
     examples: ["estado de comandas", "¿qué hay en cocina?"],
   },
   {
+    id: "query-cost-matrix",
+    domain: "logistica",
+    kind: "query",
+    title: "Matriz de costos",
+    description: "Food cost, márgenes y fichas por producto.",
+    keywords:
+      /(matriz de costos|ficha de costos|food cost|costo de preparacion|margen del|margen de|cuanto cuesta hacer)/,
+    examples: ["matriz de costos", "food cost del latte"],
+  },
+  {
+    id: "build-recipe-cost",
+    domain: "logistica",
+    kind: "execute",
+    title: "Generar ficha de costos",
+    description: "Arma receta desde inventario y catálogo Ghost.",
+    keywords: /(genera ficha|actualiza ficha|crea ficha|arma ficha|ficha de costos)/,
+    examples: ["genera ficha de costos de Dirty Chai"],
+  },
+  {
+    id: "save-recipe-cost",
+    domain: "logistica",
+    kind: "execute",
+    title: "Guardar ficha de costos",
+    description: "Actualiza ingredientes, rendimiento y precio de venta.",
+    keywords: /(guarda ficha|ficha.*precio|ingredientes.*precio)/,
+    examples: ["ficha Latte: 18g café, 200ml leche, precio 12000"],
+  },
+  {
     id: "query-cash-summary",
     domain: "finanzas",
     kind: "query",
@@ -245,7 +273,7 @@ export const GHOST_BRAIN_SKILLS: GhostBrainSkill[] = [
     kind: "execute",
     title: "Cargar carta Ghost",
     description: "Importa bebidas y fichas SCA de referencia.",
-    keywords: /(cargar carta|carta ghost|seed|menu ghost)/,
+    keywords: /(cargar carta|carta ghost|seed|menu ghost|actualiza matriz de costos|refresca matriz)/,
     examples: ["carga la carta Ghost"],
   },
 ];
@@ -276,6 +304,7 @@ export function classifyBrainQueryIntent(message: string): string | null {
     "query-fixed-expenses",
     "query-work-shifts",
     "query-kitchen-status",
+    "query-cost-matrix",
     "org-status",
   ]);
 

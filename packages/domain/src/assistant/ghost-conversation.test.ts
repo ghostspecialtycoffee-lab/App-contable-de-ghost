@@ -42,6 +42,8 @@ const baseContext: GhostConversationContext = {
   inventoryStockSnapshot: [],
   fixedExpensesSnapshot: [],
   workShiftsSnapshot: [],
+  recipesSnapshot: [],
+  inventoryCostSnapshot: [],
 };
 
 describe("ghost-conversation", () => {
@@ -387,6 +389,101 @@ describe("ghost-conversation", () => {
     if (result.kind === "reply") {
       expect(result.messages[0]).toContain("bajo mínimo");
       expect(result.messages[0]).toContain("Café Caturra");
+    }
+  });
+
+  it("consulta matriz de costos de un producto", () => {
+    const result = processConversationTurn({
+      message: "ficha de costos del latte",
+      session: createEmptyGhostChatSession(),
+      context: {
+        ...baseContext,
+        menuProducts: [
+          {
+            id: "prod-1",
+            name: "Latte",
+            price: 12000,
+            category: "beverage",
+            station: "bar",
+            recipeCost: 2500,
+          },
+        ],
+        recipesSnapshot: [
+          {
+            menuProductId: "prod-1",
+            productName: "Latte",
+            yieldQuantity: 1,
+            recipeCost: 2500,
+            lines: [
+              {
+                inventoryItemId: "inv-1",
+                itemName: "Café Caturra",
+                quantity: 18,
+                unit: "g",
+              },
+            ],
+          },
+        ],
+        inventoryCostSnapshot: [
+          {
+            itemId: "inv-1",
+            name: "Café Caturra",
+            baseUnit: "g",
+            averageCost: 120,
+          },
+        ],
+        costMatrixSettings: {
+          targetFoodCostPct: 0.3,
+          targetBeverageCostPct: 0.28,
+          reteIvaPct: 0.15,
+          reteFuenteServicesPct: 0.04,
+          reteFuenteGoodsPct: 0.025,
+        },
+      },
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.messages[0]).toContain("Latte");
+      expect(result.messages[0]).toContain("Food cost");
+    }
+  });
+
+  it("prepara guardado de ficha con ingredientes", () => {
+    const result = processConversationTurn({
+      message: "ficha Latte: 18g café caturra, precio 12000",
+      session: createEmptyGhostChatSession(),
+      context: {
+        ...baseContext,
+        menuProducts: [
+          {
+            id: "prod-1",
+            name: "Latte",
+            price: 10000,
+            category: "beverage",
+            station: "bar",
+          },
+        ],
+        inventoryItems: [
+          { id: "inv-1", name: "Café Caturra", sku: "CAFE", baseUnit: "g" },
+        ],
+        inventoryCostSnapshot: [
+          { itemId: "inv-1", name: "Café Caturra", baseUnit: "g", averageCost: 120 },
+        ],
+        costMatrixSettings: {
+          targetFoodCostPct: 0.3,
+          targetBeverageCostPct: 0.28,
+          reteIvaPct: 0.15,
+          reteFuenteServicesPct: 0.04,
+          reteFuenteGoodsPct: 0.025,
+        },
+      },
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.session.pendingIntent).toBe("save-recipe-cost");
+      expect(result.messages[0]).toContain("Vista previa");
     }
   });
 

@@ -6,12 +6,14 @@ import {
   type InventoryItemType,
   type KitchenStation,
   type MenuCategory,
+  type RecipeLineInput,
 } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
 
 import { closeCashSession, openCashSession, registerCashMovement } from "@/lib/cash/cash";
 import { seedCostMatrix } from "@/lib/costing/seed-cost-matrix";
+import { seedRecipeForProduct } from "@/lib/costing/seed-recipe-for-product";
 import { getFirestoreDb } from "@/lib/firebase/client";
 import { createInventoryItem } from "@/lib/inventory/inventory";
 import { createPurchaseInvoice, confirmPurchaseInvoice } from "@/lib/purchases/purchases";
@@ -19,6 +21,7 @@ import {
   createMenuProduct,
   createSale,
   updateKitchenOrderStatus,
+  updateMenuProduct,
 } from "@/lib/pos/pos";
 import { saveRecipe } from "@/lib/recipes/recipes";
 import {
@@ -189,6 +192,50 @@ export async function executeGhostChatAction(
       ].filter(Boolean);
       return {
         message: parts.length > 0 ? parts.join(" · ") : "Sin cambios (revisa inventario).",
+      };
+    }
+
+    case "build-recipe-cost": {
+      const result = await seedRecipeForProduct(action.payload.productName);
+      const warningNote =
+        result.warnings.length > 0 ? `\n\nNotas: ${result.warnings.slice(0, 2).join(" · ")}` : "";
+      return {
+        message:
+          `Ficha de **${action.payload.productName}** ${result.created ? "creada" : "actualizada"}. ` +
+          `Costo por porción: **$${Math.round(result.recipeCost).toLocaleString("es-CO")}**.` +
+          ` La matriz de costos y reportes ya reflejan el cambio.` +
+          warningNote,
+      };
+    }
+
+    case "save-recipe-cost": {
+      const lines = JSON.parse(action.payload.recipeLines ?? "[]") as RecipeLineInput[];
+      const productId = action.payload.productId ?? "";
+      const productName = action.payload.productName ?? "producto";
+      const price = Number(action.payload.price ?? 0);
+      const yieldQuantity = Number(action.payload.yieldQuantity ?? 1);
+      const category = (action.payload.category ?? "beverage") as MenuCategory;
+
+      if (price > 0) {
+        await updateMenuProduct({
+          productId,
+          price,
+        });
+      }
+
+      const result = await saveRecipe({
+        menuProductId: productId,
+        menuProductName: productName,
+        yieldQuantity,
+        category,
+        lines,
+      });
+
+      return {
+        message:
+          `Ficha de **${productName}** guardada. Costo por porción: **$${Math.round(result.recipeCost).toLocaleString("es-CO")}**` +
+          (price > 0 ? ` · Precio de venta: **$${price.toLocaleString("es-CO")}**` : "") +
+          ". Matriz de costos, menú POS e informes actualizados.",
       };
     }
 

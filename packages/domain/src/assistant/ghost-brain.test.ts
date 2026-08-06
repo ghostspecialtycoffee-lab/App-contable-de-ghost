@@ -21,6 +21,7 @@ describe("ghost brain registry", () => {
     expect(classifyBrainQueryIntent("turnos de hoy")).toBe("query-work-shifts");
     expect(classifyBrainQueryIntent("estado de comandas")).toBe("query-kitchen-status");
     expect(classifyBrainQueryIntent("informe de compras del mes")).toBe("query-purchases-report");
+    expect(classifyBrainQueryIntent("matriz de costos")).toBe("query-cost-matrix");
   });
 
   it("genera guía con ejemplos", () => {
@@ -65,6 +66,8 @@ describe("brain sales response", () => {
       inventoryStockSnapshot: [],
       fixedExpensesSnapshot: [],
       workShiftsSnapshot: [],
+      recipesSnapshot: [],
+      inventoryCostSnapshot: [],
     };
 
     const reply = buildSalesReportReply(context);

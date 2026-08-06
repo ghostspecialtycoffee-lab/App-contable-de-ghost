@@ -531,3 +531,62 @@ export async function seedCostMatrixClient(): Promise<SeedCostMatrixResult> {
     warnings,
   };
 }
+
+export async function seedRecipeForProductClient(productName: string): Promise<{
+  created: boolean;
+  updated: boolean;
+  recipeCost: number;
+  warnings: string[];
+}> {
+  const organizationId = await getOrganizationId();
+  const warnings: string[] = [];
+
+  const products = await loadMenuProducts(organizationId);
+  const normalizedTarget = normalizeCatalogName(productName);
+  const product =
+    products.find((entry) => normalizeCatalogName(entry.name) === normalizedTarget) ??
+    products.find((entry) => {
+      const normalizedName = normalizeCatalogName(entry.name);
+      return (
+        normalizedName.includes(normalizedTarget) || normalizedTarget.includes(normalizedName)
+      );
+    });
+
+  if (!product) {
+    throw new Error(`No encontré "${productName}" en la carta.`);
+  }
+
+  const inventoryItems = await loadInventoryItems(organizationId);
+  if (inventoryItems.length === 0) {
+    throw new Error("No hay insumos en inventario. Importa compras primero.");
+  }
+
+  const recipes = await loadRecipes(organizationId);
+  const existing = recipes.find((recipe) => recipe.menuProductId === product.id);
+  const lines = buildRecipeLinesForProduct(product, inventoryItems, warnings);
+
+  if (!lines || lines.length === 0) {
+    throw new Error(
+      warnings[warnings.length - 1] ??
+        `No pude armar la ficha de "${product.name}" con el inventario actual.`,
+    );
+  }
+
+  const yieldQuantity =
+    product.category === "pastry" ? suggestRecipeYield(product.name) : 1;
+
+  const result = await saveRecipeClient({
+    menuProductId: product.id,
+    menuProductName: product.name,
+    lines,
+    yieldQuantity,
+    category: product.category,
+  });
+
+  return {
+    created: !existing || existing.lines.length === 0,
+    updated: Boolean(existing && existing.lines.length > 0),
+    recipeCost: result.recipeCost,
+    warnings,
+  };
+}
