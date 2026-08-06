@@ -1,8 +1,5 @@
-import type {
-  BaseUnit,
-  InventoryItemType,
-  RecipeLineInput,
-} from "@ghost/domain";
+import type { BaseUnit, InventoryItemType, MenuCategory, RecipeLineInput } from "@ghost/domain";
+import { suggestRecipeYield } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 
@@ -33,6 +30,7 @@ type InventoryRow = {
 type MenuProductRow = {
   id: string;
   name: string;
+  category: MenuCategory;
 };
 
 type RecipeRow = {
@@ -393,6 +391,7 @@ async function loadMenuProducts(organizationId: string): Promise<MenuProductRow[
   return snapshot.docs.map((document) => ({
     id: document.id,
     name: String(document.data().name ?? ""),
+    category: (document.data().category ?? "other") as MenuCategory,
   }));
 }
 
@@ -490,8 +489,9 @@ export async function seedCostMatrixClient(): Promise<SeedCostMatrixResult> {
   for (const product of products) {
     const existing = recipeByProductId.get(product.id);
     const catalogBeverage = isCatalogBeverage(product.name);
+    const shouldRefreshRecipe = catalogBeverage || product.category === "pastry";
 
-    if (existing && existing.lines.length > 0 && !catalogBeverage) {
+    if (existing && existing.lines.length > 0 && !shouldRefreshRecipe) {
       recipesSkipped += 1;
       continue;
     }
@@ -504,10 +504,14 @@ export async function seedCostMatrixClient(): Promise<SeedCostMatrixResult> {
       continue;
     }
 
+    const yieldQuantity =
+      product.category === "pastry" ? suggestRecipeYield(product.name) : 1;
+
     await saveRecipeClient({
       menuProductId: product.id,
       menuProductName: product.name,
       lines,
+      yieldQuantity,
     });
 
     if (existing && existing.lines.length > 0) {

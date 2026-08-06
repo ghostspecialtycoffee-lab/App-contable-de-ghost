@@ -148,6 +148,29 @@ export default function ReportsPage() {
     });
   }, [menuProducts, recipes, itemProfiles, costMatrixSettings]);
 
+  const pastryCostMatrixReport = useMemo(() => {
+    return buildCostMatrixReport({
+      products: menuProducts
+        .filter((product) => product.status === "active")
+        .map((product) => ({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          category: product.category,
+          saleTaxCategory: product.saleTaxCategory,
+          recipeCost: product.recipeCost,
+        })),
+      recipes: recipes.map((recipe) => ({
+        menuProductId: recipe.menuProductId,
+        yieldQuantity: recipe.yieldQuantity,
+        lines: recipe.lines,
+      })),
+      itemProfiles,
+      matrixSettings: costMatrixSettings,
+      categoryFilter: "pastry",
+    });
+  }, [menuProducts, recipes, itemProfiles, costMatrixSettings]);
+
   const recentSales = useMemo(() => {
     return filterSalesByPeriod(
       sales.map((sale) => ({
@@ -345,6 +368,99 @@ export default function ReportsPage() {
                           ) : null}
                         </td>
                         <td className="px-2 py-2">{formatMoney(row.price)}</td>
+                        <td className="px-2 py-2">
+                          {row.recipeCost > 0 ? formatMoney(row.recipeCost) : "—"}
+                        </td>
+                        <td className="px-2 py-2">
+                          {row.hasRecipe ? `${(row.foodCostPct * 100).toFixed(1)}%` : "—"}
+                        </td>
+                        <td className="px-2 py-2">
+                          {(row.targetFoodCostPct * 100).toFixed(0)}%
+                        </td>
+                        <td className="px-2 py-2">
+                          {row.hasRecipe ? formatMoney(row.grossProfitAmount) : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <Link href="/costing" className="mt-3 inline-block text-sm underline">
+              Ver fichas de costeo
+            </Link>
+          </Card>
+
+          <Card title="Matriz de costos — repostería">
+            <p className="mb-4 text-sm text-[var(--ghost-text-muted)]">
+              Tortas: costo de factura ÷ 12 porciones. Food cost sobre precio de venta + $10.000
+              domicilio.
+            </p>
+            <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard
+                label="Food cost promedio"
+                value={`${(pastryCostMatrixReport.averageFoodCostPct * 100).toFixed(1)}%`}
+                hint="Precio + domicilio"
+              />
+              <StatCard
+                label="Margen bruto promedio"
+                value={`${(pastryCostMatrixReport.averageGrossMarginPct * 100).toFixed(1)}%`}
+                hint="Después de costo por porción"
+              />
+              <StatCard
+                label="Con ficha de costo"
+                value={String(pastryCostMatrixReport.productsWithRecipe)}
+                hint={`${pastryCostMatrixReport.productsMissingRecipe} sin ficha`}
+              />
+              <StatCard
+                label="Sobre meta"
+                value={String(pastryCostMatrixReport.productsAboveTarget)}
+                hint="Food cost por encima del objetivo"
+              />
+            </div>
+
+            {pastryCostMatrixReport.rows.length === 0 ? (
+              <EmptyHint href="/costing" label="Sin repostería activa con ficha de costo" />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="border-b border-[var(--ghost-border)] text-[var(--ghost-text-muted)]">
+                    <tr>
+                      <th className="px-2 py-2 font-medium">Producto</th>
+                      <th className="px-2 py-2 font-medium">Precio</th>
+                      <th className="px-2 py-2 font-medium">Costo/porción</th>
+                      <th className="px-2 py-2 font-medium">Food cost</th>
+                      <th className="px-2 py-2 font-medium">Meta</th>
+                      <th className="px-2 py-2 font-medium">Utilidad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pastryCostMatrixReport.rows.map((row) => (
+                      <tr
+                        key={row.productId}
+                        className="border-b border-[var(--ghost-border)] last:border-0"
+                      >
+                        <td className="px-2 py-2">
+                          <Link
+                            href={`/costing?product=${row.productId}`}
+                            className="font-medium underline"
+                          >
+                            {row.name}
+                          </Link>
+                          {row.status === "missing" ? (
+                            <p className="text-xs text-[var(--ghost-danger)]">Sin ficha</p>
+                          ) : row.status === "high" ? (
+                            <p className="text-xs text-[var(--ghost-danger)]">Sobre meta</p>
+                          ) : null}
+                        </td>
+                        <td className="px-2 py-2">
+                          {formatMoney(row.price)}
+                          {row.effectiveSalePrice > row.price ? (
+                            <p className="text-xs text-[var(--ghost-text-muted)]">
+                              + dom. {formatMoney(row.effectiveSalePrice)}
+                            </p>
+                          ) : null}
+                        </td>
                         <td className="px-2 py-2">
                           {row.recipeCost > 0 ? formatMoney(row.recipeCost) : "—"}
                         </td>

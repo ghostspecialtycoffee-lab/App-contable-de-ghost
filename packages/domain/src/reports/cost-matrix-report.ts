@@ -2,9 +2,13 @@ import type { CostMatrixSettingsInput, CoTaxCategory } from "../fiscal/colombia-
 import { calculateCostMatrix } from "../fiscal/colombia-tax.js";
 import type { InventoryCostProfile } from "../inventory/unit-conversion.js";
 import { getTargetCostPctForCategory } from "../organization-cost-matrix.js";
+import { getCostMatrixSalePrice, isPastryCategory } from "../operations/pastry-costing.js";
 import type { MenuCategory } from "../pos/menu-product.js";
 import type { RecipeLineInput } from "../production/recipe.js";
-import { calculateRecipeCostPerPortion } from "../production/services/recipe-yield.js";
+import {
+  calculateRecipeCostPerPortion,
+  suggestRecipeYield,
+} from "../production/services/recipe-yield.js";
 
 export type CostMatrixReportStatus = "ok" | "high" | "missing";
 
@@ -13,6 +17,7 @@ export interface CostMatrixReportRow {
   name: string;
   category: MenuCategory;
   price: number;
+  effectiveSalePrice: number;
   recipeCost: number;
   foodCostPct: number;
   targetFoodCostPct: number;
@@ -58,14 +63,24 @@ export function buildCostMatrixReport(input: {
 
     const recipe = input.recipes.find((entry) => entry.menuProductId === product.id);
     const hasRecipe = Boolean(recipe?.lines.length);
+    const yieldQuantity =
+      recipe?.yieldQuantity && recipe.yieldQuantity > 0
+        ? recipe.yieldQuantity
+        : isPastryCategory(product.category)
+          ? suggestRecipeYield(product.name)
+          : 1;
     const recipeCost =
       hasRecipe && recipe
         ? calculateRecipeCostPerPortion(
             recipe.lines,
             input.itemProfiles,
-            recipe.yieldQuantity || 1,
+            yieldQuantity,
           )
         : product.recipeCost ?? 0;
+    const effectiveSalePrice = getCostMatrixSalePrice({
+      category: product.category,
+      menuPrice: product.price,
+    });
 
     const targetFoodCostPct = getTargetCostPctForCategory(
       product.category,
@@ -78,6 +93,7 @@ export function buildCostMatrixReport(input: {
         name: product.name,
         category: product.category,
         price: product.price,
+        effectiveSalePrice,
         recipeCost,
         foodCostPct: 0,
         targetFoodCostPct,
@@ -93,7 +109,7 @@ export function buildCostMatrixReport(input: {
       unitCostNet: recipeCost,
       quantity: 1,
       purchaseTaxCategory: "IVA_19",
-      salePriceGross: product.price,
+      salePriceGross: effectiveSalePrice,
       saleTaxCategory: (product.saleTaxCategory ?? "IVA_19") as CoTaxCategory,
       recipeCost,
       targetCostPct: targetFoodCostPct,
@@ -108,6 +124,7 @@ export function buildCostMatrixReport(input: {
       name: product.name,
       category: product.category,
       price: product.price,
+      effectiveSalePrice,
       recipeCost,
       foodCostPct: matrix.foodCostPct,
       targetFoodCostPct,

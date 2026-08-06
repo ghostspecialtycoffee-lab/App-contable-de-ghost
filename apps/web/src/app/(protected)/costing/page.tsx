@@ -25,9 +25,11 @@ import {
   calculateRecipeCostPerPortion,
   calculateRecipeBatchCost,
   calculateRecipeLineCost,
+  getCostMatrixSalePrice,
   getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
+  PASTRY_DOMICILIO_ALLOCATION_COP,
   suggestRecipeYield,
   type BaseUnit,
   type CoTaxCategory,
@@ -153,11 +155,16 @@ export default function CostingPage() {
       return null;
     }
 
+    const salePriceForMatrix = getCostMatrixSalePrice({
+      category: selectedProduct.category,
+      menuPrice: salePrice,
+    });
+
     return calculateCostMatrix({
       unitCostNet: previewRecipeCost,
       quantity: 1,
       purchaseTaxCategory: "IVA_19",
-      salePriceGross: salePrice,
+      salePriceGross: salePriceForMatrix,
       saleTaxCategory,
       recipeCost: previewRecipeCost,
       targetCostPct,
@@ -291,8 +298,12 @@ export default function CostingPage() {
         recipe && recipe.lines.length > 0
           ? calculateRecipeCostPerPortion(recipe.lines, itemProfiles, recipe.yieldQuantity)
           : product.recipeCost ?? 0;
+      const effectiveSalePrice = getCostMatrixSalePrice({
+        category: product.category,
+        menuPrice: product.price,
+      });
       const foodCostPct =
-        product.price > 0 && cost > 0 ? cost / product.price : null;
+        effectiveSalePrice > 0 && cost > 0 ? cost / effectiveSalePrice : null;
 
       return {
         product,
@@ -557,7 +568,11 @@ export default function CostingPage() {
                     <Metric
                       label="Food cost"
                       value={`${(matrix.foodCostPct * 100).toFixed(1)}%`}
-                      hint={`Meta ${(targetCostPct * 100).toFixed(0)}%`}
+                      hint={
+                        selectedProduct?.category === "pastry"
+                          ? `Meta ${(targetCostPct * 100).toFixed(0)}% · precio + ${formatMoney(PASTRY_DOMICILIO_ALLOCATION_COP)} domicilio`
+                          : `Meta ${(targetCostPct * 100).toFixed(0)}%`
+                      }
                     />
                     <Metric
                       label="Utilidad bruta"
