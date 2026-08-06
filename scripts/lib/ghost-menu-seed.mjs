@@ -21,6 +21,29 @@ export function normalizeCatalogName(value) {
     .replace(/\s+/g, " ");
 }
 
+/** Tortas → 12 porciones; brownies/galletas → 8; etc. */
+export function suggestRecipeYield(name) {
+  const normalized = normalizeCatalogName(name);
+  if (/torta|tarta|cheesecake|pastel/.test(normalized)) {
+    return 12;
+  }
+  if (/brownie|galleta/.test(normalized)) {
+    return 8;
+  }
+  if (/pan\b|enrollado/.test(normalized)) {
+    return 10;
+  }
+  return 1;
+}
+
+function normalizeYieldQuantity(value) {
+  const next = Number(value ?? 1);
+  if (!Number.isFinite(next) || next <= 0) {
+    return 1;
+  }
+  return Math.round(next * 1000) / 1000;
+}
+
 const PRODUCT_CATALOG_ALIASES = {
   espresso: "Espresso sencillo",
   macciatto: "Macchiato",
@@ -141,6 +164,13 @@ function resolveSpecAmounts(spec, espressoBase) {
   };
 }
 
+function usesTapWaterForCoffeePrep(spec) {
+  if (spec.usesEspressoBase) return true;
+  if (spec.kind === "brew_method") return true;
+  if ((spec.coffeeGrams ?? 0) > 0) return true;
+  return false;
+}
+
 function buildCatalogRecipeLines(spec, items, espressoBase, warnings) {
   const lines = [];
   const { coffeeGrams, waterMl, milkMl } = resolveSpecAmounts(spec, espressoBase);
@@ -154,7 +184,7 @@ function buildCatalogRecipeLines(spec, items, espressoBase, warnings) {
     lines.push(buildGramLine(coffee, coffeeGrams, espressoBase));
   }
 
-  if (waterMl > 0) {
+  if (waterMl > 0 && !usesTapWaterForCoffeePrep(spec)) {
     const water = findWaterItem(items);
     if (!water) {
       warnings.push(`Sin agua en inventario para ${spec.name}.`);
@@ -262,7 +292,11 @@ async function saveRecipe(db, FieldValue, organizationId, actorUserId, input) {
     });
   }
 
-  const recipeCost = calculateRecipeCost(lines, itemById);
+  const batchCost = calculateRecipeCost(lines, itemById);
+  const yieldQty = normalizeYieldQuantity(
+    input.yieldQuantity ?? suggestRecipeYield(input.menuProductName),
+  );
+  const recipeCost = Math.round(batchCost / yieldQty);
   const existing = await db
     .collection(`organizations/${organizationId}/recipes`)
     .where("menuProductId", "==", input.menuProductId)
@@ -278,7 +312,7 @@ async function saveRecipe(db, FieldValue, organizationId, actorUserId, input) {
     organizationId,
     menuProductId: input.menuProductId,
     menuProductName: input.menuProductName.trim(),
-    yieldQuantity: 1,
+    yieldQuantity: yieldQty,
     lines,
     recipeCost,
     createdAt: now,
@@ -348,6 +382,7 @@ export async function seedGhostMenu(db, FieldValue, input) {
   const products = allProductsSnap.docs.map((doc) => ({
     id: doc.id,
     name: String(doc.data().name ?? ""),
+    category: doc.data().category ?? "other",
   }));
 
   const inventorySnap = await db
@@ -375,7 +410,9 @@ export async function seedGhostMenu(db, FieldValue, input) {
 
   for (const product of products) {
     const existing = recipeByProductId.get(product.id);
-    if (existing?.lines?.length > 0 && !isCatalogBeverage(product.name)) {
+    const shouldRefreshRecipe =
+      isCatalogBeverage(product.name) || product.category === "pastry";
+    if (existing?.lines?.length > 0 && !shouldRefreshRecipe) {
       recipesSkipped += 1;
       continue;
     }
@@ -583,4 +620,80 @@ export async function applyMenuPricesAndCostMatrix(db, FieldValue, input) {
     recipesSkipped,
     warnings,
   };
+}
+
+/**
+ * Regenera fichas de repostería: torta completa ÷ porciones (12 para tortas).
+ */
+export async function applyPastryCostMatrix(db, FieldValue, input) {
+  const { organizationId, actorUserId } = input;
+  const warnings = [];
+  let recipesCreated = 0;
+  let recipesUpdated = 0;
+  let recipesSkipped = 0;
+
+  const productSnaps = await db
+    .collection(`organizations/${organizationId}/menuProducts`)
+    .where("category", "==", "pastry")
+    .get();
+
+  if (productSnaps.empty) {
+    return { recipesCreated, recipesUpdated, recipesSkipped, warnings };
+  }
+
+  const inventorySnap = await db
+    .collection(`organizations/${organizationId}/inventoryItems`)
+    .get();
+  const items = inventorySnap.docs.map((doc) => ({
+    id: doc.id,
+    name: String(doc.data().name ?? ""),
+    type: doc.data().type ?? "raw_material",
+    baseUnit: doc.data().baseUnit ?? "unit",
+    averageCost: Number(doc.data().averageCost ?? doc.data().lastCost ?? 0),
+    presentationQuantity: doc.data().presentationQuantity,
+  }));
+
+  const recipeSnaps = await db.collection(`organizations/${organizationId}/recipes`).get();
+  const recipeByProductId = new Map(
+    recipeSnaps.docs.map((doc) => [String(doc.data().menuProductId), doc.data()]),
+  );
+
+  const catalog = loadGhostMenuCatalog();
+
+  for (const doc of productSnaps.docs) {
+    const product = {
+      id: doc.id,
+      name: String(doc.data().name ?? ""),
+    };
+    const existing = recipeByProductId.get(product.id);
+    const lines = buildRecipeLinesForProduct(
+      product,
+      items,
+      catalog,
+      catalog.espressoBase,
+      warnings,
+    );
+
+    if (!lines || lines.length === 0) {
+      if (existing?.lines?.length > 0) {
+        recipesSkipped += 1;
+      }
+      continue;
+    }
+
+    await saveRecipe(db, FieldValue, organizationId, actorUserId, {
+      menuProductId: product.id,
+      menuProductName: product.name,
+      lines,
+      yieldQuantity: suggestRecipeYield(product.name),
+    });
+
+    if (existing?.lines?.length > 0) {
+      recipesUpdated += 1;
+    } else {
+      recipesCreated += 1;
+    }
+  }
+
+  return { recipesCreated, recipesUpdated, recipesSkipped, warnings };
 }

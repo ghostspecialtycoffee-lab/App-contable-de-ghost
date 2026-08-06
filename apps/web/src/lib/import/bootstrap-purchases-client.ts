@@ -1,4 +1,5 @@
 import type { BaseUnit, CoTaxCategory, KitchenStation, MenuCategory } from "@ghost/domain";
+import { suggestRecipeYield } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
 
@@ -315,12 +316,14 @@ export async function runBootstrapPurchaseImport(input: {
   let sortOrder = 0;
   for (const entry of finishedProducts.values()) {
     const menuCategory = inferMenuCategory(entry.name);
+    const yieldQuantity = suggestRecipeYield(entry.name);
+    const portionCost = Math.round(entry.unitCostNet / yieldQuantity);
     await createMenuProduct({
       name: entry.name,
-      price: roundSalePrice(entry.unitCostNet),
+      price: roundSalePrice(portionCost),
       category: menuCategory,
       station: inferMenuStation(menuCategory),
-      description: `Importado desde compras · costo ref. ${entry.unitCostNet}`,
+      description: `Importado desde compras · costo ref. ${entry.unitCostNet} (÷ ${yieldQuantity} porciones)`,
       sortOrder,
     });
     sortOrder += 1;

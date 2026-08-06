@@ -25,9 +25,11 @@ import {
   calculateRecipeCostPerPortion,
   calculateRecipeBatchCost,
   calculateRecipeLineCost,
+  getCostMatrixSalePrice,
   getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
+  PASTRY_DOMICILIO_ALLOCATION_COP,
   suggestRecipeYield,
   type BaseUnit,
   type CoTaxCategory,
@@ -153,11 +155,16 @@ export default function CostingPage() {
       return null;
     }
 
+    const salePriceForMatrix = getCostMatrixSalePrice({
+      category: selectedProduct.category,
+      menuPrice: salePrice,
+    });
+
     return calculateCostMatrix({
       unitCostNet: previewRecipeCost,
       quantity: 1,
       purchaseTaxCategory: "IVA_19",
-      salePriceGross: salePrice,
+      salePriceGross: salePriceForMatrix,
       saleTaxCategory,
       recipeCost: previewRecipeCost,
       targetCostPct,
@@ -291,8 +298,12 @@ export default function CostingPage() {
         recipe && recipe.lines.length > 0
           ? calculateRecipeCostPerPortion(recipe.lines, itemProfiles, recipe.yieldQuantity)
           : product.recipeCost ?? 0;
+      const effectiveSalePrice = getCostMatrixSalePrice({
+        category: product.category,
+        menuPrice: product.price,
+      });
       const foodCostPct =
-        product.price > 0 && cost > 0 ? cost / product.price : null;
+        effectiveSalePrice > 0 && cost > 0 ? cost / effectiveSalePrice : null;
 
       return {
         product,
@@ -341,7 +352,7 @@ export default function CostingPage() {
         <div className="mt-4 space-y-2 border-t border-[var(--ghost-border)] pt-4">
           <p className="text-sm text-[var(--ghost-text-muted)]">
             Carga la carta Ghost (25 bebidas) con base espresso: 18 g café Black Coffee
-            (paq 5 lb · $145.000) + 40 ml agua. Las fichas se cruzan con compras; productos
+            (paq 5 lb · $145.000) + agua de red. Las fichas se cruzan con compras; productos
             Kiuegi y extras se irán completando al registrar facturas.
           </p>
           <Button
@@ -557,7 +568,11 @@ export default function CostingPage() {
                     <Metric
                       label="Food cost"
                       value={`${(matrix.foodCostPct * 100).toFixed(1)}%`}
-                      hint={`Meta ${(targetCostPct * 100).toFixed(0)}%`}
+                      hint={
+                        selectedProduct?.category === "pastry"
+                          ? `Meta ${(targetCostPct * 100).toFixed(0)}% · precio + ${formatMoney(PASTRY_DOMICILIO_ALLOCATION_COP)} domicilio`
+                          : `Meta ${(targetCostPct * 100).toFixed(0)}%`
+                      }
                     />
                     <Metric
                       label="Utilidad bruta"

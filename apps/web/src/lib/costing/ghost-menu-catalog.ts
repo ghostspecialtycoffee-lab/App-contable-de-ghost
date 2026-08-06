@@ -53,3 +53,19 @@ export function findCatalogSpec(productName: string): GhostBeverageSpec | undefi
 export function isCatalogBeverage(productName: string): boolean {
   return Boolean(findCatalogSpec(productName));
 }
+
+/** Agua de preparación de café = red/llave; no se descuenta botella de inventario. */
+export function usesTapWaterForCoffeePrep(
+  spec: Pick<GhostBeverageSpec, "usesEspressoBase" | "kind" | "coffeeGrams">,
+): boolean {
+  if (spec.usesEspressoBase) {
+    return true;
+  }
+  if (spec.kind === "brew_method") {
+    return true;
+  }
+  if ((spec.coffeeGrams ?? 0) > 0) {
+    return true;
+  }
+  return false;
+}

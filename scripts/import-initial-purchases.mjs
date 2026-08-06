@@ -186,6 +186,18 @@ function roundSalePrice(unitCostNet) {
   return Math.max(1000, Math.round(grossEstimate / 500) * 500);
 }
 
+function suggestRecipeYield(name) {
+  const normalized = name
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (/torta|tarta|cheesecake|pastel/.test(normalized)) return 12;
+  if (/brownie|galleta/.test(normalized)) return 8;
+  if (/pan\b|enrollado/.test(normalized)) return 10;
+  return 1;
+}
+
 function buildCatalog(manifest) {
   const catalog = new Map();
 
@@ -485,7 +497,9 @@ async function createMenuProductsFromFinished(
     const menuCategory = inferMenuCategory(entry.name);
     const station = inferMenuStation(menuCategory);
     const saleTaxCategory = inferSaleTaxCategory(entry.name, menuCategory);
-    const price = roundSalePrice(entry.unitCostNet);
+    const yieldQuantity = suggestRecipeYield(entry.name);
+    const portionCost = Math.round(entry.unitCostNet / yieldQuantity);
+    const price = roundSalePrice(portionCost);
     const ref = db.collection(`organizations/${organizationId}/menuProducts`).doc();
     const now = FieldValue.serverTimestamp();
 
@@ -499,7 +513,7 @@ async function createMenuProductsFromFinished(
       status: "active",
       sortOrder,
       saleTaxCategory,
-      recipeCost: entry.unitCostNet,
+      recipeCost: portionCost,
       createdAt: now,
       updatedAt: now,
       createdBy: actorUserId,

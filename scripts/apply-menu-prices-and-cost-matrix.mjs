@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
-import { applyMenuPricesAndCostMatrix } from "./lib/ghost-menu-seed.mjs";
+import { applyMenuPricesAndCostMatrix, applyPastryCostMatrix } from "./lib/ghost-menu-seed.mjs";
 
 const require = createRequire(import.meta.url);
 const admin = require("firebase-admin/app");
@@ -84,15 +84,24 @@ async function main() {
     actorUserId: args.actor,
   });
 
+  const pastryResult = await applyPastryCostMatrix(db, FieldValue, {
+    organizationId: args.org,
+    actorUserId: args.actor,
+  });
+
   console.log("\nResumen precios y matriz de costos:");
   console.log(`  Precios actualizados: ${result.pricesUpdated}`);
   console.log(`  Productos nuevos: ${result.productsCreated}`);
-  console.log(`  Fichas creadas: ${result.recipesCreated}`);
-  console.log(`  Fichas actualizadas: ${result.recipesUpdated}`);
-  console.log(`  Sin cambios: ${result.recipesSkipped}`);
-  if (result.warnings.length > 0) {
-    console.log(`  Avisos (${result.warnings.length}):`);
-    for (const warning of result.warnings.slice(0, 10)) {
+  console.log(`  Fichas bebidas creadas: ${result.recipesCreated}`);
+  console.log(`  Fichas bebidas actualizadas: ${result.recipesUpdated}`);
+  console.log(`  Sin cambios bebidas: ${result.recipesSkipped}`);
+  console.log(`  Fichas repostería creadas: ${pastryResult.recipesCreated}`);
+  console.log(`  Fichas repostería actualizadas: ${pastryResult.recipesUpdated}`);
+  console.log(`  Sin cambios repostería: ${pastryResult.recipesSkipped}`);
+  const allWarnings = [...result.warnings, ...pastryResult.warnings];
+  if (allWarnings.length > 0) {
+    console.log(`  Avisos (${allWarnings.length}):`);
+    for (const warning of allWarnings.slice(0, 10)) {
       console.log(`    · ${warning}`);
     }
   }
