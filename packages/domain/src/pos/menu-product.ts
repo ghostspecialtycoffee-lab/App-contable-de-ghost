@@ -18,6 +18,30 @@ export const MENU_CATEGORY_LABELS: Record<MenuCategory, string> = {
   other: "Otros",
 };
 
+export interface MenuCategoryMeta {
+  emoji: string;
+  tagline: string;
+}
+
+export const MENU_CATEGORY_META: Record<MenuCategory, MenuCategoryMeta> = {
+  beverage: {
+    emoji: "☕",
+    tagline: "Cafés de especialidad, tés y bebidas frías",
+  },
+  food: {
+    emoji: "🥗",
+    tagline: "Platos salados y acompañamientos",
+  },
+  pastry: {
+    emoji: "🍰",
+    tagline: "Repostería artesanal y postres",
+  },
+  other: {
+    emoji: "✨",
+    tagline: "Otros favoritos de la casa",
+  },
+};
+
 export const KITCHEN_STATIONS = ["counter", "bar", "kitchen"] as const;
 
 export type KitchenStation = (typeof KITCHEN_STATIONS)[number];

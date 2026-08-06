@@ -24,11 +24,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isGuestRoute = pathname.startsWith("/mesa") || pathname.startsWith("/menu");
 
   if (isGuestRoute) {
-    const title = pathname.startsWith("/menu") ? "Menú digital" : "Menú · mesa";
+    const isMenu = pathname.startsWith("/menu");
+    const title = isMenu ? "Menú" : "Mesa";
     return (
       <div className="min-h-screen bg-[var(--ghost-surface-0)]">
-        <header className="border-b border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] px-4 py-3 text-center">
-          <p className="text-sm font-medium">{title}</p>
+        <header className="sticky top-0 z-30 border-b border-[var(--ghost-border)]/80 bg-[var(--ghost-surface-0)]/90 px-4 py-3 text-center backdrop-blur-md">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--ghost-text-muted)]">
+            Ghost Specialty Coffee
+          </p>
+          <p className="text-sm font-semibold">{title}</p>
         </header>
         <main>{children}</main>
       </div>

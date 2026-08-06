@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { formatMoney } from "@/lib/format";
 import { normalizeCatalogName } from "@/lib/costing/ghost-menu-catalog";
@@ -8,6 +8,7 @@ import { normalizeMenuCategory } from "@/lib/pos/menu-queries";
 import {
   MENU_CATEGORIES,
   MENU_CATEGORY_LABELS,
+  MENU_CATEGORY_META,
   type MenuCategory,
   type MenuProduct,
 } from "@ghost/domain";
@@ -20,6 +21,10 @@ interface GuestMenuCatalogProps {
   showSearch?: boolean;
 }
 
+function categoryAnchorId(category: MenuCategory): string {
+  return `menu-cat-${category}`;
+}
+
 export function GuestMenuCatalog({
   products,
   cartQty = {},
@@ -28,6 +33,8 @@ export function GuestMenuCatalog({
   showSearch = true,
 }: GuestMenuCatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState<MenuCategory | null>(null);
+  const sectionRefs = useRef<Partial<Record<MenuCategory, HTMLElement | null>>>({});
 
   const visibleProducts = useMemo(() => {
     const normalizedQuery = normalizeCatalogName(searchQuery);
@@ -36,10 +43,14 @@ export function GuestMenuCatalog({
     }
 
     return products.filter((product) => {
+      const category = normalizeMenuCategory(product.category);
       const haystack = normalizeCatalogName(
-        [product.name, product.description ?? "", MENU_CATEGORY_LABELS[normalizeMenuCategory(product.category)]].join(
-          " ",
-        ),
+        [
+          product.name,
+          product.description ?? "",
+          MENU_CATEGORY_LABELS[category],
+          MENU_CATEGORY_META[category].tagline,
+        ].join(" "),
       );
       return haystack.includes(normalizedQuery);
     });
@@ -60,9 +71,68 @@ export function GuestMenuCatalog({
     return MENU_CATEGORIES.map((category) => ({
       category,
       label: MENU_CATEGORY_LABELS[category],
+      meta: MENU_CATEGORY_META[category],
       products: grouped.get(category) ?? [],
     })).filter((section) => section.products.length > 0);
   }, [visibleProducts]);
+
+  const scrollToCategory = useCallback((category: MenuCategory) => {
+    const section = sectionRefs.current[category];
+    if (!section) {
+      return;
+    }
+
+    setActiveCategory(category);
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  useEffect(() => {
+    if (productsByCategory.length === 0) {
+      setActiveCategory(null);
+      return;
+    }
+
+    if (!activeCategory || !productsByCategory.some((section) => section.category === activeCategory)) {
+      setActiveCategory(productsByCategory[0]?.category ?? null);
+    }
+  }, [activeCategory, productsByCategory]);
+
+  useEffect(() => {
+    if (productsByCategory.length === 0 || searchQuery.trim()) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((left, right) => right.intersectionRatio - left.intersectionRatio);
+
+        const topEntry = visible[0];
+        if (!topEntry?.target.id) {
+          return;
+        }
+
+        const category = topEntry.target.id.replace("menu-cat-", "") as MenuCategory;
+        if (MENU_CATEGORIES.includes(category)) {
+          setActiveCategory(category);
+        }
+      },
+      {
+        rootMargin: "-30% 0px -55% 0px",
+        threshold: [0, 0.25, 0.5, 0.75, 1],
+      },
+    );
+
+    for (const section of productsByCategory) {
+      const element = sectionRefs.current[section.category];
+      if (element) {
+        observer.observe(element);
+      }
+    }
+
+    return () => observer.disconnect();
+  }, [productsByCategory, searchQuery]);
 
   if (products.length === 0) {
     return (
@@ -73,16 +143,41 @@ export function GuestMenuCatalog({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="ghost-menu">
       {showSearch ? (
         <input
           type="search"
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
-          className="ghost-input"
-          placeholder="Buscar en el menú..."
+          className="ghost-menu-search"
+          placeholder="Buscar bebida, postre, plato..."
           autoComplete="off"
         />
+      ) : null}
+
+      {productsByCategory.length > 1 && !searchQuery.trim() ? (
+        <nav className="ghost-menu-nav" aria-label="Categorías del menú">
+          {productsByCategory.map((section) => {
+            const isActive = activeCategory === section.category;
+            return (
+              <button
+                key={section.category}
+                type="button"
+                className={[
+                  "ghost-menu-nav-chip",
+                  isActive ? "ghost-menu-nav-chip-active" : "",
+                ].join(" ")}
+                aria-current={isActive ? "true" : undefined}
+                onClick={() => scrollToCategory(section.category)}
+              >
+                <span aria-hidden="true" className="mr-1.5">
+                  {section.meta.emoji}
+                </span>
+                {section.label}
+              </button>
+            );
+          })}
+        </nav>
       ) : null}
 
       {productsByCategory.length === 0 ? (
@@ -93,68 +188,85 @@ export function GuestMenuCatalog({
         </p>
       ) : (
         productsByCategory.map((section) => (
-          <section key={section.category} className="space-y-3">
-          <h2 className="text-lg font-semibold">{section.label}</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {section.products.map((product) => (
-              <article
-                key={product.id}
-                className="overflow-hidden rounded-xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)]"
-              >
-                {product.imageDataUrl ? (
-                  <img
-                    src={product.imageDataUrl}
-                    alt={product.name}
-                    className="h-36 w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-36 items-center justify-center bg-[var(--ghost-surface-2)] text-sm text-[var(--ghost-text-muted)]">
-                    Sin foto
-                  </div>
-                )}
-                <div className="space-y-1 p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-medium leading-snug">{product.name}</p>
-                    <p className="shrink-0 text-sm font-semibold text-[var(--ghost-brand-500)]">
-                      {formatMoney(product.price)}
-                    </p>
-                  </div>
-                  {product.description ? (
-                    <p className="text-sm leading-relaxed text-[var(--ghost-text-muted)]">
-                      {product.description}
-                    </p>
-                  ) : null}
-                  {orderMode && onQtyChange ? (
-                    <div className="flex items-center gap-2 pt-2">
-                      <button
-                        type="button"
-                        className="ghost-input h-9 w-9 px-0"
-                        aria-label={`Menos ${product.name}`}
-                        onClick={() =>
-                          onQtyChange(product.id, Math.max(0, (cartQty[product.id] ?? 0) - 1))
-                        }
-                      >
-                        −
-                      </button>
-                      <span className="w-8 text-center text-sm font-medium">
-                        {cartQty[product.id] ?? 0}
-                      </span>
-                      <button
-                        type="button"
-                        className="ghost-input h-9 w-9 px-0"
-                        aria-label={`Más ${product.name}`}
-                        onClick={() =>
-                          onQtyChange(product.id, (cartQty[product.id] ?? 0) + 1)
-                        }
-                      >
-                        +
-                      </button>
+          <section
+            key={section.category}
+            id={categoryAnchorId(section.category)}
+            ref={(element) => {
+              sectionRefs.current[section.category] = element;
+            }}
+            className="ghost-menu-section"
+            aria-labelledby={`${categoryAnchorId(section.category)}-title`}
+          >
+            <header className="ghost-menu-section-header">
+              <span className="ghost-menu-section-emoji" aria-hidden="true">
+                {section.meta.emoji}
+              </span>
+              <div>
+                <h2
+                  id={`${categoryAnchorId(section.category)}-title`}
+                  className="ghost-menu-section-title"
+                >
+                  {section.label}
+                </h2>
+                <p className="ghost-menu-section-tagline">{section.meta.tagline}</p>
+                <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
+                  {section.products.length}{" "}
+                  {section.products.length === 1 ? "opción" : "opciones"}
+                </p>
+              </div>
+            </header>
+
+            <div className="ghost-menu-grid">
+              {section.products.map((product) => {
+                const quantity = cartQty[product.id] ?? 0;
+
+                return (
+                  <article key={product.id} className="ghost-menu-card">
+                    <div className="ghost-menu-card-media">
+                      {product.imageDataUrl ? (
+                        <img src={product.imageDataUrl} alt={product.name} loading="lazy" />
+                      ) : (
+                        <div className="ghost-menu-card-placeholder" aria-hidden="true">
+                          {section.meta.emoji}
+                        </div>
+                      )}
+                      <span className="ghost-menu-card-price">{formatMoney(product.price)}</span>
                     </div>
-                  ) : null}
-                </div>
-              </article>
-            ))}
-          </div>
+
+                    <div className="ghost-menu-card-body">
+                      <h3 className="ghost-menu-card-title">{product.name}</h3>
+                      {product.description ? (
+                        <p className="ghost-menu-card-description">{product.description}</p>
+                      ) : null}
+
+                      {orderMode && onQtyChange ? (
+                        <div className="ghost-menu-qty">
+                          <button
+                            type="button"
+                            className="ghost-menu-qty-btn"
+                            aria-label={`Menos ${product.name}`}
+                            onClick={() =>
+                              onQtyChange(product.id, Math.max(0, quantity - 1))
+                            }
+                          >
+                            −
+                          </button>
+                          <span className="ghost-menu-qty-value">{quantity}</span>
+                          <button
+                            type="button"
+                            className="ghost-menu-qty-btn"
+                            aria-label={`Más ${product.name}`}
+                            onClick={() => onQtyChange(product.id, quantity + 1)}
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           </section>
         ))
       )}

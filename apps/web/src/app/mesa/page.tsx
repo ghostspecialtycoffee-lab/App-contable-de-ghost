@@ -319,22 +319,21 @@ function GuestTableContent() {
         </div>
       </div>
 
-      <Card title="Menú">
-        {productsError ? (
-          <p className="mb-3 text-sm text-[var(--ghost-danger)]">{productsError}</p>
-        ) : null}
-        {products.length === 0 && !productsLoading ? (
-          <p className="mb-3 text-sm text-[var(--ghost-text-muted)]">
-            El menú no está disponible en este momento. Pide ayuda a un mesero.
-          </p>
-        ) : null}
-        <GuestMenuCatalog
-          products={products}
-          orderMode
-          cartQty={cartQty}
-          onQtyChange={handleQtyChange}
-        />
-      </Card>
+      {productsError ? (
+        <p className="text-sm text-[var(--ghost-danger)]">{productsError}</p>
+      ) : null}
+      {products.length === 0 && !productsLoading ? (
+        <p className="text-sm text-[var(--ghost-text-muted)]">
+          El menú no está disponible en este momento. Pide ayuda a un mesero.
+        </p>
+      ) : null}
+
+      <GuestMenuCatalog
+        products={products}
+        orderMode
+        cartQty={cartQty}
+        onQtyChange={handleQtyChange}
+      />
 
       {lines.length > 0 ? (
         <Card title="Tu cuenta">
