@@ -2,6 +2,7 @@ import type { BaseUnit, InventoryCostProfile, MenuCategory, RecipeLineInput } fr
 import {
   calculatePastryPortionCost,
   calculateRecipeBatchCost,
+  sanitizeBeverageAdvancedSetupAnswers,
   type InventoryItem,
 } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -53,6 +54,7 @@ export async function saveRecipeClient(input: {
   yieldQuantity?: number;
   category?: MenuCategory;
   lines: RecipeLineInput[];
+  advancedSetupAnswers?: Record<string, string>;
 }): Promise<{ recipeId: string; recipeCost: number }> {
   const userId = requireUserId();
   const organizationId = await getOrganizationIdFromProfile();
@@ -70,6 +72,10 @@ export async function saveRecipeClient(input: {
   const productSnap = await getDoc(productRef);
   const category =
     input.category ?? (productSnap.data()?.category as MenuCategory | undefined) ?? "other";
+  const advancedSetupAnswers = sanitizeBeverageAdvancedSetupAnswers(
+    input.menuProductName,
+    input.advancedSetupAnswers ?? {},
+  );
 
   const itemProfiles: Record<string, InventoryCostProfile> = {};
 
@@ -124,6 +130,9 @@ export async function saveRecipeClient(input: {
       quantity: line.quantity,
       unit: line.unit as BaseUnit,
     })),
+    ...(Object.keys(advancedSetupAnswers).length > 0
+      ? { advancedSetupAnswers }
+      : {}),
     recipeCost,
     createdAt: now,
     updatedAt: now,

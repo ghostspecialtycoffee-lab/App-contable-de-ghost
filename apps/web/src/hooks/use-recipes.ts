@@ -42,6 +42,7 @@ export function useRecipes() {
               menuProductName: data.menuProductName,
               yieldQuantity: data.yieldQuantity ?? 1,
               lines: data.lines ?? [],
+              advancedSetupAnswers: data.advancedSetupAnswers ?? undefined,
             } satisfies Recipe;
           }),
         );
