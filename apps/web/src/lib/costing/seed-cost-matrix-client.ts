@@ -513,6 +513,7 @@ export async function seedCostMatrixClient(): Promise<SeedCostMatrixResult> {
       menuProductName: product.name,
       lines,
       yieldQuantity,
+      category: product.category,
     });
 
     if (existing && existing.lines.length > 0) {

@@ -4,6 +4,7 @@ import { firestorePaths } from "@ghost/infrastructure";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
 
 import manifest from "@/data/purchase-invoices.manifest.json";
+import { formatMoney } from "@/lib/format";
 import { getFirestoreDb } from "@/lib/firebase/client";
 import { createInventoryItem, createWarehouse } from "@/lib/inventory/inventory";
 import { createMenuProduct } from "@/lib/pos/pos";
@@ -317,13 +318,17 @@ export async function runBootstrapPurchaseImport(input: {
   for (const entry of finishedProducts.values()) {
     const menuCategory = inferMenuCategory(entry.name);
     const yieldQuantity = suggestRecipeYield(entry.name);
-    const portionCost = Math.round(entry.unitCostNet / yieldQuantity);
+    const isPastry = menuCategory === "pastry";
+
     await createMenuProduct({
       name: entry.name,
-      price: roundSalePrice(portionCost),
+      price: isPastry ? 0 : roundSalePrice(Math.round(entry.unitCostNet / yieldQuantity)),
       category: menuCategory,
       station: inferMenuStation(menuCategory),
-      description: `Importado desde compras · costo ref. ${entry.unitCostNet} (÷ ${yieldQuantity} porciones)`,
+      status: isPastry ? "inactive" : "active",
+      description: isPastry
+        ? `Repostería · factura ${formatMoney(entry.unitCostNet)} + domicilio ÷ ${yieldQuantity} porciones. Define tu precio de venta en el catálogo.`
+        : `Importado desde compras · costo ref. ${entry.unitCostNet}`,
       sortOrder,
     });
     sortOrder += 1;

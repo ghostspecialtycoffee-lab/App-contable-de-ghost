@@ -21,11 +21,11 @@ import {
   CO_TAX_CATEGORIES,
   CO_TAX_CATEGORY_LABELS,
   calculateCostMatrix,
+  calculatePastryPortionCost,
+  calculateRecipeBatchCost,
   calculateRecipeCostBreakdown,
   calculateRecipeCostPerPortion,
-  calculateRecipeBatchCost,
   calculateRecipeLineCost,
-  getCostMatrixSalePrice,
   getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
@@ -123,10 +123,16 @@ export default function CostingPage() {
     [validRecipeLines, itemProfiles],
   );
 
-  const previewRecipeCost = useMemo(
-    () => calculateRecipeCostPerPortion(validRecipeLines, itemProfiles, yieldQuantity),
-    [validRecipeLines, itemProfiles, yieldQuantity],
-  );
+  const previewRecipeCost = useMemo(() => {
+    if (!selectedProduct) {
+      return 0;
+    }
+    return calculatePastryPortionCost({
+      batchCostNet: previewBatchCost,
+      yieldQuantity,
+      category: selectedProduct.category,
+    });
+  }, [previewBatchCost, yieldQuantity, selectedProduct]);
 
   const suggestedTaxCategory = useMemo(() => {
     if (!selectedProduct) {
@@ -155,16 +161,11 @@ export default function CostingPage() {
       return null;
     }
 
-    const salePriceForMatrix = getCostMatrixSalePrice({
-      category: selectedProduct.category,
-      menuPrice: salePrice,
-    });
-
     return calculateCostMatrix({
       unitCostNet: previewRecipeCost,
       quantity: 1,
       purchaseTaxCategory: "IVA_19",
-      salePriceGross: salePriceForMatrix,
+      salePriceGross: salePrice,
       saleTaxCategory,
       recipeCost: previewRecipeCost,
       targetCostPct,
@@ -276,12 +277,17 @@ export default function CostingPage() {
         menuProductId: selectedProduct.id,
         menuProductName: selectedProduct.name,
         yieldQuantity,
+        category: selectedProduct.category,
         lines: validLines,
       });
 
       setSaveMessage(
         `Ficha guardada. Costo por porción: ${formatMoney(result.recipeCost)}` +
-          (yieldQuantity > 1 ? ` (lote ${formatMoney(previewBatchCost)} ÷ ${yieldQuantity})` : "") +
+          (yieldQuantity > 1
+            ? selectedProduct.category === "pastry"
+              ? ` (factura ${formatMoney(previewBatchCost)} + ${formatMoney(PASTRY_DOMICILIO_ALLOCATION_COP)} domicilio ÷ ${yieldQuantity})`
+              : ` (lote ${formatMoney(previewBatchCost)} ÷ ${yieldQuantity})`
+            : "") +
           ".",
       );
     } catch (cause) {
@@ -294,16 +300,20 @@ export default function CostingPage() {
   const productSummaries = useMemo(() => {
     return products.map((product) => {
       const recipe = recipes.find((entry) => entry.menuProductId === product.id);
+      const batchCost =
+        recipe && recipe.lines.length > 0
+          ? calculateRecipeBatchCost(recipe.lines, itemProfiles)
+          : 0;
       const cost =
         recipe && recipe.lines.length > 0
-          ? calculateRecipeCostPerPortion(recipe.lines, itemProfiles, recipe.yieldQuantity)
+          ? calculatePastryPortionCost({
+              batchCostNet: batchCost,
+              yieldQuantity: recipe.yieldQuantity,
+              category: product.category,
+            })
           : product.recipeCost ?? 0;
-      const effectiveSalePrice = getCostMatrixSalePrice({
-        category: product.category,
-        menuPrice: product.price,
-      });
       const foodCostPct =
-        effectiveSalePrice > 0 && cost > 0 ? cost / effectiveSalePrice : null;
+        product.price > 0 && cost > 0 ? cost / product.price : null;
 
       return {
         product,
@@ -570,7 +580,7 @@ export default function CostingPage() {
                       value={`${(matrix.foodCostPct * 100).toFixed(1)}%`}
                       hint={
                         selectedProduct?.category === "pastry"
-                          ? `Meta ${(targetCostPct * 100).toFixed(0)}% · precio + ${formatMoney(PASTRY_DOMICILIO_ALLOCATION_COP)} domicilio`
+                          ? `Meta ${(targetCostPct * 100).toFixed(0)}% · costo incluye ${formatMoney(PASTRY_DOMICILIO_ALLOCATION_COP)} domicilio`
                           : `Meta ${(targetCostPct * 100).toFixed(0)}%`
                       }
                     />

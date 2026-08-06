@@ -393,14 +393,14 @@ export default function ReportsPage() {
 
           <Card title="Matriz de costos — repostería">
             <p className="mb-4 text-sm text-[var(--ghost-text-muted)]">
-              Tortas: costo de factura ÷ 12 porciones. Food cost sobre precio de venta + $10.000
-              domicilio.
+              Costo por porción = (factura torta completa + $10.000 domicilio) ÷ porciones. Tú
+              defines el precio de venta en el catálogo.
             </p>
             <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <StatCard
                 label="Food cost promedio"
                 value={`${(pastryCostMatrixReport.averageFoodCostPct * 100).toFixed(1)}%`}
-                hint="Precio + domicilio"
+                hint="Sobre tu precio de venta"
               />
               <StatCard
                 label="Margen bruto promedio"
@@ -453,14 +453,7 @@ export default function ReportsPage() {
                             <p className="text-xs text-[var(--ghost-danger)]">Sobre meta</p>
                           ) : null}
                         </td>
-                        <td className="px-2 py-2">
-                          {formatMoney(row.price)}
-                          {row.effectiveSalePrice > row.price ? (
-                            <p className="text-xs text-[var(--ghost-text-muted)]">
-                              + dom. {formatMoney(row.effectiveSalePrice)}
-                            </p>
-                          ) : null}
-                        </td>
+                        <td className="px-2 py-2">{formatMoney(row.price)}</td>
                         <td className="px-2 py-2">
                           {row.recipeCost > 0 ? formatMoney(row.recipeCost) : "—"}
                         </td>

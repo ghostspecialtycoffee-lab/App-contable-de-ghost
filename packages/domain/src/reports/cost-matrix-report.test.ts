@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { buildCostMatrixReport } from "./cost-matrix-report.js";
 import type { InventoryCostProfile } from "../inventory/unit-conversion.js";
-import { PASTRY_DOMICILIO_ALLOCATION_COP } from "../operations/pastry-costing.js";
 
 describe("buildCostMatrixReport", () => {
   it("calcula food cost y margen por producto", () => {
@@ -49,7 +48,7 @@ describe("buildCostMatrixReport", () => {
     expect(report.averageFoodCostPct).toBeGreaterThan(0);
   });
 
-  it("costea repostería por porción con domicilio en el precio efectivo", () => {
+  it("costea repostería: (factura + domicilio) ÷ porciones vs precio manual", () => {
     const report = buildCostMatrixReport({
       products: [
         {
@@ -84,8 +83,8 @@ describe("buildCostMatrixReport", () => {
     });
 
     expect(report.rows).toHaveLength(1);
-    expect(report.rows[0]?.recipeCost).toBe(5250);
-    expect(report.rows[0]?.effectiveSalePrice).toBe(8000 + PASTRY_DOMICILIO_ALLOCATION_COP);
-    expect(report.rows[0]?.foodCostPct).toBeCloseTo(5250 / (8000 + PASTRY_DOMICILIO_ALLOCATION_COP), 4);
+    expect(report.rows[0]?.recipeCost).toBe(6083);
+    expect(report.rows[0]?.effectiveSalePrice).toBe(8000);
+    expect(report.rows[0]?.foodCostPct).toBeCloseTo(6083 / 8000, 4);
   });
 });

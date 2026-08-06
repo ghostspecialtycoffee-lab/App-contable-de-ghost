@@ -1,31 +1,22 @@
 import type { MenuCategory } from "../pos/menu-product.js";
-import { suggestRecipeYield } from "../production/services/recipe-yield.js";
+import {
+  normalizeYieldQuantity,
+  suggestRecipeYield,
+} from "../production/services/recipe-yield.js";
 
-/** Asignación de domicilio incluida en el precio efectivo para costear repostería. */
+/** Domicilio fijo sumado al costo del lote de repostería (torta completa). */
 export const PASTRY_DOMICILIO_ALLOCATION_COP = 10_000;
 
 export function isPastryCategory(category: MenuCategory | undefined): boolean {
   return category === "pastry";
 }
 
-/** Precio de venta + domicilio para calcular food cost de repostería. */
-export function getPastryEffectiveSalePrice(menuPrice: number): number {
-  const price = Math.round(menuPrice);
-  if (!Number.isFinite(price) || price <= 0) {
-    return 0;
-  }
-  return price + PASTRY_DOMICILIO_ALLOCATION_COP;
-}
-
-/** Precio usado en la matriz de costos según categoría del producto. */
+/** Precio de venta en matriz (repostería: el que defines tú, sin ajustes). */
 export function getCostMatrixSalePrice(input: {
   category: MenuCategory;
   menuPrice: number;
 }): number {
-  if (isPastryCategory(input.category)) {
-    return getPastryEffectiveSalePrice(input.menuPrice);
-  }
-  return input.menuPrice;
+  return Math.round(input.menuPrice);
 }
 
 /** Rendimiento por defecto para fichas de repostería (tortas → 12 porciones). */
@@ -33,11 +24,41 @@ export function getPastryRecipeYield(productName: string): number {
   return suggestRecipeYield(productName);
 }
 
-/** Costo por porción a partir del precio de factura de la torta completa. */
-export function calculatePastryPortionCostFromInvoice(wholeCakeCostNet: number): number {
-  const whole = Math.round(wholeCakeCostNet);
-  if (!Number.isFinite(whole) || whole <= 0) {
+/**
+ * Costo por porción de repostería:
+ * (costo factura del lote + domicilio) ÷ porciones.
+ * Ej: torta $63.000 + $10.000 domicilio ÷ 12 = $6.083/porción.
+ */
+export function calculatePastryPortionCost(input: {
+  batchCostNet: number;
+  yieldQuantity?: number;
+  category?: MenuCategory;
+  domicilioAllocation?: number;
+}): number {
+  const yieldQty = normalizeYieldQuantity(input.yieldQuantity);
+  const batch = Math.round(input.batchCostNet);
+  if (!Number.isFinite(batch) || batch <= 0 || yieldQty <= 0) {
     return 0;
   }
-  return Math.round(whole / 12);
+
+  if (!isPastryCategory(input.category)) {
+    return Math.round(batch / yieldQty);
+  }
+
+  const domicilio = Math.round(input.domicilioAllocation ?? PASTRY_DOMICILIO_ALLOCATION_COP);
+  return Math.round((batch + domicilio) / yieldQty);
+}
+
+/** Atajo: costo factura torta completa + domicilio ÷ 12. */
+export function calculatePastryPortionCostFromInvoice(
+  wholeCakeCostNet: number,
+  yieldQuantity = 12,
+  domicilioAllocation = PASTRY_DOMICILIO_ALLOCATION_COP,
+): number {
+  return calculatePastryPortionCost({
+    batchCostNet: wholeCakeCostNet,
+    yieldQuantity,
+    category: "pastry",
+    domicilioAllocation,
+  });
 }

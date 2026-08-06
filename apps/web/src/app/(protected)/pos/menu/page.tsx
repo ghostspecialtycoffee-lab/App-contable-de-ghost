@@ -25,10 +25,12 @@ import {
   MENU_CATEGORIES,
   MENU_CATEGORY_LABELS,
   calculateCostMatrix,
-  calculateRecipeCostPerPortion,
+  calculatePastryPortionCost,
+  calculateRecipeBatchCost,
   getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
+  PASTRY_DOMICILIO_ALLOCATION_COP,
   suggestRecipeYield,
   type BaseUnit,
   type CoTaxCategory,
@@ -76,14 +78,24 @@ export default function PosMenuPage() {
     [inventoryItems],
   );
 
-  const previewRecipeCost = useMemo(() => {
+  const previewBatchCost = useMemo(() => {
     const validLines = recipeLines.filter(
       (line) => line.inventoryItemId && line.quantity > 0,
     );
     return validLines.length > 0
-      ? calculateRecipeCostPerPortion(validLines, itemProfiles, yieldQuantity)
+      ? calculateRecipeBatchCost(validLines, itemProfiles)
       : 0;
-  }, [recipeLines, itemProfiles, yieldQuantity]);
+  }, [recipeLines, itemProfiles]);
+
+  const previewRecipeCost = useMemo(
+    () =>
+      calculatePastryPortionCost({
+        batchCostNet: previewBatchCost,
+        yieldQuantity,
+        category,
+      }),
+    [previewBatchCost, yieldQuantity, category],
+  );
 
   useEffect(() => {
     if (name.trim()) {
@@ -181,6 +193,7 @@ export default function PosMenuPage() {
           menuProductId: result.productId,
           menuProductName: name.trim(),
           yieldQuantity,
+          category,
           lines: validLines,
         });
       }
@@ -384,6 +397,14 @@ export default function PosMenuPage() {
                 ))}
               </select>
             </label>
+            {category === "pastry" ? (
+              <p className="rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-muted)] p-3 text-sm text-[var(--ghost-text-muted)]">
+                <strong className="text-[var(--ghost-text)]">Repostería:</strong> vincula la torta
+                completa de bodega (1 unidad = factura). Costo por porción = (factura +{" "}
+                {formatMoney(PASTRY_DOMICILIO_ALLOCATION_COP)} domicilio) ÷ porciones. Tú defines el
+                precio de venta arriba.
+              </p>
+            ) : null}
             <label className="block space-y-1">
               <span className="text-sm font-medium">Comanda</span>
               <select
