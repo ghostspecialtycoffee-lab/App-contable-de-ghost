@@ -105,7 +105,7 @@ export function GhostChatFloating() {
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--ghost-brand-500)] text-white shadow-lg transition hover:bg-[var(--ghost-brand-600)] active:scale-95"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--ghost-brand-500)] text-[var(--ghost-brand-fg)] shadow-lg transition hover:bg-[var(--ghost-brand-600)] active:scale-95"
           aria-label={open ? "Cerrar chat" : `Abrir chat con ${GHOST_ASSISTANT_NAME}`}
           aria-expanded={open}
         >
