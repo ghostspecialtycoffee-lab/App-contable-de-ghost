@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CatalogProductRow } from "@/components/catalog-product-row";
+import { ProductCostPanoramaPanel } from "@/components/product-cost-panorama-panel";
 import { RecipeYieldField } from "@/components/recipe-yield-field";
 import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
@@ -27,6 +28,7 @@ import {
   calculateCostMatrix,
   calculatePastryPortionCost,
   calculateRecipeBatchCost,
+  buildProductCostPanorama,
   getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
@@ -141,6 +143,21 @@ export default function PosMenuPage() {
       matrixSettings: costMatrixSettings,
     });
   }, [price, category, saleTaxCategory, previewRecipeCost, costMatrixSettings]);
+
+  const costPanorama = useMemo(() => {
+    if (previewBatchCost <= 0) {
+      return null;
+    }
+
+    return buildProductCostPanorama({
+      category,
+      batchCostNet: previewBatchCost,
+      yieldQuantity,
+      userSalePrice: Number(price) || 0,
+      saleTaxCategory,
+      matrixSettings: costMatrixSettings,
+    });
+  }, [category, previewBatchCost, yieldQuantity, price, saleTaxCategory, costMatrixSettings]);
 
   function updateRecipeLine(index: number, patch: Partial<RecipeLineInput>) {
     setRecipeLines((current) =>
@@ -528,20 +545,21 @@ export default function PosMenuPage() {
               ))}
             </div>
 
+            <ProductCostPanoramaPanel panorama={costPanorama} title="Vista previa de costos" />
+
             {previewMatrix ? (
               <div className="rounded-lg bg-[var(--ghost-surface-2)] p-3 text-sm">
-                <p>Precio final: {formatMoney(Number(price) || 0)}</p>
+                <p className="font-medium">Detalle impuestos (tu precio)</p>
                 <p>Base gravable: {formatMoney(previewMatrix.salePriceNet)}</p>
                 <p>
                   {CO_TAX_CATEGORY_LABELS[saleTaxCategory]} incluido:{" "}
                   {formatMoney(previewMatrix.sale.taxAmount)}
                 </p>
-                <p>Costo receta: {formatMoney(previewRecipeCost)}</p>
-                <p>Food cost: {(previewMatrix.foodCostPct * 100).toFixed(1)}%</p>
-                <p>Utilidad bruta: {formatMoney(previewMatrix.grossProfitAmount)}</p>
-                <p>Margen neto: {(previewMatrix.grossMarginPct * 100).toFixed(1)}%</p>
-                <p>Precio sugerido: {formatMoney(previewMatrix.suggestedSalePriceGross)}</p>
               </div>
+            ) : previewRecipeCost > 0 ? (
+              <p className="text-sm text-[var(--ghost-text-muted)]">
+                Ingresa tu precio de venta para comparar con el sugerido.
+              </p>
             ) : null}
 
             {submitError ? (

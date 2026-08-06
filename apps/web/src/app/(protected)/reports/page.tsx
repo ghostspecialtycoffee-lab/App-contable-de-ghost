@@ -341,10 +341,10 @@ export default function ReportsPage() {
                   <thead className="border-b border-[var(--ghost-border)] text-[var(--ghost-text-muted)]">
                     <tr>
                       <th className="px-2 py-2 font-medium">Producto</th>
-                      <th className="px-2 py-2 font-medium">Precio</th>
+                      <th className="px-2 py-2 font-medium">Tu precio</th>
+                      <th className="px-2 py-2 font-medium">Sugerido</th>
                       <th className="px-2 py-2 font-medium">Costo</th>
-                      <th className="px-2 py-2 font-medium">Food cost</th>
-                      <th className="px-2 py-2 font-medium">Meta</th>
+                      <th className="px-2 py-2 font-medium">FC tu precio</th>
                       <th className="px-2 py-2 font-medium">Utilidad</th>
                     </tr>
                   </thead>
@@ -367,18 +367,26 @@ export default function ReportsPage() {
                             <p className="text-xs text-[var(--ghost-danger)]">Sobre meta</p>
                           ) : null}
                         </td>
-                        <td className="px-2 py-2">{formatMoney(row.price)}</td>
+                        <td className="px-2 py-2">
+                          {row.price > 0 ? formatMoney(row.price) : "—"}
+                        </td>
+                        <td className="px-2 py-2">
+                          {row.suggestedSalePriceGross > 0
+                            ? formatMoney(row.suggestedSalePriceGross)
+                            : "—"}
+                        </td>
                         <td className="px-2 py-2">
                           {row.recipeCost > 0 ? formatMoney(row.recipeCost) : "—"}
                         </td>
                         <td className="px-2 py-2">
-                          {row.hasRecipe ? `${(row.foodCostPct * 100).toFixed(1)}%` : "—"}
+                          {row.price > 0 && row.hasRecipe
+                            ? `${(row.foodCostPct * 100).toFixed(1)}%`
+                            : "—"}
                         </td>
                         <td className="px-2 py-2">
-                          {(row.targetFoodCostPct * 100).toFixed(0)}%
-                        </td>
-                        <td className="px-2 py-2">
-                          {row.hasRecipe ? formatMoney(row.grossProfitAmount) : "—"}
+                          {row.price > 0 && row.hasRecipe
+                            ? formatMoney(row.grossProfitAmount)
+                            : "—"}
                         </td>
                       </tr>
                     ))}
@@ -427,10 +435,10 @@ export default function ReportsPage() {
                   <thead className="border-b border-[var(--ghost-border)] text-[var(--ghost-text-muted)]">
                     <tr>
                       <th className="px-2 py-2 font-medium">Producto</th>
-                      <th className="px-2 py-2 font-medium">Precio</th>
+                      <th className="px-2 py-2 font-medium">Tu precio</th>
+                      <th className="px-2 py-2 font-medium">Sugerido</th>
                       <th className="px-2 py-2 font-medium">Costo/porción</th>
-                      <th className="px-2 py-2 font-medium">Food cost</th>
-                      <th className="px-2 py-2 font-medium">Meta</th>
+                      <th className="px-2 py-2 font-medium">FC tu precio</th>
                       <th className="px-2 py-2 font-medium">Utilidad</th>
                     </tr>
                   </thead>
@@ -453,18 +461,37 @@ export default function ReportsPage() {
                             <p className="text-xs text-[var(--ghost-danger)]">Sobre meta</p>
                           ) : null}
                         </td>
-                        <td className="px-2 py-2">{formatMoney(row.price)}</td>
+                        <td className="px-2 py-2">
+                          {row.price > 0 ? formatMoney(row.price) : "—"}
+                          {row.batchCostNet > 0 && row.yieldQuantity > 1 ? (
+                            <p className="text-xs text-[var(--ghost-text-muted)]">
+                              {formatMoney(row.batchCostNet)} + {formatMoney(row.domicilioAllocation)}{" "}
+                              dom. ÷ {row.yieldQuantity}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-2 py-2">
+                          {row.suggestedSalePriceGross > 0
+                            ? formatMoney(row.suggestedSalePriceGross)
+                            : "—"}
+                          {row.suggestedSalePriceGross > 0 ? (
+                            <p className="text-xs text-[var(--ghost-text-muted)]">
+                              Meta {(row.targetFoodCostPct * 100).toFixed(0)}%
+                            </p>
+                          ) : null}
+                        </td>
                         <td className="px-2 py-2">
                           {row.recipeCost > 0 ? formatMoney(row.recipeCost) : "—"}
                         </td>
                         <td className="px-2 py-2">
-                          {row.hasRecipe ? `${(row.foodCostPct * 100).toFixed(1)}%` : "—"}
+                          {row.price > 0 && row.hasRecipe
+                            ? `${(row.foodCostPct * 100).toFixed(1)}%`
+                            : "—"}
                         </td>
                         <td className="px-2 py-2">
-                          {(row.targetFoodCostPct * 100).toFixed(0)}%
-                        </td>
-                        <td className="px-2 py-2">
-                          {row.hasRecipe ? formatMoney(row.grossProfitAmount) : "—"}
+                          {row.price > 0 && row.hasRecipe
+                            ? formatMoney(row.grossProfitAmount)
+                            : "—"}
                         </td>
                       </tr>
                     ))}
