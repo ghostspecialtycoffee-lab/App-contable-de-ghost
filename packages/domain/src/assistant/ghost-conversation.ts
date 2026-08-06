@@ -212,8 +212,10 @@ function inferBaseUnit(name: string): string {
   return "unit";
 }
 
-function classifyIntent(message: string): GhostConversationIntent {
+function classifyIntent(message: string, context: GhostConversationContext): GhostConversationIntent {
   const normalized = normalizeText(message);
+  const mentionedProduct = findByName(message, context.menuProducts);
+  const mentionedInventory = findByName(message, context.inventoryItems);
 
   if (/(como vamos|estado|resumen|que tal|operacion|status)/.test(normalized)) {
     return "org-status";
@@ -227,13 +229,23 @@ function classifyIntent(message: string): GhostConversationIntent {
   if (/(factura|proveedor|registr.*compra|compre|llego.*compra)/.test(normalized)) {
     return "create-purchase-invoice";
   }
-  if (/(nuevo insumo|agregar insumo|crear insumo|anadir insumo)/.test(normalized)) {
+  if (
+    /(nuevo insumo|agregar insumo|crear insumo|anadir insumo)/.test(normalized) ||
+    (/(agrega|crea|anota)\s+/i.test(message) &&
+      mentionedInventory &&
+      !mentionedProduct &&
+      !/mesa/.test(normalized))
+  ) {
     return "create-inventory-item";
   }
   if (/(nuevo producto|agregar.*catalogo|producto en menu)/.test(normalized)) {
     return "create-menu-product";
   }
-  if (/(vend|cobra|cobro|mostrador|venta de)/.test(normalized)) {
+  if (
+    /(vend|cobra|cobro|mostrador|venta de)/.test(normalized) ||
+    (mentionedProduct &&
+      /(quiero|dame|un |una |dos |tres |cobr|vend|para llevar)/.test(normalized))
+  ) {
     return "create-counter-sale";
   }
   if (/(abrir mesa)/.test(normalized) || extractTableNumber(message)) {
@@ -600,7 +612,7 @@ export function processConversationTurn(input: {
     };
   }
 
-  const intent = classifyIntent(trimmed);
+  const intent = classifyIntent(trimmed, context);
 
   if (intent === "org-status") {
     return {
@@ -626,7 +638,7 @@ export function processConversationTurn(input: {
     return {
       kind: "agent",
       session: { ...clearPending(session), agentSessionId },
-      messages: [],
+      messages: ["Dame un segundo, reviso tu operación y lo que sé del negocio…"],
       message: trimmed,
     };
   }
@@ -657,6 +669,21 @@ export function processConversationTurn(input: {
     intent,
     draft,
   };
+}
+
+export function suggestionsAfterIntent(intent: GhostConversationIntent): string[] {
+  switch (intent) {
+    case "create-purchase-invoice":
+      return ["¿Cómo va la operación?", "Registra otra compra"];
+    case "create-counter-sale":
+      return ["Otra venta", "¿Cómo va la operación?"];
+    case "open-cash-session":
+      return ["Vende un latte", "¿Cómo va la operación?"];
+    case "open-table":
+      return ["Anota un pedido en la mesa", "Enviar comanda"];
+    default:
+      return ["¿Cómo va la operación?", "Registra una compra"];
+  }
 }
 
 export function flowPathForIntent(intent: GhostConversationIntent): string[] {

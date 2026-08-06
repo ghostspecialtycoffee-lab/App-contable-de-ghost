@@ -18,6 +18,7 @@ import {
   parsePaymentMethod,
   processConversationTurn,
   resolveMenuSelection,
+  suggestionsAfterIntent,
   type GhostChatMessage,
   type GhostChatMenuOption,
   type GhostChatRole,
@@ -1030,7 +1031,7 @@ export function processGhostChatTurn(
   return {
     session: result.session,
     ghostMessages: result.messages,
-    quickReplies: [],
+    quickReplies: suggestionsAfterIntent(result.intent),
     action,
   };
 }
