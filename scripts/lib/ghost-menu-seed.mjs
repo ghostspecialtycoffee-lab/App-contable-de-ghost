@@ -21,6 +21,19 @@ export function normalizeCatalogName(value) {
     .replace(/\s+/g, " ");
 }
 
+const PRODUCT_CATALOG_ALIASES = {
+  espresso: "Espresso sencillo",
+  macciatto: "Macchiato",
+};
+
+function findCatalogSpecByProductName(name, catalog) {
+  const normalized = normalizeCatalogName(name);
+  const resolved = PRODUCT_CATALOG_ALIASES[normalized] ?? name;
+  return catalog.beverages.find(
+    (spec) => normalizeCatalogName(spec.name) === normalizeCatalogName(resolved),
+  );
+}
+
 function pickBestItem(items, matcher, scorer) {
   const candidates = items.filter(matcher);
   if (candidates.length === 0) return null;
@@ -114,8 +127,9 @@ function buildMilliliterLine(item, milliliters, fallbackBottleMl) {
 
 function resolveSpecAmounts(spec, espressoBase) {
   if (spec.usesEspressoBase) {
+    const shots = spec.espressoShots ?? 1;
     return {
-      coffeeGrams: espressoBase.coffeeGrams,
+      coffeeGrams: espressoBase.coffeeGrams * shots,
       waterMl: espressoBase.waterMl + (spec.extraWaterMl ?? 0),
       milkMl: spec.milkMl ?? 0,
     };
@@ -178,9 +192,7 @@ function findFinishedInventoryMatch(productName, items) {
 }
 
 function buildRecipeLinesForProduct(product, items, catalog, espressoBase, warnings) {
-  const catalogSpec = catalog.beverages.find(
-    (spec) => normalizeCatalogName(spec.name) === normalizeCatalogName(product.name),
-  );
+  const catalogSpec = findCatalogSpecByProductName(product.name, catalog);
   if (catalogSpec) {
     return buildCatalogRecipeLines(catalogSpec, items, espressoBase, warnings);
   }
@@ -359,10 +371,7 @@ export async function seedGhostMenu(db, FieldValue, input) {
     recipeSnaps.docs.map((doc) => [String(doc.data().menuProductId), doc.data()]),
   );
 
-  const isCatalogBeverage = (name) =>
-    catalog.beverages.some(
-      (spec) => normalizeCatalogName(spec.name) === normalizeCatalogName(name),
-    );
+  const isCatalogBeverage = (name) => Boolean(findCatalogSpecByProductName(name, catalog));
 
   for (const product of products) {
     const existing = recipeByProductId.get(product.id);
@@ -401,5 +410,177 @@ export async function hasGhostMenuSeeded(db, organizationId) {
     .collection(`organizations/${organizationId}/menuProducts`)
     .where("status", "==", "active")
     .get();
-  return snap.docs.some((doc) => normalizeCatalogName(doc.data().name) === "espresso");
+  return snap.docs.some((doc) => {
+    const normalized = normalizeCatalogName(doc.data().name);
+    return normalized === "espresso" || normalized === "espresso sencillo";
+  });
+}
+
+/**
+ * Aplica precios del catálogo Ghost, crea productos faltantes y regenera fichas de costo.
+ */
+export async function applyMenuPricesAndCostMatrix(db, FieldValue, input) {
+  const catalog = loadGhostMenuCatalog(input.catalogPath);
+  const { organizationId, actorUserId } = input;
+  const warnings = [];
+  let pricesUpdated = 0;
+  let productsCreated = 0;
+  let recipesCreated = 0;
+  let recipesUpdated = 0;
+  let recipesSkipped = 0;
+
+  const allProductSnaps = await db
+    .collection(`organizations/${organizationId}/menuProducts`)
+    .get();
+
+  const productsByNormalizedName = new Map();
+  for (const doc of allProductSnaps.docs) {
+    productsByNormalizedName.set(normalizeCatalogName(String(doc.data().name ?? "")), {
+      id: doc.id,
+      ref: doc.ref,
+      data: doc.data(),
+    });
+  }
+
+  const now = FieldValue.serverTimestamp();
+
+  function findProductForSpec(spec) {
+    const specNormalized = normalizeCatalogName(spec.name);
+    if (productsByNormalizedName.has(specNormalized)) {
+      return productsByNormalizedName.get(specNormalized);
+    }
+    if (specNormalized === "espresso sencillo" && productsByNormalizedName.has("espresso")) {
+      return productsByNormalizedName.get("espresso");
+    }
+    for (const [alias, target] of Object.entries(PRODUCT_CATALOG_ALIASES)) {
+      if (
+        normalizeCatalogName(target) === specNormalized &&
+        productsByNormalizedName.has(alias)
+      ) {
+        return productsByNormalizedName.get(alias);
+      }
+    }
+    return null;
+  }
+
+  for (const spec of catalog.beverages) {
+    const specNormalized = normalizeCatalogName(spec.name);
+    const match = findProductForSpec(spec);
+
+    if (match) {
+      await match.ref.set(
+        {
+          name: spec.name,
+          price: Math.round(spec.price),
+          description: spec.description ?? match.data.description ?? "",
+          saleTaxCategory: spec.saleTaxCategory,
+          updatedAt: now,
+          updatedBy: actorUserId,
+        },
+        { merge: true },
+      );
+      pricesUpdated += 1;
+      productsByNormalizedName.delete(normalizeCatalogName(String(match.data.name ?? "")));
+      productsByNormalizedName.set(specNormalized, {
+        id: match.id,
+        ref: match.ref,
+        data: { ...match.data, name: spec.name },
+      });
+      continue;
+    }
+
+    const ref = db.collection(`organizations/${organizationId}/menuProducts`).doc();
+    await ref.set({
+      organizationId,
+      name: spec.name,
+      price: Math.round(spec.price),
+      category: spec.category,
+      station: spec.station,
+      description: spec.description ?? "Carta Ghost Specialty Coffee",
+      status: "active",
+      sortOrder: catalog.beverages.indexOf(spec),
+      saleTaxCategory: spec.saleTaxCategory,
+      recipeCost: 0,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: actorUserId,
+      updatedBy: actorUserId,
+    });
+    productsCreated += 1;
+    productsByNormalizedName.set(specNormalized, {
+      id: ref.id,
+      ref,
+      data: { name: spec.name },
+    });
+  }
+
+  const products = [...productsByNormalizedName.values()].map((entry) => ({
+    id: entry.id,
+    name: String(entry.data.name ?? ""),
+  }));
+
+  const inventorySnap = await db
+    .collection(`organizations/${organizationId}/inventoryItems`)
+    .get();
+  const items = inventorySnap.docs.map((doc) => ({
+    id: doc.id,
+    name: String(doc.data().name ?? ""),
+    type: doc.data().type ?? "raw_material",
+    baseUnit: doc.data().baseUnit ?? "unit",
+    averageCost: Number(doc.data().averageCost ?? doc.data().lastCost ?? 0),
+    presentationQuantity: doc.data().presentationQuantity,
+  }));
+
+  if (items.length === 0) {
+    throw new Error("No hay insumos en inventario. Importa compras primero.");
+  }
+
+  const recipeSnaps = await db.collection(`organizations/${organizationId}/recipes`).get();
+  const recipeByProductId = new Map(
+    recipeSnaps.docs.map((doc) => [String(doc.data().menuProductId), doc.data()]),
+  );
+
+  for (const product of products) {
+    const catalogSpec = findCatalogSpecByProductName(product.name, catalog);
+    if (!catalogSpec) {
+      continue;
+    }
+
+    const existing = recipeByProductId.get(product.id);
+    const lines = buildRecipeLinesForProduct(
+      product,
+      items,
+      catalog,
+      catalog.espressoBase,
+      warnings,
+    );
+
+    if (!lines || lines.length === 0) {
+      if (existing?.lines?.length > 0) {
+        recipesSkipped += 1;
+      }
+      continue;
+    }
+
+    await saveRecipe(db, FieldValue, organizationId, actorUserId, {
+      menuProductId: product.id,
+      menuProductName: catalogSpec.name,
+      lines,
+    });
+
+    if (existing?.lines?.length > 0) {
+      recipesUpdated += 1;
+    } else {
+      recipesCreated += 1;
+    }
+  }
+
+  return {
+    pricesUpdated,
+    productsCreated,
+    recipesCreated,
+    recipesUpdated,
+    recipesSkipped,
+    warnings,
+  };
 }
