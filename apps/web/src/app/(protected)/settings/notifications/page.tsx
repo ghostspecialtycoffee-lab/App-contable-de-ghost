@@ -11,17 +11,25 @@ import {
   saveNotificationPreferencesClient,
   type NotificationEventType,
 } from "@/lib/notifications/notifications-client";
+import { updateOrganizationEmailDeliveryClient } from "@/lib/organizations/organization-email-delivery-client";
 import { useAuth } from "@/providers/auth-provider";
 import { Button, Card } from "@ghost/ui";
 
 export default function NotificationSettingsPage() {
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, organization, refreshOrganization } = useAuth();
   const [email, setEmail] = useState("");
   const [events, setEvents] = useState(DEFAULT_NOTIFICATION_EVENTS);
+  const [publicKey, setPublicKey] = useState("");
+  const [serviceId, setServiceId] = useState("");
+  const [templateId, setTemplateId] = useState("");
+  const [replyToEmail, setReplyToEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingEmailDelivery, setSavingEmailDelivery] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [emailDeliveryMessage, setEmailDeliveryMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [emailDeliveryError, setEmailDeliveryError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -49,6 +57,14 @@ export default function NotificationSettingsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const delivery = organization?.emailDelivery;
+    setPublicKey(delivery?.publicKey ?? "");
+    setServiceId(delivery?.serviceId ?? "");
+    setTemplateId(delivery?.templateId ?? "");
+    setReplyToEmail(delivery?.replyToEmail ?? organization?.fiscalProfile?.email ?? "");
+  }, [organization?.emailDelivery, organization?.fiscalProfile?.email]);
+
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -57,11 +73,43 @@ export default function NotificationSettingsPage() {
 
     try {
       await saveNotificationPreferencesClient({ email, events });
-      setMessage("Preferencias guardadas. Los correos se envían vía Resend cuando RESEND_API_KEY está configurada.");
+      setMessage("Preferencias guardadas.");
     } catch (cause) {
       setError(getCallableErrorMessage(cause));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSaveEmailDelivery(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!organization?.id) {
+      return;
+    }
+
+    setSavingEmailDelivery(true);
+    setEmailDeliveryError(null);
+    setEmailDeliveryMessage(null);
+
+    try {
+      await updateOrganizationEmailDeliveryClient({
+        organizationId: organization.id,
+        emailDelivery: {
+          provider: "emailjs",
+          publicKey,
+          serviceId,
+          templateId,
+          replyToEmail,
+        },
+      });
+      await refreshOrganization();
+      setEmailDeliveryMessage(
+        "EmailJS configurado. Los comprobantes se enviarán automáticamente desde el chat y Registros.",
+      );
+    } catch (cause) {
+      setEmailDeliveryError(getCallableErrorMessage(cause));
+    } finally {
+      setSavingEmailDelivery(false);
     }
   }
 
@@ -73,10 +121,96 @@ export default function NotificationSettingsPage() {
     <div className="ghost-page-stack">
       <PageHeader
         title="Notificaciones por correo"
-        description="Ghost avisa por email sobre caja, horarios, turnos e inventario."
+        description="Envío automático de comprobantes y alertas operativas."
       />
 
-      <Card title="Destinatario">
+      <Card title="Envío automático de comprobantes (gratis)">
+        <div className="space-y-4 text-sm text-[var(--ghost-text-muted)]">
+          <p>
+            Usa{" "}
+            <a
+              href="https://www.emailjs.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--ghost-brand-500)] underline"
+            >
+              EmailJS
+            </a>{" "}
+            (plan gratis: 200 correos/mes). No requiere plan Blaze ni Cloud Functions.
+          </p>
+          <ol className="list-decimal space-y-1 pl-5">
+            <li>Crea cuenta en EmailJS y conecta tu Gmail u otro correo.</li>
+            <li>
+              Crea una plantilla con campos: <code>to_email</code>, <code>subject</code>,{" "}
+              <code>message</code>, <code>message_html</code>, <code>from_name</code>.
+            </li>
+            <li>
+              En la plantilla, pon <strong>To Email</strong> = <code>{"{{to_email}}"}</code> y el
+              cuerpo = <code>{"{{{message_html}}}"}</code>.
+            </li>
+            <li>Copia Public Key, Service ID y Template ID aquí abajo.</li>
+          </ol>
+        </div>
+
+        <form className="mt-4 space-y-4" onSubmit={handleSaveEmailDelivery}>
+          <label className="block space-y-1">
+            <span className="text-sm font-medium">Public Key</span>
+            <input
+              type="text"
+              required
+              value={publicKey}
+              onChange={(event) => setPublicKey(event.target.value)}
+              placeholder="xxxxxxxxxxxx"
+              className="ghost-input"
+            />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-sm font-medium">Service ID</span>
+            <input
+              type="text"
+              required
+              value={serviceId}
+              onChange={(event) => setServiceId(event.target.value)}
+              placeholder="service_xxxxx"
+              className="ghost-input"
+            />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-sm font-medium">Template ID</span>
+            <input
+              type="text"
+              required
+              value={templateId}
+              onChange={(event) => setTemplateId(event.target.value)}
+              placeholder="template_xxxxx"
+              className="ghost-input"
+            />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-sm font-medium">Correo de respuesta (opcional)</span>
+            <input
+              type="email"
+              value={replyToEmail}
+              onChange={(event) => setReplyToEmail(event.target.value)}
+              placeholder={organization?.fiscalProfile?.email ?? "facturacion@ghost.coffee"}
+              className="ghost-input"
+            />
+          </label>
+
+          {emailDeliveryError ? (
+            <p className="text-sm text-[var(--ghost-danger)]">{emailDeliveryError}</p>
+          ) : null}
+          {emailDeliveryMessage ? (
+            <p className="text-sm text-[var(--ghost-brand-500)]">{emailDeliveryMessage}</p>
+          ) : null}
+
+          <Button type="submit" disabled={savingEmailDelivery}>
+            {savingEmailDelivery ? "Guardando…" : "Guardar envío automático"}
+          </Button>
+        </form>
+      </Card>
+
+      <Card title="Alertas operativas">
         {loading ? (
           <p className="text-sm text-[var(--ghost-text-muted)]">Cargando…</p>
         ) : (
