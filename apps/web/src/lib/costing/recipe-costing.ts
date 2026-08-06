@@ -1,4 +1,5 @@
 import type { InventoryCostProfile, InventoryItem } from "@ghost/domain";
+import { resolveUnitCostPerBase } from "@ghost/domain";
 
 export function toInventoryCostProfile(item: InventoryItem): InventoryCostProfile {
   return {
@@ -7,6 +8,10 @@ export function toInventoryCostProfile(item: InventoryItem): InventoryCostProfil
     purchaseUnit: item.purchaseUnit,
     presentationQuantity: item.presentationQuantity,
   };
+}
+
+export function getResolvedUnitCost(item: InventoryItem): number {
+  return resolveUnitCostPerBase(toInventoryCostProfile(item));
 }
 
 export function buildInventoryCostProfiles(

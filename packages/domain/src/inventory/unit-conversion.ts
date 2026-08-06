@@ -116,6 +116,45 @@ export function convertToBaseUnit(
   return quantity;
 }
 
+/**
+ * Costo por unidad base (g, ml, unit) a partir del promedio del ítem.
+ * Si el inventario guardó el precio de la presentación de compra (ej. bolsa $145.000
+ * de 2.500 g), lo divide entre la cantidad en unidad base.
+ */
+export function resolveUnitCostPerBase(profile: InventoryCostProfile): number {
+  const { averageCost, baseUnit, purchaseUnit, presentationQuantity } = profile;
+  if (!Number.isFinite(averageCost) || averageCost <= 0) {
+    return 0;
+  }
+
+  const effectivePurchaseUnit = purchaseUnit ?? baseUnit;
+  const quantityInBase = resolvePresentationQuantity(
+    effectivePurchaseUnit,
+    baseUnit,
+    presentationQuantity,
+  );
+
+  if (quantityInBase <= 1) {
+    return averageCost;
+  }
+
+  const isWeightOrVolume = baseUnit === "g" || baseUnit === "ml";
+  const purchaseIsPackage =
+    effectivePurchaseUnit === "bag" ||
+    effectivePurchaseUnit === "box" ||
+    effectivePurchaseUnit !== baseUnit;
+
+  const looksLikePurchasePrice =
+    averageCost >= quantityInBase &&
+    (isWeightOrVolume || averageCost >= 1000);
+
+  if (looksLikePurchasePrice && (isWeightOrVolume || purchaseIsPackage)) {
+    return Math.round(averageCost / quantityInBase);
+  }
+
+  return averageCost;
+}
+
 export function formatPresentationLabel(input: {
   presentationLabel?: string;
   purchaseUnit?: BaseUnit;

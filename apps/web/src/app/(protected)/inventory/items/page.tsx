@@ -18,6 +18,7 @@ import {
   PRODUCT_CATEGORIES,
   PRODUCT_CATEGORY_LABELS,
   formatPresentationLabel,
+  resolveUnitCostPerBase,
   type BaseUnit,
   type InventoryItemType,
   type ProductCategory,
@@ -320,7 +321,33 @@ export default function InventoryItemsPage() {
                                 )}
                               </td>
                               <td className="px-2 py-2">
-                                {formatMoney(item.averageCost || item.lastCost)}/{item.baseUnit}
+                                {(() => {
+                                  const rawCost = item.averageCost || item.lastCost;
+                                  const unitCost = resolveUnitCostPerBase({
+                                    baseUnit: item.baseUnit,
+                                    averageCost: rawCost,
+                                    purchaseUnit: item.purchaseUnit,
+                                    presentationQuantity: item.presentationQuantity,
+                                  });
+                                  const presentation = formatPresentationLabel({
+                                    presentationLabel: item.presentationLabel,
+                                    purchaseUnit: item.purchaseUnit,
+                                    presentationQuantity: item.presentationQuantity,
+                                    baseUnit: item.baseUnit,
+                                  });
+                                  return (
+                                    <div className="space-y-0.5">
+                                      <span>
+                                        {formatMoney(unitCost)}/{item.baseUnit}
+                                      </span>
+                                      {rawCost > 0 && unitCost !== rawCost && presentation ? (
+                                        <p className="text-[10px] text-[var(--ghost-text-muted)]">
+                                          Compra: {formatMoney(rawCost)} ({presentation})
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                  );
+                                })()}
                               </td>
                               <td className="px-2 py-2 text-right">
                                 <Button

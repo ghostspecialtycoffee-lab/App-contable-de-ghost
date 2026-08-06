@@ -13,7 +13,7 @@ import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useRecipes } from "@/hooks/use-recipes";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
-import { buildInventoryCostProfiles } from "@/lib/costing/recipe-costing";
+import { buildInventoryCostProfiles, getResolvedUnitCost } from "@/lib/costing/recipe-costing";
 import { seedCostMatrix } from "@/lib/costing/seed-cost-matrix";
 import { updateMenuProduct } from "@/lib/pos/pos";
 import { saveRecipe } from "@/lib/recipes/recipes";
@@ -581,7 +581,7 @@ export default function CostingPage() {
                           <option value="">Seleccionar insumo</option>
                           {inventoryItems.map((item) => (
                             <option key={item.id} value={item.id}>
-                              {item.name} · {formatMoney(item.averageCost || item.lastCost)}/
+                              {item.name} · {formatMoney(getResolvedUnitCost(item))}/
                               {item.baseUnit}
                             </option>
                           ))}

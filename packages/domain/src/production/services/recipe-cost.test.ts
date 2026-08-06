@@ -45,4 +45,24 @@ describe("calculateRecipeCost", () => {
     expect(breakdown.quantityInBase).toBe(18);
     expect(breakdown.lineCost).toBe(1440);
   });
+
+  it("calcula costo de porción con bolsa de café a precio de compra", () => {
+    const breakdown = calculateRecipeLineCost(
+      {
+        inventoryItemId: "coffee",
+        itemName: "Café Caturra",
+        quantity: 18,
+        unit: "g",
+      },
+      {
+        baseUnit: "g",
+        averageCost: 145_000,
+        purchaseUnit: "bag",
+        presentationQuantity: 2500,
+      },
+    );
+
+    expect(breakdown.unitCostPerBase).toBe(58);
+    expect(breakdown.lineCost).toBe(1044);
+  });
 });

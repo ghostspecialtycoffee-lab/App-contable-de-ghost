@@ -86,9 +86,9 @@ export function InventoryItemPresentationEditor({
     <div className="space-y-3 rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-2)] p-3">
       <p className="text-sm font-medium">Presentación de compra — {item.name}</p>
       <p className="text-xs text-[var(--ghost-text-muted)]">
-        El costeo usa esta conversión: 1 {purchaseUnit} = {presentationQuantity || "?"}{" "}
-        {baseUnitHint} ({item.baseUnit}). Ej: bolsa de café 2,5 kg → unidad <em>bag</em>, cantidad{" "}
-        2500, base g.
+        El costeo convierte el precio de compra a unidad base: bolsa de café 2,5 kg a $145.000 =
+        $58/g si usas 18 g en la receta. Configura: unidad <em>bolsa</em>, cantidad{" "}
+        <strong>2500</strong>, base <em>g</em>.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2">

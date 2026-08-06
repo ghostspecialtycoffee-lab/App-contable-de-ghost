@@ -4,6 +4,7 @@ import {
   convertToBaseUnit,
   formatPresentationLabel,
   resolvePresentationQuantity,
+  resolveUnitCostPerBase,
 } from "./unit-conversion.js";
 
 describe("convertToBaseUnit", () => {
@@ -69,6 +70,63 @@ describe("resolvePresentationQuantity", () => {
 
   it("respeta bolsa de café en gramos", () => {
     expect(resolvePresentationQuantity("bag", "g", 2268)).toBe(2268);
+  });
+});
+
+describe("resolveUnitCostPerBase", () => {
+  it("divide precio de bolsa entre gramos de presentación", () => {
+    expect(
+      resolveUnitCostPerBase({
+        baseUnit: "g",
+        averageCost: 145_000,
+        purchaseUnit: "bag",
+        presentationQuantity: 2500,
+      }),
+    ).toBe(58);
+  });
+
+  it("respeta costo ya expresado por gramo desde compras", () => {
+    expect(
+      resolveUnitCostPerBase({
+        baseUnit: "g",
+        averageCost: 58,
+        purchaseUnit: "bag",
+        presentationQuantity: 2500,
+      }),
+    ).toBe(58);
+  });
+
+  it("divide precio de botella entre mililitros", () => {
+    expect(
+      resolveUnitCostPerBase({
+        baseUnit: "ml",
+        averageCost: 5000,
+        purchaseUnit: "unit",
+        presentationQuantity: 1000,
+      }),
+    ).toBe(5);
+  });
+
+  it("deja costo por unidad cuando la presentación es 1", () => {
+    expect(
+      resolveUnitCostPerBase({
+        baseUnit: "unit",
+        averageCost: 48_000,
+        purchaseUnit: "unit",
+        presentationQuantity: 1,
+      }),
+    ).toBe(48_000);
+  });
+
+  it("divide precio de caja entre unidades", () => {
+    expect(
+      resolveUnitCostPerBase({
+        baseUnit: "unit",
+        averageCost: 50_000,
+        purchaseUnit: "box",
+        presentationQuantity: 100,
+      }),
+    ).toBe(500);
   });
 });
 
