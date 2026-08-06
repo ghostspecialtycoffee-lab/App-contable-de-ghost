@@ -71,7 +71,18 @@ export default function FiscalSettingsPage() {
     try {
       await updateOrganizationFiscalProfile({
         organizationId: organization.id,
-        fiscalProfile: profile,
+        fiscalProfile: {
+          ...emptyProfile(),
+          ...profile,
+          address: {
+            ...emptyProfile().address,
+            ...profile.address,
+          },
+          legalRepresentative: {
+            ...emptyProfile().legalRepresentative,
+            ...profile.legalRepresentative,
+          },
+        },
       });
       await refreshOrganization();
       setSaveMessage("Datos fiscales guardados. Las facturas usarán logo y representante legal.");

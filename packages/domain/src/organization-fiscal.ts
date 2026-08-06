@@ -92,8 +92,13 @@ export function validateFiscalProfile(
     return err("El documento del representante legal es obligatorio.");
   }
 
-  return ok({
-    ...profile,
+  return ok(normalizeFiscalProfile(profile));
+}
+
+export function normalizeFiscalProfile(
+  profile: OrganizationFiscalProfile,
+): OrganizationFiscalProfile {
+  return {
     legalName: profile.legalName.trim(),
     tradeName: profile.tradeName?.trim() ?? "",
     nit: profile.nit.trim(),
@@ -114,5 +119,35 @@ export function validateFiscalProfile(
       documentType: profile.legalRepresentative.documentType.trim() || "CC",
       documentNumber: profile.legalRepresentative.documentNumber.trim(),
     },
-  });
+  };
+}
+
+/** Objeto explícito para Firestore (sin undefined ni spread del input). */
+export function serializeFiscalProfileForFirestore(
+  profile: OrganizationFiscalProfile,
+): OrganizationFiscalProfile {
+  const normalized = normalizeFiscalProfile(profile);
+
+  return {
+    legalName: normalized.legalName,
+    tradeName: normalized.tradeName,
+    nit: normalized.nit,
+    verificationDigit: normalized.verificationDigit,
+    email: normalized.email,
+    phone: normalized.phone,
+    invoiceFooter: normalized.invoiceFooter,
+    address: {
+      line1: normalized.address.line1,
+      line2: normalized.address.line2,
+      city: normalized.address.city,
+      state: normalized.address.state,
+      country: normalized.address.country,
+      postalCode: normalized.address.postalCode,
+    },
+    legalRepresentative: {
+      fullName: normalized.legalRepresentative.fullName,
+      documentType: normalized.legalRepresentative.documentType,
+      documentNumber: normalized.legalRepresentative.documentNumber,
+    },
+  };
 }
