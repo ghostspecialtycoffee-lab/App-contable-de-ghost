@@ -9,8 +9,9 @@ import { useActiveMembership } from "@/providers/auth-provider";
 import { inferMenuProductTaxCategory, type MenuProduct } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 
-export function useMenuProducts() {
+export function useMenuProducts(options?: { includeInactive?: boolean }) {
   const membership = useActiveMembership();
+  const includeInactive = options?.includeInactive ?? false;
   const [products, setProducts] = useState<MenuProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +60,7 @@ export function useMenuProducts() {
               updatedBy: data.updatedBy ?? "",
             } satisfies MenuProduct;
           })
-          .filter((product) => product.status === "active")
+          .filter((product) => includeInactive || product.status === "active")
           .sort((left, right) => left.sortOrder - right.sortOrder);
 
         setProducts(nextProducts);
@@ -73,7 +74,7 @@ export function useMenuProducts() {
     );
 
     return unsubscribe;
-  }, [membership?.organizationId]);
+  }, [membership?.organizationId, includeInactive]);
 
   return { products, loading, error };
 }
