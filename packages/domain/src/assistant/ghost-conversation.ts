@@ -11,8 +11,13 @@ import type { PaymentMethod, SaleStatus } from "../pos/sale.js";
 import {
   buildCashSummaryReply,
   buildFinancialOverviewReply,
+  buildFixedExpensesReply,
+  buildInventoryLowStockReply,
+  buildKitchenStatusReply,
+  buildPurchasesReportReply,
   buildPurchasesReviewReply,
   buildSalesReportReply,
+  buildWorkShiftsReply,
 } from "./brain-responses.js";
 import { buildBrainHelpMessage, classifyBrainQueryIntent } from "./ghost-brain.js";
 
@@ -21,14 +26,20 @@ export type GhostConversationIntent =
   | "brain-help"
   | "query-sales-report"
   | "query-purchases-review"
+  | "query-purchases-report"
   | "query-cash-summary"
   | "query-financial-overview"
+  | "query-inventory-low-stock"
+  | "query-fixed-expenses"
+  | "query-work-shifts"
+  | "query-kitchen-status"
   | "create-inventory-item"
   | "create-purchase-invoice"
   | "create-menu-product"
   | "open-cash-session"
   | "close-cash-session"
   | "register-cash-outflow"
+  | "register-cash-inflow"
   | "create-counter-sale"
   | "open-table"
   | "add-table-order"
@@ -43,6 +54,33 @@ export interface GhostConversationInventoryItem {
   name: string;
   sku: string;
   baseUnit: string;
+  minStock?: number;
+}
+
+export interface GhostConversationInventoryStockSnapshot {
+  itemId: string;
+  name: string;
+  baseUnit: string;
+  quantity: number;
+  minStock: number;
+}
+
+export interface GhostConversationFixedExpenseSnapshot {
+  name: string;
+  category: string;
+  amount: number;
+  frequency: string;
+  monthlyEquivalent: number;
+  dueDay?: number;
+  isActive: boolean;
+}
+
+export interface GhostConversationWorkShiftSnapshot {
+  staffName: string;
+  role: "bar" | "cashier" | "kitchen" | "manager" | "other";
+  shiftDate: string;
+  startTime: string;
+  endTime: string;
 }
 
 export interface GhostConversationProduct {
@@ -117,6 +155,8 @@ export interface GhostConversationPurchaseSnapshot {
   supplierName: string;
   invoiceNumber: string;
   invoiceDate: string;
+  subtotal: number;
+  taxAmount: number;
   total: number;
   status: string;
 }
@@ -135,6 +175,9 @@ export interface GhostConversationContext {
   salesSnapshot: GhostConversationSaleSnapshot[];
   purchasesSnapshot: GhostConversationPurchaseSnapshot[];
   cashSnapshot?: GhostConversationCashSnapshot;
+  inventoryStockSnapshot: GhostConversationInventoryStockSnapshot[];
+  fixedExpensesSnapshot: GhostConversationFixedExpenseSnapshot[];
+  workShiftsSnapshot: GhostConversationWorkShiftSnapshot[];
 }
 
 export interface GhostConversationHistoryMessage {
@@ -169,8 +212,13 @@ type ExecutableGhostConversationIntent = Exclude<
   | "brain-help"
   | "query-sales-report"
   | "query-purchases-review"
+  | "query-purchases-report"
   | "query-cash-summary"
   | "query-financial-overview"
+  | "query-inventory-low-stock"
+  | "query-fixed-expenses"
+  | "query-work-shifts"
+  | "query-kitchen-status"
   | "agent-query"
 >;
 
@@ -181,6 +229,7 @@ const INTENT_FLOW_KEY: Record<ExecutableGhostConversationIntent, string> = {
   "open-cash-session": "cashier/open-cash",
   "close-cash-session": "cashier/close-cash",
   "register-cash-outflow": "cashier/cash-outflow",
+  "register-cash-inflow": "cashier/cash-inflow",
   "create-counter-sale": "cashier/counter-sale",
   "open-table": "waiter/open-table",
   "add-table-order": "waiter/add-table-order",
@@ -197,6 +246,7 @@ const REQUIRED_FIELDS: Record<string, string[]> = {
   "open-cash-session": ["openingAmount"],
   "close-cash-session": ["sessionId", "countedAmount"],
   "register-cash-outflow": ["sessionId", "amount", "reason"],
+  "register-cash-inflow": ["sessionId", "amount", "reason"],
   "create-counter-sale": ["productId"],
   "open-table": ["tableId"],
   "add-table-order": ["productId"],
@@ -554,8 +604,23 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
   if (brainQuery === "query-purchases-review") {
     return "query-purchases-review";
   }
+  if (brainQuery === "query-purchases-report") {
+    return "query-purchases-report";
+  }
   if (brainQuery === "query-cash-summary") {
     return "query-cash-summary";
+  }
+  if (brainQuery === "query-inventory-low-stock") {
+    return "query-inventory-low-stock";
+  }
+  if (brainQuery === "query-fixed-expenses") {
+    return "query-fixed-expenses";
+  }
+  if (brainQuery === "query-work-shifts") {
+    return "query-work-shifts";
+  }
+  if (brainQuery === "query-kitchen-status") {
+    return "query-kitchen-status";
   }
   if (brainQuery === "query-financial-overview") {
     return "query-financial-overview";
@@ -578,6 +643,12 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
     /(salida de dinero|egreso de caja|gasto de caja|retiro de caja)/.test(normalized)
   ) {
     return "register-cash-outflow";
+  }
+  if (
+    context.cashSessionOpen &&
+    /(entrada de dinero|ingreso de caja|deposito en caja|entrada a caja)/.test(normalized)
+  ) {
+    return "register-cash-inflow";
   }
   if (isTableCheckoutMessage(normalized, message)) {
     return "checkout-table";
@@ -730,6 +801,32 @@ function extractDraftForIntent(
       }
     }
     draft.movementType = draft.movementType || "outflow";
+  }
+
+  if (intent === "register-cash-inflow") {
+    const amount = extractNumber(message);
+    if (amount !== null) {
+      draft.amount = String(amount);
+    }
+    if (context.cashSnapshot?.sessionId) {
+      draft.sessionId = context.cashSnapshot.sessionId;
+    }
+    const reasonMatch = message.match(/(?:por|para|motivo)\s+(.+)/i);
+    if (reasonMatch?.[1]) {
+      draft.reason = reasonMatch[1].trim();
+    } else if (!draft.reason) {
+      const cleaned = message
+        .replace(
+          /(entrada de dinero|ingreso de caja|deposito en caja|entrada a caja|recibo en efectivo)/gi,
+          "",
+        )
+        .replace(/(?:\$|cop)?\s*[\d][\d.,]*/gi, "")
+        .trim();
+      if (cleaned.length >= 3) {
+        draft.reason = cleaned;
+      }
+    }
+    draft.movementType = draft.movementType || "inflow";
   }
 
   if (intent === "create-counter-sale") {
@@ -938,6 +1035,9 @@ function followUpForField(intent: string, field: string, context: GhostConversat
   if (intent === "register-cash-outflow" && !context.cashSessionOpen) {
     return "Abre caja antes de registrar salidas de dinero.";
   }
+  if (intent === "register-cash-inflow" && !context.cashSessionOpen) {
+    return "Abre caja antes de registrar entradas de dinero.";
+  }
   if (intent === "create-counter-sale" && !context.cashSessionOpen) {
     return "Primero abre caja. Por ejemplo: «abre caja con 200000».";
   }
@@ -950,10 +1050,15 @@ function buildOrgStatus(context: GhostConversationContext): string {
     context.openTableSessions.length > 0
       ? context.openTableSessions.map((session) => `Mesa ${session.tableNumber}`).join(", ")
       : "ninguna";
+  const lowStockCount = context.inventoryStockSnapshot.filter(
+    (entry) => entry.minStock > 0 && entry.quantity < entry.minStock,
+  ).length;
 
   return (
     `Así va **${context.organizationName ?? "tu operación"}**:\n` +
-    `· **${context.inventoryCount}** insumos · **${context.invoiceCount}** facturas de compra\n` +
+    `· **${context.inventoryCount}** insumos · **${context.invoiceCount}** facturas de compra` +
+    (lowStockCount > 0 ? ` · **${lowStockCount}** bajo mínimo` : "") +
+    `\n` +
     `· **${context.menuProducts.length}** productos en carta (${context.ghostBeverageCount} bebidas Ghost)\n` +
     `· Caja: **${context.cashSessionOpen ? "abierta" : "cerrada"}**\n` +
     `· Mesas abiertas: ${openTables}\n` +
@@ -975,6 +1080,8 @@ function acknowledgeExecution(intent: GhostConversationIntent, draft: Record<str
       return `Cierro caja. Efectivo contado: **$${Number(draft.countedAmount || 0).toLocaleString("es-CO")}**.`;
     case "register-cash-outflow":
       return `Registro salida de **$${Number(draft.amount || 0).toLocaleString("es-CO")}** — ${draft.reason ?? "egreso"}.`;
+    case "register-cash-inflow":
+      return `Registro entrada de **$${Number(draft.amount || 0).toLocaleString("es-CO")}** — ${draft.reason ?? "ingreso"}.`;
     case "create-counter-sale": {
       const documentLabel =
         draft.documentType === "cuenta_cobro" ? "Cuenta de cobro" : "Factura de venta";
@@ -1184,6 +1291,14 @@ export function processConversationTurn(input: {
     };
   }
 
+  if (intent === "query-purchases-report") {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildPurchasesReportReply(context)],
+    };
+  }
+
   if (intent === "query-cash-summary") {
     return {
       kind: "reply",
@@ -1197,6 +1312,38 @@ export function processConversationTurn(input: {
       kind: "reply",
       session: clearPending(session),
       messages: [buildFinancialOverviewReply(context)],
+    };
+  }
+
+  if (intent === "query-inventory-low-stock") {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildInventoryLowStockReply(context)],
+    };
+  }
+
+  if (intent === "query-fixed-expenses") {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildFixedExpensesReply(context)],
+    };
+  }
+
+  if (intent === "query-work-shifts") {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildWorkShiftsReply(context)],
+    };
+  }
+
+  if (intent === "query-kitchen-status") {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildKitchenStatusReply(context)],
     };
   }
 
@@ -1242,6 +1389,14 @@ export function processConversationTurn(input: {
   }
 
   if (intent === "register-cash-outflow" && !context.cashSessionOpen) {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [followUpForField(intent, "sessionId", context)],
+    };
+  }
+
+  if (intent === "register-cash-inflow" && !context.cashSessionOpen) {
     return {
       kind: "reply",
       session: clearPending(session),

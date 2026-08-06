@@ -227,6 +227,18 @@ export async function executeGhostChatAction(
       };
     }
 
+    case "register-cash-inflow": {
+      await registerCashMovement({
+        sessionId: action.payload.sessionId,
+        type: "inflow",
+        amount: action.payload.amount,
+        reason: action.payload.reason,
+      });
+      return {
+        message: `Entrada registrada: **$${action.payload.amount.toLocaleString("es-CO")}** — ${action.payload.reason}.`,
+      };
+    }
+
     case "create-counter-sale": {
       const paymentMethod = (payloadString(action.payload, "paymentMethod") || "cash") as
         | "cash"

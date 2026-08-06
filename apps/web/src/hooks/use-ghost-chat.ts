@@ -18,6 +18,8 @@ import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { isCatalogBeverage } from "@/lib/costing/ghost-menu-catalog";
 import { useCashSession, useCashSessionSales } from "@/hooks/use-cash-session";
 import { useDiningTables } from "@/hooks/use-dining-tables";
+import { useFixedExpenses } from "@/hooks/use-fixed-expenses";
+import { useInventoryBalances } from "@/hooks/use-inventory-balances";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useKitchenOrders } from "@/hooks/use-kitchen-orders";
 import { useMenuProducts } from "@/hooks/use-menu-products";
@@ -26,6 +28,7 @@ import { useRecipes } from "@/hooks/use-recipes";
 import { useSales } from "@/hooks/use-sales";
 import { useTableSessions } from "@/hooks/use-table-sessions";
 import { useWarehouses } from "@/hooks/use-warehouses";
+import { useWorkShifts } from "@/hooks/use-work-shifts";
 import { useAuth, useActiveMembership } from "@/providers/auth-provider";
 import {
   calculateCashSessionBalance,
@@ -82,6 +85,8 @@ export function useGhostChat() {
   const { products } = useMenuProducts();
   const { recipes } = useRecipes();
   const { items: inventoryItems } = useInventoryItems();
+  const { balances: inventoryBalances } = useInventoryBalances();
+  const { expenses: fixedExpenses } = useFixedExpenses();
   const { warehouses } = useWarehouses();
   const { invoices } = usePurchaseInvoices();
   const { session: cashSession, movements: cashMovements } = useCashSession();
@@ -90,6 +95,7 @@ export function useGhostChat() {
   const { tables } = useDiningTables();
   const { orders: kitchenOrders } = useKitchenOrders();
   const { sessions: tableSessions } = useTableSessions({ openOnly: true });
+  const { shifts: workShifts } = useWorkShifts();
 
   const [messages, setMessages] = useState<GhostChatMessage[]>([]);
   const [session, setSession] = useState<GhostChatSession>(createEmptyGhostChatSession());
@@ -127,6 +133,22 @@ export function useGhostChat() {
         })
       : null;
 
+    const quantityByItemId = new Map<string, number>();
+    for (const balance of inventoryBalances) {
+      quantityByItemId.set(
+        balance.itemId,
+        (quantityByItemId.get(balance.itemId) ?? 0) + balance.quantity,
+      );
+    }
+
+    const inventoryStockSnapshot = inventoryItems.map((item) => ({
+      itemId: item.id,
+      name: item.name,
+      baseUnit: item.baseUnit,
+      quantity: quantityByItemId.get(item.id) ?? 0,
+      minStock: item.minStock ?? 0,
+    }));
+
     return {
       organizationName: organization?.name,
       inventoryItems: inventoryItems.map((item) => ({
@@ -134,6 +156,7 @@ export function useGhostChat() {
         name: item.name,
         sku: item.sku,
         baseUnit: item.baseUnit,
+        minStock: item.minStock,
       })),
       menuProducts: products.map((product) => ({
         id: product.id,
@@ -185,6 +208,8 @@ export function useGhostChat() {
         supplierName: invoice.supplierName,
         invoiceNumber: invoice.invoiceNumber,
         invoiceDate: invoice.invoiceDate,
+        subtotal: invoice.subtotal,
+        taxAmount: invoice.taxAmount,
         total: invoice.total,
         status: invoice.status,
       })),
@@ -204,10 +229,30 @@ export function useGhostChat() {
             })),
           }
         : undefined,
+      inventoryStockSnapshot,
+      fixedExpensesSnapshot: fixedExpenses.map((expense) => ({
+        name: expense.name,
+        category: expense.category,
+        amount: expense.amount,
+        frequency: expense.frequency,
+        monthlyEquivalent: expense.monthlyEquivalent,
+        dueDay: expense.dueDay,
+        isActive: expense.isActive,
+      })),
+      workShiftsSnapshot: workShifts.map((shift) => ({
+        staffName: shift.staffName,
+        role: shift.role,
+        shiftDate: shift.shiftDate,
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+      })),
     };
   }, [
     organization?.name,
     inventoryItems,
+    inventoryBalances,
+    fixedExpenses,
+    workShifts,
     products,
     warehouses,
     tables,

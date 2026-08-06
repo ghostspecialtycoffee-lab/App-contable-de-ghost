@@ -39,6 +39,9 @@ const baseContext: GhostConversationContext = {
   ghostBeverageCount: 1,
   salesSnapshot: [],
   purchasesSnapshot: [],
+  inventoryStockSnapshot: [],
+  fixedExpensesSnapshot: [],
+  workShiftsSnapshot: [],
 };
 
 describe("ghost-conversation", () => {
@@ -365,6 +368,51 @@ describe("ghost-conversation", () => {
     expect(result.kind).toBe("reply");
     if (result.kind === "reply") {
       expect(result.messages[0]).toContain("cerebro operativo");
+    }
+  });
+
+  it("responde inventario bajo mínimo", () => {
+    const result = processConversationTurn({
+      message: "qué insumos están bajos",
+      session: createEmptyGhostChatSession(),
+      context: {
+        ...baseContext,
+        inventoryStockSnapshot: [
+          { itemId: "inv-1", name: "Café Caturra", baseUnit: "g", quantity: 100, minStock: 500 },
+        ],
+      },
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.messages[0]).toContain("bajo mínimo");
+      expect(result.messages[0]).toContain("Café Caturra");
+    }
+  });
+
+  it("registra entrada de dinero con caja abierta", () => {
+    const result = processConversationTurn({
+      message: "entrada de dinero 100000 por cambio",
+      session: createEmptyGhostChatSession(),
+      context: {
+        ...baseContext,
+        cashSessionOpen: true,
+        cashSnapshot: {
+          sessionId: "cash-1",
+          openingAmount: 200000,
+          cashSalesTotal: 0,
+          expectedAmount: 200000,
+          inflowsTotal: 0,
+          outflowsTotal: 0,
+          movements: [],
+        },
+      },
+    });
+
+    expect(result.kind).toBe("execute");
+    if (result.kind === "execute") {
+      expect(result.intent).toBe("register-cash-inflow");
+      expect(result.draft.amount).toBe("100000");
     }
   });
 });

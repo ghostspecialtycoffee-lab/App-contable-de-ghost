@@ -23,8 +23,11 @@ import {
   type GhostChatRole,
   type GhostChatSession,
   type GhostConversationCashSnapshot,
+  type GhostConversationFixedExpenseSnapshot,
+  type GhostConversationInventoryStockSnapshot,
   type GhostConversationPurchaseSnapshot,
   type GhostConversationSaleSnapshot,
+  type GhostConversationWorkShiftSnapshot,
   type GhostConversationContext,
   type GhostConversationHistoryMessage,
   type GhostConversationIntent,
@@ -91,6 +94,9 @@ export interface GhostChatContext {
   salesSnapshot: GhostConversationSaleSnapshot[];
   purchasesSnapshot: GhostConversationPurchaseSnapshot[];
   cashSnapshot?: GhostConversationCashSnapshot;
+  inventoryStockSnapshot: GhostConversationInventoryStockSnapshot[];
+  fixedExpensesSnapshot: GhostConversationFixedExpenseSnapshot[];
+  workShiftsSnapshot: GhostConversationWorkShiftSnapshot[];
 }
 
 export type GhostChatAction =
@@ -102,6 +108,7 @@ export type GhostChatAction =
   | { type: "open-cash-session"; payload: { openingAmount: number } }
   | { type: "close-cash-session"; payload: { sessionId: string; countedAmount: number; expectedAmount: number } }
   | { type: "register-cash-outflow"; payload: { sessionId: string; amount: number; reason: string; movementType: string } }
+  | { type: "register-cash-inflow"; payload: { sessionId: string; amount: number; reason: string; movementType: string } }
   | { type: "create-counter-sale"; payload: Record<string, string> }
   | { type: "open-table"; payload: Record<string, string> }
   | { type: "add-table-order"; payload: Record<string, string> }
@@ -941,6 +948,16 @@ function buildAction(
           movementType: draft.movementType ?? "outflow",
         },
       };
+    case "cashier/cash-inflow":
+      return {
+        type: "register-cash-inflow",
+        payload: {
+          sessionId: draft.sessionId ?? "",
+          amount: Number(draft.amount ?? 0),
+          reason: draft.reason ?? "",
+          movementType: draft.movementType ?? "inflow",
+        },
+      };
     case "cashier/counter-sale": {
       const product = resolveProductById(draft.productId ?? "", context);
       return {
@@ -1118,6 +1135,8 @@ export function formatGhostActionSuccess(action: GhostChatAction, result?: strin
       return result ?? "Caja cerrada correctamente.";
     case "register-cash-outflow":
       return result ?? `Salida de **$${action.payload.amount.toLocaleString("es-CO")}** registrada.`;
+    case "register-cash-inflow":
+      return result ?? `Entrada de **$${action.payload.amount.toLocaleString("es-CO")}** registrada.`;
     case "create-counter-sale":
       return `Venta registrada: **${action.payload.productName}** × ${action.payload.quantity}. Comanda enviada.`;
     case "open-table":
