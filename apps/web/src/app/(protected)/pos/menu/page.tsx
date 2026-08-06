@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { CatalogProductRow } from "@/components/catalog-product-row";
 import { RecipeYieldField } from "@/components/recipe-yield-field";
 import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
@@ -11,7 +12,7 @@ import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { buildGuestMenuUrl } from "@/lib/tables/tables";
 import { buildInventoryCostProfiles } from "@/lib/costing/recipe-costing";
 import { formatMoney } from "@/lib/format";
-import { createMenuProduct, seedDefaultMenu, updateMenuProductImage } from "@/lib/pos/pos";
+import { createMenuProduct, seedColombianSodas, seedDefaultMenu, updateMenuProductImage } from "@/lib/pos/pos";
 import { compressImageFile } from "@/lib/image/compress-image";
 import { saveRecipe } from "@/lib/recipes/recipes";
 import {
@@ -47,7 +48,7 @@ const emptyRecipeLine = (): RecipeLineInput => ({
 
 export default function PosMenuPage() {
   const membership = useActiveMembership();
-  const { products, loading, error } = useMenuProducts();
+  const { products, loading, error } = useMenuProducts({ includeInactive: true });
   const costMatrixSettings = useCostMatrixSettings();
   const { items: inventoryItems } = useInventoryItems();
   const [name, setName] = useState("");
@@ -61,6 +62,7 @@ export default function PosMenuPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [seedingSodas, setSeedingSodas] = useState(false);
   const [seedMessage, setSeedMessage] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -224,6 +226,26 @@ export default function PosMenuPage() {
     ? buildGuestMenuUrl(membership.organizationId)
     : null;
 
+  async function handleSeedSodas() {
+    setSeedMessage(null);
+    setSubmitError(null);
+    setSeedingSodas(true);
+
+    try {
+      const result = await seedColombianSodas();
+      setSeedMessage(
+        `${result.created} gaseosa(s) agregadas${result.skipped > 0 ? ` · ${result.skipped} ya existían` : ""}. Quedan inactivas hasta que definas precio y actives.`,
+      );
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setSeedingSodas(false);
+    }
+  }
+
+  const activeCount = products.filter((product) => product.status === "active").length;
+  const inactiveCount = products.length - activeCount;
+
   return (
     <div className="space-y-6 pb-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -235,7 +257,7 @@ export default function PosMenuPage() {
           </p>
           <h1 className="text-2xl font-semibold">Catálogo</h1>
           <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            Producto, receta, costos e IVA Colombia.{" "}
+            Precio, presentación y visibilidad en menú público / mostrador.{" "}
             <Link href="/costing" className="underline">
               Ver matriz de costeo
             </Link>
@@ -512,6 +534,22 @@ export default function PosMenuPage() {
         </div>
 
         <Card title="Catálogo">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-[var(--ghost-text-muted)]">
+              {activeCount} activo(s) en menú · {inactiveCount} inactivo(s)
+            </p>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={seedingSodas}
+              onClick={handleSeedSodas}
+            >
+              {seedingSodas ? "Agregando..." : "+ Gaseosas Colombia"}
+            </Button>
+          </div>
+          {seedMessage ? (
+            <p className="mb-3 text-sm text-[var(--ghost-brand-500)]">{seedMessage}</p>
+          ) : null}
           {loading ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">Cargando...</p>
           ) : error ? (
@@ -526,41 +564,15 @@ export default function PosMenuPage() {
                 <thead className="border-b border-[var(--ghost-border)] text-[var(--ghost-text-muted)]">
                   <tr>
                     <th className="px-2 py-2 font-medium">Producto</th>
-                    <th className="px-2 py-2 font-medium">Precio</th>
-                    <th className="px-2 py-2 font-medium">Costo</th>
-                    <th className="px-2 py-2 font-medium">IVA</th>
-                    <th className="px-2 py-2 font-medium">Categoría</th>
-                    <th className="px-2 py-2 font-medium">Ficha</th>
+                    <th className="px-2 py-2 font-medium">Presentación</th>
+                    <th className="px-2 py-2 font-medium">Precio (COP)</th>
+                    <th className="px-2 py-2 font-medium">Menú</th>
+                    <th className="px-2 py-2 font-medium">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {products.map((product) => (
-                    <tr
-                      key={product.id}
-                      className="border-b border-[var(--ghost-border)] last:border-0"
-                    >
-                      <td className="px-2 py-2">{product.name}</td>
-                      <td className="px-2 py-2">{formatMoney(product.price)}</td>
-                      <td className="px-2 py-2">
-                        {product.recipeCost ? formatMoney(product.recipeCost) : "—"}
-                      </td>
-                      <td className="px-2 py-2">
-                        {CO_TAX_CATEGORY_LABELS[
-                          (product.saleTaxCategory ?? "IVA_19") as CoTaxCategory
-                        ]}
-                      </td>
-                      <td className="px-2 py-2">
-                        {MENU_CATEGORY_LABELS[product.category]}
-                      </td>
-                      <td className="px-2 py-2">
-                        <Link
-                          href={`/costing?product=${product.id}`}
-                          className="text-[var(--ghost-brand-500)] underline"
-                        >
-                          {product.recipeCost ? "Editar" : "Crear"}
-                        </Link>
-                      </td>
-                    </tr>
+                    <CatalogProductRow key={product.id} product={product} />
                   ))}
                 </tbody>
               </table>

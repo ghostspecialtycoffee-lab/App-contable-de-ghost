@@ -30,6 +30,11 @@ export const KITCHEN_STATION_LABELS: Record<KitchenStation, string> = {
 
 export type MenuProductStatus = "active" | "inactive";
 
+export const MENU_PRODUCT_STATUS_LABELS: Record<MenuProductStatus, string> = {
+  active: "Activo",
+  inactive: "Inactivo",
+};
+
 export interface MenuProduct extends AuditMetadata {
   id: EntityId;
   organizationId: EntityId;

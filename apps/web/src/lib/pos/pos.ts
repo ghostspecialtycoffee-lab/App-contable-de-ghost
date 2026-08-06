@@ -1,7 +1,9 @@
 import {
   createMenuProductClient,
   createSaleClient,
+  seedColombianSodasClient,
   seedDefaultMenuClient,
+  toggleMenuProductStatusClient,
   updateKitchenOrderStatusClient,
   updateMenuProductClient,
   updateMenuProductImageClient,
@@ -29,6 +31,16 @@ export async function updateMenuProduct(
 
 export async function seedDefaultMenu() {
   return seedDefaultMenuClient();
+}
+
+export async function seedColombianSodas() {
+  return seedColombianSodasClient();
+}
+
+export async function toggleMenuProductStatus(
+  input: Parameters<typeof toggleMenuProductStatusClient>[0],
+) {
+  return toggleMenuProductStatusClient(input);
 }
 
 export async function createSale(input: Parameters<typeof createSaleClient>[0]) {

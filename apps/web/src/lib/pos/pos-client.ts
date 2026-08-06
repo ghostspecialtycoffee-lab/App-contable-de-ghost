@@ -15,14 +15,17 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   runTransaction,
   serverTimestamp,
   setDoc,
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
+import { normalizeCatalogName } from "@/lib/costing/ghost-menu-catalog";
 import { consumeInventoryForSale } from "@/lib/inventory/sale-inventory-consumption";
 import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
+import { COLOMBIA_SODAS_CATALOG } from "./colombia-sodas-catalog";
 
 function requireUserId(): string {
   const uid = getFirebaseAuth().currentUser?.uid;
@@ -71,6 +74,7 @@ export async function createMenuProductClient(input: {
   description?: string;
   sortOrder?: number;
   saleTaxCategory?: CoTaxCategory;
+  status?: "active" | "inactive";
 }): Promise<{ productId: string }> {
   const userId = requireUserId();
   const { organizationId } = await getActiveContext();
@@ -97,7 +101,7 @@ export async function createMenuProductClient(input: {
     category: input.category,
     station: input.station,
     description: input.description?.trim() ?? "",
-    status: "active",
+    status: input.status ?? "active",
     sortOrder: input.sortOrder ?? 0,
     saleTaxCategory:
       input.saleTaxCategory ??
@@ -114,8 +118,13 @@ export async function createMenuProductClient(input: {
 
 export async function updateMenuProductClient(input: {
   productId: string;
+  name?: string;
+  description?: string;
   price?: number;
   saleTaxCategory?: CoTaxCategory;
+  category?: MenuCategory;
+  station?: KitchenStation;
+  status?: "active" | "inactive";
 }): Promise<void> {
   const userId = requireUserId();
   const { organizationId } = await getActiveContext();
@@ -124,10 +133,22 @@ export async function updateMenuProductClient(input: {
     throw new Error("El precio no puede ser negativo.");
   }
 
+  if (input.name !== undefined && input.name.trim().length < 2) {
+    throw new Error("El nombre es obligatorio.");
+  }
+
   const patch: Record<string, unknown> = {
     updatedAt: serverTimestamp(),
     updatedBy: userId,
   };
+
+  if (input.name !== undefined) {
+    patch.name = input.name.trim();
+  }
+
+  if (input.description !== undefined) {
+    patch.description = input.description.trim();
+  }
 
   if (input.price !== undefined) {
     patch.price = Math.round(input.price);
@@ -137,12 +158,31 @@ export async function updateMenuProductClient(input: {
     patch.saleTaxCategory = input.saleTaxCategory;
   }
 
+  if (input.category !== undefined) {
+    patch.category = input.category;
+  }
+
+  if (input.station !== undefined) {
+    patch.station = input.station;
+  }
+
+  if (input.status !== undefined) {
+    patch.status = input.status;
+  }
+
   const productRef = doc(
     getFirestoreDb(),
     firestorePaths.organizationMenuProduct(organizationId, input.productId),
   );
 
   await setDoc(productRef, patch, { merge: true });
+}
+
+export async function toggleMenuProductStatusClient(input: {
+  productId: string;
+  status: "active" | "inactive";
+}): Promise<void> {
+  return updateMenuProductClient(input);
 }
 
 export async function updateMenuProductImageClient(input: {
@@ -355,4 +395,40 @@ export async function seedDefaultMenuClient(): Promise<{ created: number }> {
   }
 
   return { created };
+}
+
+export async function seedColombianSodasClient(): Promise<{ created: number; skipped: number }> {
+  const { organizationId } = await getActiveContext();
+  const snapshot = await getDocs(
+    collection(getFirestoreDb(), firestorePaths.organizationMenuProducts(organizationId)),
+  );
+  const existing = new Set(
+    snapshot.docs.map((document) => normalizeCatalogName(document.data().name as string)),
+  );
+
+  let created = 0;
+  let skipped = 0;
+  let sortOrder = snapshot.size;
+
+  for (const soda of COLOMBIA_SODAS_CATALOG) {
+    if (existing.has(normalizeCatalogName(soda.name))) {
+      skipped += 1;
+      continue;
+    }
+
+    await createMenuProductClient({
+      name: soda.name,
+      price: soda.price,
+      category: "beverage",
+      station: "counter",
+      description: `${soda.description} · ${soda.brand}`,
+      saleTaxCategory: "IVA_19",
+      status: "inactive",
+      sortOrder,
+    });
+    sortOrder += 1;
+    created += 1;
+  }
+
+  return { created, skipped };
 }
