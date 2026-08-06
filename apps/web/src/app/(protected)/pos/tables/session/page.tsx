@@ -7,6 +7,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useTableSessions } from "@/hooks/use-table-sessions";
+import { useAuth } from "@/providers/auth-provider";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
 import { CashSessionGate } from "@/components/cash-session-gate";
@@ -35,6 +36,7 @@ import { Button, Card } from "@ghost/ui";
 
 function TableSessionContent() {
   const router = useRouter();
+  const { firebaseUser } = useAuth();
   const { path, inSalesExtension } = useSalesPaths();
   const searchParams = useSearchParams();
   const tableId = searchParams.get("id") ?? "";
@@ -64,11 +66,12 @@ function TableSessionContent() {
       tableNumber: table.number,
       tableLabel: table.label,
       guestToken: table.qrToken,
+      actorUserId: firebaseUser?.uid,
     })
       .then(() => setAccountOpenedNotice(true))
       .catch((cause) => setSubmitError(getCallableErrorMessage(cause)))
       .finally(() => setOpening(false));
-  }, [table, session, opening, sessionsLoading]);
+  }, [table, session, opening, sessionsLoading, firebaseUser?.uid]);
 
   const totals = useMemo(() => {
     if (!session) {

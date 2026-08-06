@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, limit, onSnapshot, query } from "firebase/firestore";
+import { collection, limit, query } from "firebase/firestore";
 
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { parseFirestoreDate } from "@/lib/format";
 import { getFirestoreDb } from "@/lib/firebase/client";
+import { subscribeQueryWithPoll } from "@/lib/realtime/subscribe-query";
 import { useActiveMembership } from "@/providers/auth-provider";
 import type { Sale } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -67,29 +68,27 @@ export function useSales() {
       limit(500),
     );
 
-    const unsubscribe = onSnapshot(
-      salesQuery,
-      (snapshot) => {
-        const nextSales = snapshot.docs
+    return subscribeQueryWithPoll({
+      query: salesQuery,
+      mapSnapshot: (snapshot) =>
+        snapshot.docs
           .map((document) => mapSale(document.id, document.data()))
           .filter((sale) => sale.status === "paid")
           .sort((left, right) => {
             const leftTime = new Date(left.soldAt ?? left.createdAt).getTime();
             const rightTime = new Date(right.soldAt ?? right.createdAt).getTime();
             return rightTime - leftTime;
-          });
-
+          }),
+      onData: (nextSales) => {
         setSales(nextSales);
         setLoading(false);
         setError(null);
       },
-      (cause) => {
-        setError(getFirestoreErrorMessage(cause));
+      onError: (message) => {
+        setError(message);
         setLoading(false);
       },
-    );
-
-    return unsubscribe;
+    });
   }, [membership?.organizationId]);
 
   return { sales, loading, error };
