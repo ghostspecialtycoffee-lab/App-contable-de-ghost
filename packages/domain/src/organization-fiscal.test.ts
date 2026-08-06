@@ -25,6 +25,10 @@ describe("validateFiscalProfile", () => {
     });
 
     expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.address.line2).toBe("");
+      expect(result.value.tradeName).toBe("");
+    }
     expect(isFiscalProfileComplete(result.ok ? result.value : null)).toBe(true);
   });
 });
