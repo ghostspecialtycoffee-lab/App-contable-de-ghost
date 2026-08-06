@@ -164,6 +164,13 @@ function resolveSpecAmounts(spec, espressoBase) {
   };
 }
 
+function usesTapWaterForCoffeePrep(spec) {
+  if (spec.usesEspressoBase) return true;
+  if (spec.kind === "brew_method") return true;
+  if ((spec.coffeeGrams ?? 0) > 0) return true;
+  return false;
+}
+
 function buildCatalogRecipeLines(spec, items, espressoBase, warnings) {
   const lines = [];
   const { coffeeGrams, waterMl, milkMl } = resolveSpecAmounts(spec, espressoBase);
@@ -177,7 +184,7 @@ function buildCatalogRecipeLines(spec, items, espressoBase, warnings) {
     lines.push(buildGramLine(coffee, coffeeGrams, espressoBase));
   }
 
-  if (waterMl > 0) {
+  if (waterMl > 0 && !usesTapWaterForCoffeePrep(spec)) {
     const water = findWaterItem(items);
     if (!water) {
       warnings.push(`Sin agua en inventario para ${spec.name}.`);

@@ -9,6 +9,7 @@ import {
   GHOST_ESPRESSO_BASE,
   isCatalogBeverage,
   normalizeCatalogName,
+  usesTapWaterForCoffeePrep,
   type GhostBeverageSpec,
 } from "@/lib/costing/ghost-menu-catalog";
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
@@ -313,7 +314,7 @@ function buildCatalogRecipeLines(
     lines.push(buildGramLine(coffee, coffeeGrams));
   }
 
-  if (waterMl > 0) {
+  if (waterMl > 0 && !usesTapWaterForCoffeePrep(spec)) {
     const water = findWaterItem(items);
     if (!water) {
       warnings.push(`Sin agua en inventario para ${spec.name} (${waterMl} ml).`);

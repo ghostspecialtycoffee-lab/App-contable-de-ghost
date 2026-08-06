@@ -352,7 +352,7 @@ export default function CostingPage() {
         <div className="mt-4 space-y-2 border-t border-[var(--ghost-border)] pt-4">
           <p className="text-sm text-[var(--ghost-text-muted)]">
             Carga la carta Ghost (25 bebidas) con base espresso: 18 g café Black Coffee
-            (paq 5 lb · $145.000) + 40 ml agua. Las fichas se cruzan con compras; productos
+            (paq 5 lb · $145.000) + agua de red. Las fichas se cruzan con compras; productos
             Kiuegi y extras se irán completando al registrar facturas.
           </p>
           <Button

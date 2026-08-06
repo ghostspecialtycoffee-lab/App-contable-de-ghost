@@ -12,9 +12,9 @@
     "blackCoffeeSupplierHint": "Black Coffee"
   },
   "beverages": [
-    { "name": "Espresso sencillo", "price": 6500, "category": "beverage", "station": "bar", "saleTaxCategory": "INC_8", "kind": "espresso_bar", "usesEspressoBase": true, "description": "18 g café Black Coffee · 40 ml agua · taza espresso" },
-    { "name": "Espresso doble", "price": 8500, "category": "beverage", "station": "bar", "saleTaxCategory": "INC_8", "kind": "espresso_bar", "usesEspressoBase": true, "espressoShots": 2, "description": "36 g café Black Coffee · 40 ml agua · taza espresso doble" },
-    { "name": "Americano", "price": 6000, "category": "beverage", "station": "bar", "saleTaxCategory": "INC_8", "kind": "espresso_bar", "usesEspressoBase": true, "extraWaterMl": 120, "description": "Espresso + agua caliente" },
+    { "name": "Espresso sencillo", "price": 6500, "category": "beverage", "station": "bar", "saleTaxCategory": "INC_8", "kind": "espresso_bar", "usesEspressoBase": true, "description": "18 g café Black Coffee · 40 ml agua de red · taza espresso" },
+    { "name": "Espresso doble", "price": 8500, "category": "beverage", "station": "bar", "saleTaxCategory": "INC_8", "kind": "espresso_bar", "usesEspressoBase": true, "espressoShots": 2, "description": "36 g café Black Coffee · 40 ml agua de red · taza espresso doble" },
+    { "name": "Americano", "price": 6000, "category": "beverage", "station": "bar", "saleTaxCategory": "INC_8", "kind": "espresso_bar", "usesEspressoBase": true, "extraWaterMl": 120, "description": "Espresso + agua caliente de red" },
     { "name": "Macchiato", "price": 9500, "category": "beverage", "station": "bar", "saleTaxCategory": "INC_8", "kind": "espresso_bar", "usesEspressoBase": true, "milkMl": 15 },
     { "name": "Cappuccino", "price": 14000, "category": "beverage", "station": "bar", "saleTaxCategory": "INC_8", "kind": "espresso_bar", "usesEspressoBase": true, "milkMl": 150 },
     { "name": "Latte", "price": 11500, "category": "beverage", "station": "bar", "saleTaxCategory": "INC_8", "kind": "espresso_bar", "usesEspressoBase": true, "milkMl": 200 },
