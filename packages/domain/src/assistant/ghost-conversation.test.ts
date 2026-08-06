@@ -19,8 +19,18 @@ const baseContext: GhostConversationContext = {
       category: "beverage",
       station: "bar",
     },
+    {
+      id: "prod-2",
+      name: "Dirty Chai",
+      price: 9000,
+      category: "beverage",
+      station: "bar",
+    },
   ],
-  tables: [{ id: "table-1", number: 3, label: "", status: "available", qrToken: "qr-1" }],
+  tables: [
+    { id: "table-1", number: 1, label: "", status: "available", qrToken: "qr-1" },
+    { id: "table-3", number: 3, label: "", status: "available", qrToken: "qr-3" },
+  ],
   kitchenOrders: [],
   openTableSessions: [],
   cashSessionOpen: false,
@@ -119,5 +129,149 @@ describe("ghost-conversation", () => {
     });
 
     expect(result.kind).toBe("agent");
+  });
+
+  it("interpreta pedido de mesa con cantidad y producto", () => {
+    const context = {
+      ...baseContext,
+      cashSessionOpen: true,
+      openTableSessions: [
+        {
+          sessionId: "session-1",
+          tableId: "table-1",
+          tableNumber: 1,
+          guestToken: "qr-1",
+        },
+      ],
+    };
+
+    const result = processConversationTurn({
+      message: "para la mesa 1 dame 2 dirty chai",
+      session: createEmptyGhostChatSession(),
+      context,
+    });
+
+    expect(result.kind).toBe("execute");
+    if (result.kind === "execute") {
+      expect(result.intent).toBe("add-table-order");
+      expect(result.draft.productId).toBe("prod-2");
+      expect(result.draft.quantity).toBe("2");
+      expect(result.draft.sessionId).toBe("session-1");
+    }
+  });
+
+  it("abre mesa automáticamente si no hay sesión al pedir", () => {
+    const context = {
+      ...baseContext,
+      cashSessionOpen: true,
+      openTableSessions: [],
+    };
+
+    const result = processConversationTurn({
+      message: "para la mesa 1 dame un dirty chai",
+      session: createEmptyGhostChatSession(),
+      context,
+    });
+
+    expect(result.kind).toBe("execute");
+    if (result.kind === "execute") {
+      expect(result.intent).toBe("add-table-order");
+      expect(result.draft.tableId).toBe("table-1");
+      expect(result.draft.productId).toBe("prod-2");
+    }
+  });
+
+  it("muestra cuenta de mesa y pregunta tipo de comprobante", () => {
+    const context = {
+      ...baseContext,
+      cashSessionOpen: true,
+      openTableSessions: [
+        {
+          sessionId: "session-1",
+          tableId: "table-1",
+          tableNumber: 1,
+          guestToken: "qr-1",
+          lines: [{ name: "Dirty Chai", quantity: 2, lineTotal: 18000 }],
+          total: 18000,
+        },
+      ],
+    };
+
+    const result = processConversationTurn({
+      message: "dame la cuenta de la mesa 1",
+      session: createEmptyGhostChatSession(),
+      context,
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.session.pendingIntent).toBe("checkout-table");
+      expect(result.messages[0]).toContain("Dirty Chai");
+      expect(result.messages[0]).toMatch(/factura|cuenta de cobro/i);
+    }
+  });
+
+  it("completa cobro de mesa en varios mensajes", () => {
+    const context = {
+      ...baseContext,
+      cashSessionOpen: true,
+      openTableSessions: [
+        {
+          sessionId: "session-1",
+          tableId: "table-1",
+          tableNumber: 1,
+          guestToken: "qr-1",
+          lines: [{ name: "Dirty Chai", quantity: 2, lineTotal: 18000 }],
+          total: 18000,
+        },
+      ],
+    };
+
+    const first = processConversationTurn({
+      message: "dame la cuenta de la mesa 1",
+      session: createEmptyGhostChatSession(),
+      context,
+    });
+
+    expect(first.kind).toBe("reply");
+    if (first.kind !== "reply") {
+      return;
+    }
+
+    const second = processConversationTurn({
+      message: "factura de venta",
+      session: first.session,
+      context,
+    });
+
+    expect(second.kind).toBe("reply");
+    if (second.kind !== "reply") {
+      return;
+    }
+    expect(second.session.draft.documentType).toBe("factura");
+
+    const third = processConversationTurn({
+      message: "efectivo",
+      session: second.session,
+      context,
+    });
+
+    expect(third.kind).toBe("reply");
+    if (third.kind !== "reply") {
+      return;
+    }
+
+    const fourth = processConversationTurn({
+      message: "cliente@ejemplo.com",
+      session: third.session,
+      context,
+    });
+
+    expect(fourth.kind).toBe("execute");
+    if (fourth.kind === "execute") {
+      expect(fourth.intent).toBe("checkout-table");
+      expect(fourth.draft.paymentMethod).toBe("cash");
+      expect(fourth.draft.customerEmail).toBe("cliente@ejemplo.com");
+    }
   });
 });

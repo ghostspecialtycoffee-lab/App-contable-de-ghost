@@ -23,10 +23,11 @@ import {
 import { saveRecipe } from "@/lib/recipes/recipes";
 import {
   addTableSessionLines,
+  checkoutTableSession,
   openTableSession,
   sendTableSessionToKitchen,
 } from "@/lib/tables/table-sessions";
-import { callGhostAgent } from "@/lib/firebase/functions";
+import { callGhostAgent, callSendSaleDocument } from "@/lib/firebase/functions";
 import type { GhostChatAction } from "@/lib/assistant/ghost-chat-engine";
 
 type RecipeSnapshot = {
@@ -225,10 +226,28 @@ export async function executeGhostChatAction(
     }
 
     case "add-table-order": {
+      let sessionId = payloadString(action.payload, "sessionId");
+      let guestToken = payloadString(action.payload, "guestToken");
+      const tableId = payloadString(action.payload, "tableId");
+      const tableNumber = Number(payloadString(action.payload, "tableNumber") || "0");
+
+      if (!sessionId && tableId) {
+        const opened = await openTableSession({
+          organizationId: context.organizationId,
+          branchId: context.branchId,
+          tableId,
+          tableNumber,
+          guestToken: payloadString(action.payload, "qrToken"),
+          actorUserId: context.userId,
+        });
+        sessionId = opened.sessionId;
+        guestToken = payloadString(action.payload, "qrToken");
+      }
+
       await addTableSessionLines({
         organizationId: context.organizationId,
-        sessionId: payloadString(action.payload, "sessionId"),
-        guestToken: payloadString(action.payload, "guestToken"),
+        sessionId,
+        guestToken,
         lines: [
           {
             productId: payloadString(action.payload, "productId"),
@@ -241,7 +260,51 @@ export async function executeGhostChatAction(
         ],
         actorUserId: context.userId,
       });
-      return undefined;
+
+      return {
+        message:
+          `**${payloadString(action.payload, "quantity")} × ${payloadString(action.payload, "productName")}** ` +
+          `en mesa **${tableNumber || "?"}**. Comanda enviada a barra/cocina.`,
+      };
+    }
+
+    case "checkout-table": {
+      const paymentMethod = (payloadString(action.payload, "paymentMethod") || "cash") as
+        | "cash"
+        | "card"
+        | "transfer"
+        | "other";
+      const documentType = payloadString(action.payload, "documentType") || "factura";
+      const customerEmail = payloadString(action.payload, "customerEmail");
+      const tableNumber = payloadString(action.payload, "tableNumber");
+
+      const result = await checkoutTableSession({
+        sessionId: payloadString(action.payload, "sessionId"),
+        paymentMethod,
+      });
+
+      const documentLabel =
+        documentType === "cuenta_cobro" ? "Cuenta de cobro" : "Factura de venta";
+      let emailNote = "";
+
+      if (customerEmail && customerEmail !== "skip") {
+        const emailResult = await callSendSaleDocument({
+          saleId: result.saleId,
+          email: customerEmail,
+          documentType: documentType === "cuenta_cobro" ? "cuenta_cobro" : "factura",
+        });
+        emailNote = emailResult.sent
+          ? `\nEnvié el PDF a **${customerEmail}**.`
+          : `\nNo pude enviar el correo (${emailResult.message ?? "revisa configuración de email"}). Puedes imprimirlo en Registros.`;
+      } else {
+        emailNote = "\nPuedes imprimir el comprobante en **Registros** o decirme un correo para enviarlo.";
+      }
+
+      return {
+        message:
+          `${documentLabel} **${result.saleNumber}** — mesa **${tableNumber || "?"}** — ` +
+          `**$${result.total.toLocaleString("es-CO")}** (${paymentMethod}).${emailNote}`,
+      };
     }
 
     case "send-kitchen": {
@@ -277,9 +340,6 @@ export async function executeGhostChatAction(
           : "";
       return {
         message: `${response.answer}${sources}`,
-        suggestions: response.suggestedFollowUp
-          ? [response.suggestedFollowUp]
-          : ["¿Cómo va la operación?", "Registra una compra"],
       };
     }
 

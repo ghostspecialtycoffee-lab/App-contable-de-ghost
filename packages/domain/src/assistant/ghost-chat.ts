@@ -146,10 +146,8 @@ export function ghostChatGreeting(orgName?: string): string {
   const place = orgName?.trim() ? ` en ${orgName.trim()}` : "";
   return (
     `Hola, soy ${GHOST_ASSISTANT_NAME}${place}. ` +
-    "Háblame con naturalidad: registro compras, reviso inventario, abro mesas, cobro en mostrador, " +
-    "costos de café o lo que necesites. Leo el contexto y ejecuto en la plataforma.\n\n" +
-    "Ejemplos: «¿cómo va la operación?», «registra factura de Distritcafé por 2 kg de café», " +
-    "«abre caja con 200000», «vende un latte en efectivo»."
+    "Cuéntame qué necesitas y seguimos la conversación: compras, inventario, mesas, caja, costos o lo que tengas en mente. " +
+    "Leo el contexto y actúo en la plataforma."
   );
 }
 
