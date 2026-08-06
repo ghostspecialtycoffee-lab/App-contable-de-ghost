@@ -1,5 +1,7 @@
 /** Agente Ghost — conocimiento evolutivo y búsqueda web. */
 
+import { buildBrainHelpMessage } from "../assistant/ghost-brain.js";
+
 export interface AgentKnowledgeEntry {
   id: string;
   organizationId: string;
@@ -87,17 +89,8 @@ export function buildGhostAgentFallbackAnswer(
       : "¡Hola! Cuéntame qué necesitas en la operación y lo resolvemos.";
   }
 
-  if (/(ayuda|que puedes|que sabes|como funciona|ejemplos|menu)/.test(normalized)) {
-    return (
-      "Puedo ayudarte en conversación natural, por ejemplo:\n" +
-      "· **«para la mesa 1 dame 2 dirty chai»** — anota y manda comanda\n" +
-      "· **«dame la cuenta de la mesa 1»** — cobra y emite factura o cuenta de cobro\n" +
-      "· **«factura 2 dirty chai en efectivo»** — venta y factura al cliente\n" +
-      "· **«registra compra de café del proveedor X»** — compra a proveedor\n" +
-      "· **«abre caja con 200000»** — apertura de caja\n" +
-      "· **«registra compra de café del proveedor X»** — compras\n\n" +
-      "Escríbeme como le hablarías a un compañero de barra."
-    );
+  if (/(ayuda|que puedes|que sabes|como funciona|ejemplos|menu|palabras clave|comandos|cerebro)/.test(normalized)) {
+    return buildBrainHelpMessage();
   }
 
   const hasHistory = history.length > 0;

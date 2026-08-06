@@ -18,7 +18,7 @@ describe("ghost-chat", () => {
 
   it("detects global commands", () => {
     expect(isGhostChatGlobalCommand("menu")).toBe(true);
-    expect(isGhostChatGlobalCommand("AYUDA")).toBe(true);
+    expect(isGhostChatGlobalCommand("AYUDA")).toBe(false);
     expect(isGhostChatGlobalCommand("latte")).toBe(false);
   });
 

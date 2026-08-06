@@ -33,7 +33,7 @@ export interface GhostChatMenuOption {
 
 export const GHOST_ASSISTANT_NAME = "Ghost";
 
-export const GHOST_CHAT_GLOBAL_COMMANDS = ["menu", "inicio", "ayuda", "cancelar"] as const;
+export const GHOST_CHAT_GLOBAL_COMMANDS = ["menu", "inicio", "cancelar"] as const;
 
 export function createEmptyGhostChatSession(): GhostChatSession {
   return {

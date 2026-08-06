@@ -22,6 +22,9 @@ import {
   type GhostChatMenuOption,
   type GhostChatRole,
   type GhostChatSession,
+  type GhostConversationCashSnapshot,
+  type GhostConversationPurchaseSnapshot,
+  type GhostConversationSaleSnapshot,
   type GhostConversationContext,
   type GhostConversationHistoryMessage,
   type GhostConversationIntent,
@@ -85,6 +88,9 @@ export interface GhostChatContext {
   inventoryCount: number;
   ghostBeverageCount: number;
   beverageSetupPending: Array<{ productId: string; name: string; progress: string }>;
+  salesSnapshot: GhostConversationSaleSnapshot[];
+  purchasesSnapshot: GhostConversationPurchaseSnapshot[];
+  cashSnapshot?: GhostConversationCashSnapshot;
 }
 
 export type GhostChatAction =
@@ -94,6 +100,8 @@ export type GhostChatAction =
   | { type: "save-beverage-setup"; payload: { productId: string; productName: string; answers: Record<string, string> } }
   | { type: "seed-ghost-menu" }
   | { type: "open-cash-session"; payload: { openingAmount: number } }
+  | { type: "close-cash-session"; payload: { sessionId: string; countedAmount: number; expectedAmount: number } }
+  | { type: "register-cash-outflow"; payload: { sessionId: string; amount: number; reason: string; movementType: string } }
   | { type: "create-counter-sale"; payload: Record<string, string> }
   | { type: "open-table"; payload: Record<string, string> }
   | { type: "add-table-order"; payload: Record<string, string> }
@@ -914,6 +922,25 @@ function buildAction(
         type: "open-cash-session",
         payload: { openingAmount: Number(draft.openingAmount ?? 0) },
       };
+    case "cashier/close-cash":
+      return {
+        type: "close-cash-session",
+        payload: {
+          sessionId: draft.sessionId ?? "",
+          countedAmount: Number(draft.countedAmount ?? 0),
+          expectedAmount: Number(draft.expectedAmount ?? 0),
+        },
+      };
+    case "cashier/cash-outflow":
+      return {
+        type: "register-cash-outflow",
+        payload: {
+          sessionId: draft.sessionId ?? "",
+          amount: Number(draft.amount ?? 0),
+          reason: draft.reason ?? "",
+          movementType: draft.movementType ?? "outflow",
+        },
+      };
     case "cashier/counter-sale": {
       const product = resolveProductById(draft.productId ?? "", context);
       return {
@@ -1087,6 +1114,10 @@ export function formatGhostActionSuccess(action: GhostChatAction, result?: strin
       return result ?? "Carta Ghost y fichas SCA cargadas.";
     case "open-cash-session":
       return `Caja abierta con **$${action.payload.openingAmount.toLocaleString("es-CO")}**.`;
+    case "close-cash-session":
+      return result ?? "Caja cerrada correctamente.";
+    case "register-cash-outflow":
+      return result ?? `Salida de **$${action.payload.amount.toLocaleString("es-CO")}** registrada.`;
     case "create-counter-sale":
       return `Venta registrada: **${action.payload.productName}** × ${action.payload.quantity}. Comanda enviada.`;
     case "open-table":

@@ -10,7 +10,7 @@ import {
 import { firestorePaths } from "@ghost/infrastructure";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
 
-import { openCashSession } from "@/lib/cash/cash";
+import { closeCashSession, openCashSession, registerCashMovement } from "@/lib/cash/cash";
 import { seedCostMatrix } from "@/lib/costing/seed-cost-matrix";
 import { getFirestoreDb } from "@/lib/firebase/client";
 import { createInventoryItem } from "@/lib/inventory/inventory";
@@ -197,6 +197,34 @@ export async function executeGhostChatAction(
         openingAmount: action.payload.openingAmount,
       });
       return undefined;
+    }
+
+    case "close-cash-session": {
+      await closeCashSession({
+        sessionId: action.payload.sessionId,
+        countedAmount: action.payload.countedAmount,
+        expectedAmount: action.payload.expectedAmount,
+      });
+      const difference = action.payload.countedAmount - action.payload.expectedAmount;
+      const differenceNote =
+        difference === 0
+          ? "Arqueo cuadrado."
+          : `Diferencia de **$${Math.abs(difference).toLocaleString("es-CO")}** (${difference > 0 ? "sobrante" : "faltante"}).`;
+      return {
+        message: `Caja cerrada. ${differenceNote}`,
+      };
+    }
+
+    case "register-cash-outflow": {
+      await registerCashMovement({
+        sessionId: action.payload.sessionId,
+        type: "outflow",
+        amount: action.payload.amount,
+        reason: action.payload.reason,
+      });
+      return {
+        message: `Salida registrada: **$${action.payload.amount.toLocaleString("es-CO")}** — ${action.payload.reason}.`,
+      };
     }
 
     case "create-counter-sale": {
