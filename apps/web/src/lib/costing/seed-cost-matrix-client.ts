@@ -283,8 +283,9 @@ function resolveSpecAmounts(spec: GhostBeverageSpec): {
   milkMl: number;
 } {
   if (spec.usesEspressoBase) {
+    const shots = spec.espressoShots ?? 1;
     return {
-      coffeeGrams: GHOST_ESPRESSO_BASE.coffeeGrams,
+      coffeeGrams: GHOST_ESPRESSO_BASE.coffeeGrams * shots,
       waterMl: GHOST_ESPRESSO_BASE.waterMl + (spec.extraWaterMl ?? 0),
       milkMl: spec.milkMl ?? 0,
     };

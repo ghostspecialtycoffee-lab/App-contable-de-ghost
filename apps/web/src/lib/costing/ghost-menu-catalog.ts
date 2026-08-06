@@ -15,6 +15,7 @@ export interface GhostBeverageSpec {
   saleTaxCategory: CoTaxCategory;
   kind: GhostBeverageKind;
   usesEspressoBase?: boolean;
+  espressoShots?: number;
   coffeeGrams?: number;
   waterMl?: number;
   extraWaterMl?: number;
@@ -36,10 +37,16 @@ export function normalizeCatalogName(value: string): string {
     .replace(/\s+/g, " ");
 }
 
+const PRODUCT_CATALOG_ALIASES: Record<string, string> = {
+  espresso: "Espresso sencillo",
+  macciatto: "Macchiato",
+};
+
 export function findCatalogSpec(productName: string): GhostBeverageSpec | undefined {
   const normalized = normalizeCatalogName(productName);
+  const resolvedName = PRODUCT_CATALOG_ALIASES[normalized] ?? productName;
   return GHOST_BEVERAGE_CATALOG.find(
-    (spec) => normalizeCatalogName(spec.name) === normalized,
+    (spec) => normalizeCatalogName(spec.name) === normalizeCatalogName(resolvedName),
   );
 }
 
