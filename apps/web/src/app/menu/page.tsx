@@ -5,11 +5,16 @@ import { Suspense } from "react";
 
 import { GuestMenuCatalog } from "@/components/guest-menu-catalog";
 import { useGuestMenuProducts } from "@/hooks/use-guest-menu-products";
+import { MENU_CATEGORIES, MENU_CATEGORY_LABELS, MENU_CATEGORY_META } from "@ghost/domain";
 
 function PublicMenuContent() {
   const searchParams = useSearchParams();
   const organizationId = searchParams.get("o") ?? "";
   const { products, loading, error } = useGuestMenuProducts(organizationId || null);
+
+  const categoryCount = MENU_CATEGORIES.filter((category) =>
+    products.some((product) => product.category === category),
+  ).length;
 
   if (!organizationId) {
     return (
@@ -28,13 +33,33 @@ function PublicMenuContent() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-4 pb-12">
-      <div className="text-center">
-        <p className="text-sm text-[var(--ghost-text-muted)]">Menú digital</p>
-        <h1 className="text-2xl font-semibold">Nuestro menú</h1>
-        <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-          Consulta precios, fotos y descripciones por categoría.
-        </p>
+    <div className="mx-auto max-w-3xl space-y-6 p-4 pb-16">
+      <div className="ghost-menu-hero">
+        <div className="ghost-menu-hero-content space-y-3">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[var(--ghost-text-muted)]">
+            Menú digital
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Nuestro menú</h1>
+          <p className="mx-auto max-w-md text-sm leading-relaxed text-[var(--ghost-text-muted)]">
+            Explora bebidas, comida y repostería organizados por categoría. Toca una sección para
+            ir directo a lo que buscas.
+          </p>
+          {categoryCount > 0 ? (
+            <div className="flex flex-wrap justify-center gap-2 pt-1">
+              {MENU_CATEGORIES.filter((category) =>
+                products.some((product) => product.category === category),
+              ).map((category) => (
+                <span
+                  key={category}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] px-3 py-1 text-xs font-medium"
+                >
+                  <span aria-hidden="true">{MENU_CATEGORY_META[category].emoji}</span>
+                  {MENU_CATEGORY_LABELS[category]}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {error ? (
