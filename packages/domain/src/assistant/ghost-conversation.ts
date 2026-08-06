@@ -542,11 +542,6 @@ export function createInitialConversationTurn(
     kind: "reply",
     session: createEmptyGhostChatSession(),
     messages: [ghostChatGreeting(context.organizationName)],
-    suggestions: [
-      "¿Cómo va la operación hoy?",
-      "Registra una compra de café",
-      "Abre caja con 200000",
-    ],
   };
 }
 
@@ -574,7 +569,6 @@ export function processConversationTurn(input: {
         kind: "reply",
         session: clearPending(session),
         messages: ["De acuerdo, lo dejamos aquí. ¿En qué más te ayudo?"],
-        suggestions: ["¿Cómo va la operación?", "Registra una compra"],
       };
     }
 
@@ -582,7 +576,6 @@ export function processConversationTurn(input: {
       kind: "reply",
       session: clearPending(session),
       messages: [ghostChatGreeting(context.organizationName)],
-      suggestions: ["¿Cómo va la operación hoy?", "Vende un latte", "Abre la mesa 2"],
     };
   }
 
@@ -619,7 +612,6 @@ export function processConversationTurn(input: {
       kind: "reply",
       session: clearPending(session),
       messages: [buildOrgStatus(context)],
-      suggestions: ["Registra una compra", "Abre caja", "¿Cuánto cuesta el latte?"],
     };
   }
 
@@ -669,21 +661,6 @@ export function processConversationTurn(input: {
     intent,
     draft,
   };
-}
-
-export function suggestionsAfterIntent(intent: GhostConversationIntent): string[] {
-  switch (intent) {
-    case "create-purchase-invoice":
-      return ["¿Cómo va la operación?", "Registra otra compra"];
-    case "create-counter-sale":
-      return ["Otra venta", "¿Cómo va la operación?"];
-    case "open-cash-session":
-      return ["Vende un latte", "¿Cómo va la operación?"];
-    case "open-table":
-      return ["Anota un pedido en la mesa", "Enviar comanda"];
-    default:
-      return ["¿Cómo va la operación?", "Registra una compra"];
-  }
 }
 
 export function flowPathForIntent(intent: GhostConversationIntent): string[] {

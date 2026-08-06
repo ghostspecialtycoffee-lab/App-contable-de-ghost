@@ -277,9 +277,6 @@ export async function executeGhostChatAction(
           : "";
       return {
         message: `${response.answer}${sources}`,
-        suggestions: response.suggestedFollowUp
-          ? [response.suggestedFollowUp]
-          : ["¿Cómo va la operación?", "Registra una compra"],
       };
     }
 

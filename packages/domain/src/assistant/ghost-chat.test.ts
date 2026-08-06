@@ -13,7 +13,7 @@ describe("ghost-chat", () => {
   it("greets with assistant name", () => {
     expect(ghostChatGreeting("Ghost Lab")).toContain("Ghost");
     expect(ghostChatGreeting("Ghost Lab")).toContain("Ghost Lab");
-    expect(ghostChatGreeting("Ghost Lab")).toContain("naturalidad");
+    expect(ghostChatGreeting("Ghost Lab")).toContain("conversación");
   });
 
   it("detects global commands", () => {

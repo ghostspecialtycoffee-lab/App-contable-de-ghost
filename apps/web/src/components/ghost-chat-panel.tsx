@@ -33,7 +33,7 @@ interface GhostChatPanelProps {
 }
 
 export function GhostChatPanel({ variant = "page", onClose }: GhostChatPanelProps) {
-  const { messages, quickReplies, processing, sendMessage, resetChat } = useGhostChat();
+  const { messages, processing, sendMessage, resetChat } = useGhostChat();
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +62,7 @@ export function GhostChatPanel({ variant = "page", onClose }: GhostChatPanelProp
         <div>
           <p className="text-sm font-semibold">{GHOST_ASSISTANT_NAME}</p>
           <p className="text-xs text-[var(--ghost-text-muted)]">
-            Conversación fluida · compras, ventas, mesas y costos
+            Solo conversación — escribe como hablarías con un compañero de barra
           </p>
         </div>
         <div className="flex items-center gap-1">
@@ -102,22 +102,6 @@ export function GhostChatPanel({ variant = "page", onClose }: GhostChatPanelProp
         ) : null}
       </div>
 
-      {quickReplies.length > 0 ? (
-        <div className="flex flex-wrap gap-2 border-t border-[var(--ghost-border)] px-4 py-2">
-          {quickReplies.map((reply) => (
-            <button
-              key={reply}
-              type="button"
-              disabled={processing}
-              onClick={() => sendMessage(reply)}
-              className="rounded-full border border-[var(--ghost-border)] px-3 py-1 text-xs hover:bg-[var(--ghost-surface-2)] disabled:opacity-50"
-            >
-              {reply}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       <form
         onSubmit={handleSubmit}
         className="flex items-end gap-2 border-t border-[var(--ghost-border)] px-4 py-3"
@@ -136,7 +120,7 @@ export function GhostChatPanel({ variant = "page", onClose }: GhostChatPanelProp
               event.currentTarget.form?.requestSubmit();
             }
           }}
-          placeholder="Cuéntame qué necesitas… (compras, ventas, mesas, costos)"
+          placeholder="Escribe aquí…"
           className="ghost-input min-h-[44px] flex-1 resize-none"
           disabled={processing}
         />

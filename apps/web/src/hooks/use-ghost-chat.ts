@@ -89,7 +89,6 @@ export function useGhostChat() {
 
   const [messages, setMessages] = useState<GhostChatMessage[]>([]);
   const [session, setSession] = useState<GhostChatSession>(createEmptyGhostChatSession());
-  const [quickReplies, setQuickReplies] = useState<string[]>([]);
   const [processing, setProcessing] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
@@ -163,7 +162,6 @@ export function useGhostChat() {
     if (persisted && persisted.messages.length > 0) {
       setMessages(persisted.messages);
       setSession(persisted.session);
-      setQuickReplies([]);
       setInitialized(true);
       return;
     }
@@ -174,7 +172,6 @@ export function useGhostChat() {
     );
     setMessages(initialMessages);
     setSession(initial.session);
-    setQuickReplies(initial.quickReplies);
     setInitialized(true);
   }, [organizationId, initialized, context]);
 
@@ -210,7 +207,6 @@ export function useGhostChat() {
 
         const turn = processGhostChatTurn(trimmed, session, context, history);
         setSession(turn.session);
-        setQuickReplies(turn.quickReplies);
 
         const ghostMessages = turn.ghostMessages.map((text) =>
           createGhostChatMessage("ghost", text),
@@ -241,9 +237,6 @@ export function useGhostChat() {
               detail?.message ?? formatGhostActionSuccess(turn.action, detail?.message),
             );
             setMessages((current) => [...current, successMessage]);
-            if (detail?.suggestions?.length) {
-              setQuickReplies(detail.suggestions);
-            }
           } catch (cause) {
             const errorMessage = createGhostChatMessage(
               "ghost",
@@ -277,12 +270,10 @@ export function useGhostChat() {
     );
     setMessages(initialMessages);
     setSession(initial.session);
-    setQuickReplies(initial.quickReplies);
   }, [context]);
 
   return {
     messages,
-    quickReplies,
     processing,
     sendMessage,
     resetChat,
