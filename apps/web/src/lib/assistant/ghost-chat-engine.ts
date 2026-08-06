@@ -920,11 +920,14 @@ function buildAction(
         type: "create-counter-sale",
         payload: {
           productId: product?.id ?? draft.productId ?? "",
-          productName: product?.name ?? "",
+          productName: product?.name ?? draft.productName ?? "",
           unitPrice: String(product?.price ?? 0),
           quantity: draft.quantity ?? "1",
           paymentMethod: parsePaymentMethod(draft.paymentMethod ?? "") ?? "cash",
           station: product?.station ?? "bar",
+          documentType: draft.documentType ?? "",
+          customerName: draft.customerName ?? "",
+          customerEmail: draft.customerEmail ?? "",
         },
       };
     }

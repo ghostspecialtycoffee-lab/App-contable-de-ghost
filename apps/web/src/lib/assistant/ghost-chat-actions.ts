@@ -199,7 +199,16 @@ export async function executeGhostChatAction(
     }
 
     case "create-counter-sale": {
-      await createSale({
+      const paymentMethod = (payloadString(action.payload, "paymentMethod") || "cash") as
+        | "cash"
+        | "card"
+        | "transfer"
+        | "other";
+      const documentType = payloadString(action.payload, "documentType");
+      const customerName = payloadString(action.payload, "customerName");
+      const customerEmail = payloadString(action.payload, "customerEmail");
+
+      const result = await createSale({
         lines: [
           {
             productId: payloadString(action.payload, "productId"),
@@ -209,9 +218,46 @@ export async function executeGhostChatAction(
             station: payloadString(action.payload, "station"),
           },
         ],
-        paymentMethod: action.payload.paymentMethod as "cash" | "card" | "transfer" | "other",
+        paymentMethod,
+        customerName: customerName || undefined,
+        notes: documentType
+          ? documentType === "cuenta_cobro"
+            ? "Cuenta de cobro"
+            : "Factura de venta"
+          : undefined,
       });
-      return undefined;
+
+      const documentLabel =
+        documentType === "cuenta_cobro" ? "Cuenta de cobro" : "Factura de venta";
+      let emailNote = "";
+
+      if (documentType && customerEmail && customerEmail !== "skip") {
+        try {
+          const emailResult = await callSendSaleDocument({
+            saleId: result.saleId,
+            email: customerEmail,
+            documentType: documentType === "cuenta_cobro" ? "cuenta_cobro" : "factura",
+          });
+          emailNote = emailResult.sent
+            ? `\nEnvié el comprobante a **${customerEmail}**.`
+            : `\nNo pude enviar el correo. Puedes imprimirlo en **Registros**.`;
+        } catch {
+          emailNote =
+            "\nVenta registrada. Imprime el comprobante en **Registros** (correo requiere Functions).";
+        }
+      } else if (documentType) {
+        emailNote = "\nPuedes imprimir el comprobante en **Registros** o dime un correo para enviarlo.";
+      }
+
+      const customerNote = customerName ? ` — cliente **${customerName}**` : "";
+      const docNote = documentType ? `${documentLabel} **${result.saleNumber}**` : `Venta **${result.saleNumber}**`;
+
+      return {
+        message:
+          `${docNote}${customerNote} — **${payloadString(action.payload, "productName")}** × ` +
+          `${payloadString(action.payload, "quantity")} — **$${result.total.toLocaleString("es-CO")}** ` +
+          `(${paymentMethod}). Comanda enviada.${emailNote}`,
+      };
     }
 
     case "open-table": {
