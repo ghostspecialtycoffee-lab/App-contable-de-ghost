@@ -1,5 +1,4 @@
 import type { CostMatrixSettingsInput, CoTaxCategory } from "../fiscal/colombia-tax.js";
-import { calculateCostMatrix } from "../fiscal/colombia-tax.js";
 import type { InventoryCostProfile } from "../inventory/unit-conversion.js";
 import { getTargetCostPctForCategory } from "../organization-cost-matrix.js";
 import {
@@ -13,6 +12,7 @@ import {
   calculateRecipeBatchCost,
   suggestRecipeYield,
 } from "../production/services/recipe-yield.js";
+import { buildPastryLotBreakdown, buildProductCostPanorama } from "./product-cost-panorama.js";
 
 export type CostMatrixReportStatus = "ok" | "high" | "missing";
 
@@ -27,6 +27,12 @@ export interface CostMatrixReportRow {
   targetFoodCostPct: number;
   grossMarginPct: number;
   grossProfitAmount: number;
+  suggestedSalePriceGross: number;
+  suggestedFoodCostPct: number;
+  yieldQuantity: number;
+  batchCostNet: number;
+  domicilioAllocation: number;
+  totalLotCost: number;
   hasRecipe: boolean;
   status: CostMatrixReportStatus;
 }
@@ -89,13 +95,18 @@ export function buildCostMatrixReport(input: {
       category: product.category,
       menuPrice: product.price,
     });
+    const lotBreakdown = buildPastryLotBreakdown({
+      batchCostNet: baseBatchCost,
+      yieldQuantity,
+      category: product.category,
+    });
 
     const targetFoodCostPct = getTargetCostPctForCategory(
       product.category,
       input.matrixSettings,
     );
 
-    if (!hasRecipe || recipeCost <= 0 || product.price <= 0) {
+    if (!hasRecipe || recipeCost <= 0) {
       rows.push({
         productId: product.id,
         name: product.name,
@@ -107,25 +118,34 @@ export function buildCostMatrixReport(input: {
         targetFoodCostPct,
         grossMarginPct: 0,
         grossProfitAmount: 0,
+        suggestedSalePriceGross: 0,
+        suggestedFoodCostPct: 0,
+        yieldQuantity,
+        batchCostNet: baseBatchCost,
+        domicilioAllocation: lotBreakdown?.domicilioAllocation ?? 0,
+        totalLotCost: lotBreakdown?.totalLotCost ?? baseBatchCost,
         hasRecipe,
         status: "missing",
       });
       continue;
     }
 
-    const matrix = calculateCostMatrix({
-      unitCostNet: recipeCost,
-      quantity: 1,
-      purchaseTaxCategory: "IVA_19",
-      salePriceGross: product.price,
+    const panorama = buildProductCostPanorama({
+      category: product.category,
+      batchCostNet: baseBatchCost,
+      yieldQuantity,
+      userSalePrice: product.price,
       saleTaxCategory: (product.saleTaxCategory ?? "IVA_19") as CoTaxCategory,
-      recipeCost,
-      targetCostPct: targetFoodCostPct,
       matrixSettings: input.matrixSettings,
     });
 
+    const yourPrice = panorama.yourPrice;
     const status: CostMatrixReportStatus =
-      matrix.foodCostPct > targetFoodCostPct ? "high" : "ok";
+      product.price > 0 && yourPrice
+        ? yourPrice.status === "missing"
+          ? "missing"
+          : yourPrice.status
+        : "missing";
 
     rows.push({
       productId: product.id,
@@ -133,13 +153,19 @@ export function buildCostMatrixReport(input: {
       category: product.category,
       price: product.price,
       effectiveSalePrice,
-      recipeCost,
-      foodCostPct: matrix.foodCostPct,
+      recipeCost: panorama.portionCost,
+      foodCostPct: yourPrice?.foodCostPct ?? 0,
       targetFoodCostPct,
-      grossMarginPct: matrix.grossMarginPct,
-      grossProfitAmount: matrix.grossProfitAmount,
+      grossMarginPct: yourPrice?.grossMarginPct ?? 0,
+      grossProfitAmount: yourPrice?.grossProfitAmount ?? 0,
+      suggestedSalePriceGross: panorama.suggestedSalePriceGross,
+      suggestedFoodCostPct: panorama.suggestedPrice.foodCostPct,
+      yieldQuantity,
+      batchCostNet: panorama.lotBreakdown?.batchCostNet ?? baseBatchCost,
+      domicilioAllocation: panorama.lotBreakdown?.domicilioAllocation ?? 0,
+      totalLotCost: panorama.lotBreakdown?.totalLotCost ?? baseBatchCost,
       hasRecipe,
-      status,
+      status: product.price > 0 ? status : "missing",
     });
   }
 

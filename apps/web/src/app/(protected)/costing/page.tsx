@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { RecipeYieldField } from "@/components/recipe-yield-field";
+import { ProductCostPanoramaPanel } from "@/components/product-cost-panorama-panel";
 import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
@@ -20,6 +21,7 @@ import {
   BASE_UNIT_LABELS,
   CO_TAX_CATEGORIES,
   CO_TAX_CATEGORY_LABELS,
+  buildProductCostPanorama,
   calculateCostMatrix,
   calculatePastryPortionCost,
   calculateRecipeBatchCost,
@@ -154,6 +156,28 @@ export default function CostingPage() {
   const targetCostPct = selectedProduct
     ? getTargetCostPctForCategory(selectedProduct.category, costMatrixSettings)
     : costMatrixSettings.targetFoodCostPct;
+
+  const costPanorama = useMemo(() => {
+    if (!selectedProduct || previewBatchCost <= 0) {
+      return null;
+    }
+
+    return buildProductCostPanorama({
+      category: selectedProduct.category,
+      batchCostNet: previewBatchCost,
+      yieldQuantity,
+      userSalePrice: Number(price) || 0,
+      saleTaxCategory,
+      matrixSettings: costMatrixSettings,
+    });
+  }, [
+    selectedProduct,
+    previewBatchCost,
+    yieldQuantity,
+    price,
+    saleTaxCategory,
+    costMatrixSettings,
+  ]);
 
   const matrix = useMemo(() => {
     const salePrice = Number(price) || 0;
@@ -572,6 +596,8 @@ export default function CostingPage() {
                     ))
                   )}
                 </div>
+
+                <ProductCostPanoramaPanel panorama={costPanorama} />
 
                 {matrix ? (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

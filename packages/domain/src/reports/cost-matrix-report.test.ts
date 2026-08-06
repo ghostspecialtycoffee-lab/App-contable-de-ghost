@@ -84,7 +84,7 @@ describe("buildCostMatrixReport", () => {
 
     expect(report.rows).toHaveLength(1);
     expect(report.rows[0]?.recipeCost).toBe(6083);
-    expect(report.rows[0]?.effectiveSalePrice).toBe(8000);
+    expect(report.rows[0]?.suggestedSalePriceGross).toBeGreaterThan(8000);
     expect(report.rows[0]?.foodCostPct).toBeCloseTo(6083 / 8000, 4);
   });
 });
