@@ -1,3 +1,4 @@
+export * from "./assistant/index.js";
 export * from "./audit.js";
 export * from "./branch.js";
 export * from "./brand/index.js";

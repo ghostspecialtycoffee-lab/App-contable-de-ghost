@@ -17,6 +17,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Operación",
     items: [
       { href: "/dashboard", label: "Inicio", description: "Resumen del día" },
+      { href: "/chat", label: "Ghost", description: "Asistente operativo por chat" },
       { href: "/cash", label: "Caja", description: "Apertura y movimientos" },
       { href: "/ventas", label: "Ventas", description: "Cobros y accesos" },
       { href: "/caja", label: "Modo caja", description: "Solo registro de ventas" },
