@@ -16,17 +16,19 @@ import {
 } from "@/lib/assistant/ghost-chat-engine";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { isCatalogBeverage } from "@/lib/costing/ghost-menu-catalog";
-import { useCashSession } from "@/hooks/use-cash-session";
+import { useCashSession, useCashSessionSales } from "@/hooks/use-cash-session";
 import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useKitchenOrders } from "@/hooks/use-kitchen-orders";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { usePurchaseInvoices } from "@/hooks/use-purchase-invoices";
 import { useRecipes } from "@/hooks/use-recipes";
+import { useSales } from "@/hooks/use-sales";
 import { useTableSessions } from "@/hooks/use-table-sessions";
 import { useWarehouses } from "@/hooks/use-warehouses";
 import { useAuth, useActiveMembership } from "@/providers/auth-provider";
 import {
+  calculateCashSessionBalance,
   createEmptyGhostChatSession,
   type GhostChatMessage,
   type GhostChatSession,
@@ -82,7 +84,9 @@ export function useGhostChat() {
   const { items: inventoryItems } = useInventoryItems();
   const { warehouses } = useWarehouses();
   const { invoices } = usePurchaseInvoices();
-  const { session: cashSession } = useCashSession();
+  const { session: cashSession, movements: cashMovements } = useCashSession();
+  const { cashSalesTotal } = useCashSessionSales(cashSession?.id ?? null);
+  const { sales } = useSales();
   const { tables } = useDiningTables();
   const { orders: kitchenOrders } = useKitchenOrders();
   const { sessions: tableSessions } = useTableSessions({ openOnly: true });
@@ -111,6 +115,17 @@ export function useGhostChat() {
         ),
       };
     });
+
+    const cashBalance = cashSession
+      ? calculateCashSessionBalance({
+          openingAmount: cashSession.openingAmount,
+          cashSalesTotal,
+          movements: cashMovements.map((movement) => ({
+            type: movement.type,
+            amount: movement.amount,
+          })),
+        })
+      : null;
 
     return {
       organizationName: organization?.name,
@@ -151,6 +166,44 @@ export function useGhostChat() {
       inventoryCount: inventoryItems.length,
       ghostBeverageCount: products.filter((product) => isCatalogBeverage(product.name)).length,
       beverageSetupPending: buildBeverageSetupPending(products, recipes),
+      salesSnapshot: sales.map((sale) => ({
+        soldAt: sale.soldAt ?? sale.createdAt,
+        soldOn: sale.soldOn ?? (sale.soldAt ?? sale.createdAt).slice(0, 10),
+        status: sale.status,
+        subtotal: sale.subtotal,
+        taxAmount: sale.taxAmount,
+        total: sale.total,
+        paymentMethod: sale.paymentMethod,
+        tableNumber: sale.tableNumber,
+        lines: sale.lines.map((line) => ({
+          name: line.name,
+          quantity: line.quantity,
+          lineTotal: line.lineTotal,
+        })),
+      })),
+      purchasesSnapshot: invoices.map((invoice) => ({
+        supplierName: invoice.supplierName,
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceDate: invoice.invoiceDate,
+        total: invoice.total,
+        status: invoice.status,
+      })),
+      cashSnapshot: cashSession && cashBalance
+        ? {
+            sessionId: cashSession.id,
+            openingAmount: cashSession.openingAmount,
+            cashSalesTotal,
+            expectedAmount: cashBalance.expectedAmount,
+            inflowsTotal: cashBalance.inflowsTotal,
+            outflowsTotal: cashBalance.outflowsTotal,
+            movements: cashMovements.map((movement) => ({
+              type: movement.type,
+              amount: movement.amount,
+              reason: movement.reason,
+              occurredAt: movement.occurredAt,
+            })),
+          }
+        : undefined,
     };
   }, [
     organization?.name,
@@ -161,7 +214,10 @@ export function useGhostChat() {
     kitchenOrders,
     tableSessions,
     cashSession,
-    invoices.length,
+    cashMovements,
+    cashSalesTotal,
+    sales,
+    invoices,
     recipes,
   ]);
 

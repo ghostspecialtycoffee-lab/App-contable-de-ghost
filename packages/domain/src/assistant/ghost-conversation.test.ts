@@ -37,6 +37,8 @@ const baseContext: GhostConversationContext = {
   invoiceCount: 2,
   inventoryCount: 1,
   ghostBeverageCount: 1,
+  salesSnapshot: [],
+  purchasesSnapshot: [],
 };
 
 describe("ghost-conversation", () => {
@@ -321,6 +323,48 @@ describe("ghost-conversation", () => {
       expect(fourth.intent).toBe("checkout-table");
       expect(fourth.draft.paymentMethod).toBe("cash");
       expect(fourth.draft.customerEmail).toBe("cliente@ejemplo.com");
+    }
+  });
+
+  it("responde informe de ventas sin ejecutar acción", () => {
+    const context: GhostConversationContext = {
+      ...baseContext,
+      salesSnapshot: [
+        {
+          soldAt: new Date().toISOString(),
+          soldOn: new Date().toISOString().slice(0, 10),
+          status: "paid",
+          subtotal: 10000,
+          taxAmount: 1900,
+          total: 11900,
+          paymentMethod: "card",
+          lines: [{ name: "Latte", quantity: 1, lineTotal: 11900 }],
+        },
+      ],
+    };
+
+    const result = processConversationTurn({
+      message: "ventas de hoy",
+      session: createEmptyGhostChatSession(),
+      context,
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.messages[0]).toContain("Ventas de hoy");
+    }
+  });
+
+  it("muestra guía del cerebro con ayuda", () => {
+    const result = processConversationTurn({
+      message: "ayuda",
+      session: createEmptyGhostChatSession(),
+      context: baseContext,
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.messages[0]).toContain("cerebro operativo");
     }
   });
 });
