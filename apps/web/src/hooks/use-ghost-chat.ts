@@ -17,6 +17,7 @@ import {
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { isCatalogBeverage } from "@/lib/costing/ghost-menu-catalog";
 import { useCashSession, useCashSessionSales } from "@/hooks/use-cash-session";
+import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useFixedExpenses } from "@/hooks/use-fixed-expenses";
 import { useInventoryBalances } from "@/hooks/use-inventory-balances";
@@ -96,6 +97,7 @@ export function useGhostChat() {
   const { orders: kitchenOrders } = useKitchenOrders();
   const { sessions: tableSessions } = useTableSessions({ openOnly: true });
   const { shifts: workShifts } = useWorkShifts();
+  const costMatrixSettings = useCostMatrixSettings();
 
   const [messages, setMessages] = useState<GhostChatMessage[]>([]);
   const [session, setSession] = useState<GhostChatSession>(createEmptyGhostChatSession());
@@ -164,6 +166,8 @@ export function useGhostChat() {
         price: product.price,
         category: product.category,
         station: product.station,
+        saleTaxCategory: product.saleTaxCategory,
+        recipeCost: product.recipeCost,
       })),
       warehouses: warehouses.map((warehouse) => ({
         id: warehouse.id,
@@ -246,6 +250,28 @@ export function useGhostChat() {
         startTime: shift.startTime,
         endTime: shift.endTime,
       })),
+      recipesSnapshot: recipes.map((recipe) => ({
+        menuProductId: recipe.menuProductId,
+        productName: recipe.menuProductName,
+        yieldQuantity: recipe.yieldQuantity,
+        recipeCost:
+          products.find((product) => product.id === recipe.menuProductId)?.recipeCost ?? 0,
+        lines: recipe.lines.map((line) => ({
+          inventoryItemId: line.inventoryItemId,
+          itemName: line.itemName,
+          quantity: line.quantity,
+          unit: line.unit,
+        })),
+      })),
+      inventoryCostSnapshot: inventoryItems.map((item) => ({
+        itemId: item.id,
+        name: item.name,
+        baseUnit: item.baseUnit,
+        averageCost: item.averageCost || item.lastCost || 0,
+        purchaseUnit: item.purchaseUnit,
+        presentationQuantity: item.presentationQuantity,
+      })),
+      costMatrixSettings,
     };
   }, [
     organization?.name,
@@ -264,6 +290,7 @@ export function useGhostChat() {
     sales,
     invoices,
     recipes,
+    costMatrixSettings,
   ]);
 
   useEffect(() => {

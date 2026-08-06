@@ -18,7 +18,18 @@ import {
   buildPurchasesReviewReply,
   buildSalesReportReply,
   buildWorkShiftsReply,
+  buildCostMatrixOverviewReply,
+  buildRecipeCostPreviewReply,
+  buildSingleProductCostReply,
 } from "./brain-responses.js";
+import {
+  extractRecipePriceFromMessage,
+  extractYieldQuantityFromMessage,
+  isBuildRecipeCostMessage,
+  isCostMatrixQueryMessage,
+  isSaveRecipeCostMessage,
+  parseIngredientLinesFromMessage,
+} from "./cost-matrix-conversation.js";
 import { buildBrainHelpMessage, classifyBrainQueryIntent } from "./ghost-brain.js";
 
 export type GhostConversationIntent =
@@ -33,6 +44,9 @@ export type GhostConversationIntent =
   | "query-fixed-expenses"
   | "query-work-shifts"
   | "query-kitchen-status"
+  | "query-cost-matrix"
+  | "build-recipe-cost"
+  | "save-recipe-cost"
   | "create-inventory-item"
   | "create-purchase-invoice"
   | "create-menu-product"
@@ -89,6 +103,30 @@ export interface GhostConversationProduct {
   price: number;
   category: string;
   station: string;
+  saleTaxCategory?: string;
+  recipeCost?: number;
+}
+
+export interface GhostConversationRecipeSnapshot {
+  menuProductId: string;
+  productName: string;
+  yieldQuantity: number;
+  recipeCost: number;
+  lines: Array<{
+    inventoryItemId: string;
+    itemName: string;
+    quantity: number;
+    unit: string;
+  }>;
+}
+
+export interface GhostConversationInventoryCostSnapshot {
+  itemId: string;
+  name: string;
+  baseUnit: string;
+  averageCost: number;
+  purchaseUnit?: string;
+  presentationQuantity?: number;
 }
 
 export interface GhostConversationTable {
@@ -161,6 +199,14 @@ export interface GhostConversationPurchaseSnapshot {
   status: string;
 }
 
+export interface GhostConversationCostMatrixSettings {
+  targetFoodCostPct: number;
+  targetBeverageCostPct: number;
+  reteIvaPct: number;
+  reteFuenteServicesPct: number;
+  reteFuenteGoodsPct: number;
+}
+
 export interface GhostConversationContext {
   organizationName?: string;
   inventoryItems: GhostConversationInventoryItem[];
@@ -178,6 +224,9 @@ export interface GhostConversationContext {
   inventoryStockSnapshot: GhostConversationInventoryStockSnapshot[];
   fixedExpensesSnapshot: GhostConversationFixedExpenseSnapshot[];
   workShiftsSnapshot: GhostConversationWorkShiftSnapshot[];
+  recipesSnapshot: GhostConversationRecipeSnapshot[];
+  inventoryCostSnapshot: GhostConversationInventoryCostSnapshot[];
+  costMatrixSettings?: GhostConversationCostMatrixSettings;
 }
 
 export interface GhostConversationHistoryMessage {
@@ -219,6 +268,7 @@ type ExecutableGhostConversationIntent = Exclude<
   | "query-fixed-expenses"
   | "query-work-shifts"
   | "query-kitchen-status"
+  | "query-cost-matrix"
   | "agent-query"
 >;
 
@@ -237,6 +287,8 @@ const INTENT_FLOW_KEY: Record<ExecutableGhostConversationIntent, string> = {
   "send-kitchen": "waiter/send-kitchen",
   "update-kitchen-order": "cashier/update-kitchen-order",
   "seed-ghost-menu": "admin/seed-ghost-menu",
+  "build-recipe-cost": "admin/build-recipe-cost",
+  "save-recipe-cost": "admin/save-recipe-cost",
 };
 
 const REQUIRED_FIELDS: Record<string, string[]> = {
@@ -253,6 +305,8 @@ const REQUIRED_FIELDS: Record<string, string[]> = {
   "checkout-table": ["sessionId", "documentType", "paymentMethod", "customerEmail"],
   "send-kitchen": ["sessionId"],
   "update-kitchen-order": ["orderId", "status"],
+  "build-recipe-cost": ["productId"],
+  "save-recipe-cost": ["productId", "recipeLines"],
 };
 
 const FIELD_PROMPTS: Record<string, string> = {
@@ -266,7 +320,7 @@ const FIELD_PROMPTS: Record<string, string> = {
   countedAmount: "¿Cuánto efectivo contaste en caja al cerrar?",
   amount: "¿Cuál es el monto del movimiento en COP?",
   reason: "¿Cuál es el motivo? (ej. domicilios, propinas, compra menor)",
-  productId: "¿Qué producto es?",
+  productId: "¿Qué producto de la carta?",
   tableId: "¿Qué mesa?",
   sessionId: "¿En qué mesa va el pedido?",
   orderId: "¿Qué comanda actualizamos?",
@@ -275,6 +329,8 @@ const FIELD_PROMPTS: Record<string, string> = {
     "¿Lo emito como **factura de venta** o como **cuenta de cobro**?",
   customerEmail:
     "¿A qué correo envío el comprobante en PDF? Si no hace falta, di **no**.",
+  recipeLines:
+    "¿Qué ingredientes lleva? Ejemplo: «18g café caturra, 200ml leche entera, precio 12000».",
 };
 
 function normalizeText(value: string): string {
@@ -622,6 +678,9 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
   if (brainQuery === "query-kitchen-status") {
     return "query-kitchen-status";
   }
+  if (brainQuery === "query-cost-matrix") {
+    return "query-cost-matrix";
+  }
   if (brainQuery === "query-financial-overview") {
     return "query-financial-overview";
   }
@@ -629,8 +688,17 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
     return "org-status";
   }
 
-  if (/(cargar carta|carta ghost|seed|menu ghost)/.test(normalized)) {
+  if (/(cargar carta|carta ghost|seed|menu ghost|actualiza matriz de costos|refresca matriz de costos)/.test(normalized)) {
     return "seed-ghost-menu";
+  }
+  if (isSaveRecipeCostMessage(message, normalized)) {
+    return "save-recipe-cost";
+  }
+  if (isBuildRecipeCostMessage(normalized) && findByName(message, context.menuProducts)) {
+    return "build-recipe-cost";
+  }
+  if (isCostMatrixQueryMessage(normalized)) {
+    return "query-cost-matrix";
   }
   if (/(abrir caja|abre caja|fondo inicial)/.test(normalized)) {
     return "open-cash-session";
@@ -968,6 +1036,44 @@ function extractDraftForIntent(
     }
   }
 
+  if (intent === "build-recipe-cost" || intent === "save-recipe-cost") {
+    const product = findByName(message, context.menuProducts);
+    if (product) {
+      draft.productId = product.id;
+      draft.productName = product.name;
+      draft.category = product.category;
+    }
+
+    const parsedLines = parseIngredientLinesFromMessage(message, context.inventoryItems);
+    if (parsedLines.length > 0) {
+      draft.recipeLines = JSON.stringify(
+        parsedLines.map((line) => ({
+          inventoryItemId: line.inventoryItemId,
+          itemName: line.itemName,
+          quantity: line.quantity,
+          unit: line.unit,
+        })),
+      );
+    } else if (intent === "save-recipe-cost" && draft.productId) {
+      const existing = context.recipesSnapshot.find(
+        (entry) => entry.menuProductId === draft.productId,
+      );
+      if (existing?.lines.length) {
+        draft.recipeLines = JSON.stringify(existing.lines);
+      }
+    }
+
+    const price = extractRecipePriceFromMessage(message);
+    if (price !== null) {
+      draft.price = String(price);
+    }
+
+    const yieldQuantity = extractYieldQuantityFromMessage(message);
+    if (yieldQuantity !== null) {
+      draft.yieldQuantity = String(yieldQuantity);
+    }
+  }
+
   return draft;
 }
 
@@ -1103,6 +1209,10 @@ function acknowledgeExecution(intent: GhostConversationIntent, draft: Record<str
       return `Actualizo la comanda a **${draft.status}**.`;
     case "seed-ghost-menu":
       return "Cargo la carta Ghost y las fichas SCA base.";
+    case "build-recipe-cost":
+      return `Genero la ficha de costos de **${draft.productName ?? "producto"}** desde inventario.`;
+    case "save-recipe-cost":
+      return `Guardo la ficha de **${draft.productName ?? "producto"}** y actualizo precio en carta y reportes.`;
     default:
       return "Listo.";
   }
@@ -1347,6 +1457,19 @@ export function processConversationTurn(input: {
     };
   }
 
+  if (intent === "query-cost-matrix") {
+    const product = findByName(trimmed, context.menuProducts);
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [
+        product
+          ? buildSingleProductCostReply(context, product.id)
+          : buildCostMatrixOverviewReply(context),
+      ],
+    };
+  }
+
   if (intent === "seed-ghost-menu") {
     return {
       kind: "execute",
@@ -1417,6 +1540,29 @@ export function processConversationTurn(input: {
       kind: "reply",
       session: sessionWithPending(session, intent, draft),
       messages: [buildPendingReply(intent, draft, missing[0]!, context)],
+    };
+  }
+
+  if (intent === "save-recipe-cost" && draft.confirm !== "si") {
+    const lines = JSON.parse(draft.recipeLines ?? "[]") as Array<{
+      itemName: string;
+      quantity: number;
+      unit: string;
+    }>;
+
+    return {
+      kind: "reply",
+      session: sessionWithPending(session, intent, draft),
+      messages: [
+        buildRecipeCostPreviewReply(context, {
+          productId: draft.productId ?? "",
+          productName: draft.productName ?? "producto",
+          price: draft.price,
+          yieldQuantity: draft.yieldQuantity,
+          lines,
+        }),
+        "¿Guardo la ficha y actualizo la plataforma? Responde **sí** para confirmar.",
+      ],
     };
   }
 

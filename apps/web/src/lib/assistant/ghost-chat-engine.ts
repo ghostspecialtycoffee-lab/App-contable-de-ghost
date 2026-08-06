@@ -23,9 +23,12 @@ import {
   type GhostChatRole,
   type GhostChatSession,
   type GhostConversationCashSnapshot,
+  type GhostConversationCostMatrixSettings,
   type GhostConversationFixedExpenseSnapshot,
+  type GhostConversationInventoryCostSnapshot,
   type GhostConversationInventoryStockSnapshot,
   type GhostConversationPurchaseSnapshot,
+  type GhostConversationRecipeSnapshot,
   type GhostConversationSaleSnapshot,
   type GhostConversationWorkShiftSnapshot,
   type GhostConversationContext,
@@ -46,6 +49,8 @@ export interface GhostChatMenuProduct {
   price: number;
   category: string;
   station: string;
+  saleTaxCategory?: string;
+  recipeCost?: number;
 }
 
 export interface GhostChatWarehouse {
@@ -97,6 +102,9 @@ export interface GhostChatContext {
   inventoryStockSnapshot: GhostConversationInventoryStockSnapshot[];
   fixedExpensesSnapshot: GhostConversationFixedExpenseSnapshot[];
   workShiftsSnapshot: GhostConversationWorkShiftSnapshot[];
+  recipesSnapshot: GhostConversationRecipeSnapshot[];
+  inventoryCostSnapshot: GhostConversationInventoryCostSnapshot[];
+  costMatrixSettings?: GhostConversationCostMatrixSettings;
 }
 
 export type GhostChatAction =
@@ -109,6 +117,8 @@ export type GhostChatAction =
   | { type: "close-cash-session"; payload: { sessionId: string; countedAmount: number; expectedAmount: number } }
   | { type: "register-cash-outflow"; payload: { sessionId: string; amount: number; reason: string; movementType: string } }
   | { type: "register-cash-inflow"; payload: { sessionId: string; amount: number; reason: string; movementType: string } }
+  | { type: "build-recipe-cost"; payload: { productId: string; productName: string } }
+  | { type: "save-recipe-cost"; payload: Record<string, string> }
   | { type: "create-counter-sale"; payload: Record<string, string> }
   | { type: "open-table"; payload: Record<string, string> }
   | { type: "add-table-order"; payload: Record<string, string> }
@@ -1030,6 +1040,19 @@ function buildAction(
         type: "send-kitchen",
         payload: { sessionId: draft.sessionId ?? "" },
       };
+    case "admin/build-recipe-cost":
+      return {
+        type: "build-recipe-cost",
+        payload: {
+          productId: draft.productId ?? "",
+          productName: draft.productName ?? "",
+        },
+      };
+    case "admin/save-recipe-cost":
+      return {
+        type: "save-recipe-cost",
+        payload: { ...draft },
+      };
     default:
       return undefined;
   }
@@ -1137,6 +1160,10 @@ export function formatGhostActionSuccess(action: GhostChatAction, result?: strin
       return result ?? `Salida de **$${action.payload.amount.toLocaleString("es-CO")}** registrada.`;
     case "register-cash-inflow":
       return result ?? `Entrada de **$${action.payload.amount.toLocaleString("es-CO")}** registrada.`;
+    case "build-recipe-cost":
+      return result ?? `Ficha de costos de **${action.payload.productName}** actualizada.`;
+    case "save-recipe-cost":
+      return result ?? `Ficha de **${action.payload.productName ?? "producto"}** guardada en la matriz de costos.`;
     case "create-counter-sale":
       return `Venta registrada: **${action.payload.productName}** × ${action.payload.quantity}. Comanda enviada.`;
     case "open-table":

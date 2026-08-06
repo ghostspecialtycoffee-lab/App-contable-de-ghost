@@ -1,3 +1,11 @@
+import type { CoTaxCategory } from "../fiscal/colombia-tax.js";
+import type { BaseUnit } from "../inventory/units.js";
+import type { InventoryCostProfile } from "../inventory/unit-conversion.js";
+import type { MenuCategory } from "../pos/menu-product.js";
+import { buildCostMatrixReport } from "../reports/cost-matrix-report.js";
+import { buildProductCostPanorama } from "../reports/product-cost-panorama.js";
+import { calculateRecipeBatchCost } from "../production/services/recipe-yield.js";
+import { suggestRecipeYield } from "../production/services/recipe-yield.js";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod, type SaleStatus } from "../pos/sale.js";
 import {
   buildSalesReport,
@@ -320,4 +328,242 @@ function formatQuantity(value: number, unit: string): string {
     maximumFractionDigits: value % 1 === 0 ? 0 : 2,
   });
   return `${formatted} ${unit}`;
+}
+
+function buildItemProfiles(context: GhostConversationContext): Record<string, InventoryCostProfile> {
+  const profiles: Record<string, InventoryCostProfile> = {};
+  for (const item of context.inventoryCostSnapshot) {
+    profiles[item.itemId] = {
+      baseUnit: item.baseUnit as InventoryCostProfile["baseUnit"],
+      averageCost: item.averageCost,
+      purchaseUnit: item.purchaseUnit as InventoryCostProfile["purchaseUnit"],
+      presentationQuantity: item.presentationQuantity,
+    };
+  }
+  return profiles;
+}
+
+function findProductInMessage(
+  message: string,
+  context: GhostConversationContext,
+): GhostConversationContext["menuProducts"][number] | null {
+  const normalized = message
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "");
+
+  let best: { product: GhostConversationContext["menuProducts"][number]; score: number } | null =
+    null;
+
+  for (const product of context.menuProducts) {
+    const name = product.name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "");
+    if (normalized.includes(name) || name.includes(normalized)) {
+      return product;
+    }
+
+    const tokens = name.split(/\s+/).filter((token) => token.length > 2);
+    const overlap = tokens.filter((token) => normalized.includes(token)).length;
+    const score = overlap / Math.max(tokens.length, 1);
+    if (!best || score > best.score) {
+      best = { product, score };
+    }
+  }
+
+  return best && best.score >= 0.5 ? best.product : null;
+}
+
+export function buildCostMatrixOverviewReply(
+  context: GhostConversationContext,
+  productFilter?: string,
+): string {
+  const itemProfiles = buildItemProfiles(context);
+  const products = context.menuProducts.map((product) => ({
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    category: product.category as MenuCategory,
+    saleTaxCategory: (product.saleTaxCategory ?? "IVA_19") as CoTaxCategory,
+    recipeCost: product.recipeCost,
+  }));
+  const reportRecipes = context.recipesSnapshot.map((recipe) => ({
+    menuProductId: recipe.menuProductId,
+    yieldQuantity: recipe.yieldQuantity,
+    lines: recipe.lines.map((line) => ({
+      ...line,
+      unit: line.unit as BaseUnit,
+    })),
+  }));
+
+  if (productFilter) {
+    const product = context.menuProducts.find(
+      (entry) => entry.name.toLowerCase() === productFilter.toLowerCase(),
+    ) ?? findProductInMessage(productFilter, context);
+
+    if (!product) {
+      return `No encontré el producto **${productFilter}** en la carta.`;
+    }
+
+    return buildSingleProductCostReply(context, product.id, itemProfiles);
+  }
+
+  const beverageReport = buildCostMatrixReport({
+    products,
+    recipes: reportRecipes,
+    itemProfiles,
+    matrixSettings: context.costMatrixSettings,
+    categoryFilter: "beverage",
+  });
+  const pastryReport = buildCostMatrixReport({
+    products,
+    recipes: reportRecipes,
+    itemProfiles,
+    matrixSettings: context.costMatrixSettings,
+    categoryFilter: "pastry",
+  });
+
+  const beverageLines = beverageReport.rows
+    .slice(0, 6)
+    .map(
+      (row) =>
+        `· **${row.name}** — venta ${formatMoney(row.price)} · costo ${formatMoney(row.recipeCost)} · ` +
+        `food cost **${(row.foodCostPct * 100).toFixed(1)}%** (${row.status === "high" ? "alto" : row.status === "missing" ? "sin ficha" : "ok"})`,
+    )
+    .join("\n");
+
+  const pastryLines = pastryReport.rows
+    .slice(0, 4)
+    .map(
+      (row) =>
+        `· **${row.name}** — venta ${formatMoney(row.price)} · costo ${formatMoney(row.recipeCost)} · ` +
+        `food cost **${(row.foodCostPct * 100).toFixed(1)}%**`,
+    )
+    .join("\n");
+
+  return (
+    "**Matriz de costos**\n\n" +
+    `**Bebidas** — food cost prom. **${(beverageReport.averageFoodCostPct * 100).toFixed(1)}%** · ` +
+    `${beverageReport.productsAboveTarget} sobre meta · ${beverageReport.productsMissingRecipe} sin ficha\n` +
+    `${beverageLines || "· Sin productos"}\n\n` +
+    `**Repostería** — food cost prom. **${(pastryReport.averageFoodCostPct * 100).toFixed(1)}%**\n` +
+    `${pastryLines || "· Sin productos"}\n\n` +
+    "Para actualizar una ficha: «genera ficha de costos de Latte» o «ficha Dirty Chai: 18g café, 200ml leche, precio 9000»."
+  );
+}
+
+export function buildSingleProductCostReply(
+  context: GhostConversationContext,
+  productId: string,
+  itemProfiles?: Record<string, InventoryCostProfile>,
+): string {
+  const profiles = itemProfiles ?? buildItemProfiles(context);
+  const product = context.menuProducts.find((entry) => entry.id === productId);
+  if (!product) {
+    return "No encontré ese producto en la carta.";
+  }
+
+  const recipe = context.recipesSnapshot.find((entry) => entry.menuProductId === productId);
+  if (!recipe || recipe.lines.length === 0) {
+    return (
+      `**${product.name}**\n` +
+      `Precio de venta: **${formatMoney(product.price)}**\n` +
+      "Aún no tiene ficha de costos.\n\n" +
+      `Di: «genera ficha de costos de ${product.name}» para armarla desde inventario.`
+    );
+  }
+
+  const batchCost = calculateRecipeBatchCost(
+    recipe.lines.map((line) => ({
+      ...line,
+      unit: line.unit as BaseUnit,
+    })),
+    profiles,
+  );
+  const panorama = buildProductCostPanorama({
+    category: product.category as MenuCategory,
+    batchCostNet: batchCost,
+    yieldQuantity: recipe.yieldQuantity,
+    userSalePrice: product.price,
+    saleTaxCategory: (product.saleTaxCategory ?? "IVA_19") as CoTaxCategory,
+    matrixSettings: context.costMatrixSettings,
+  });
+
+  const ingredientLines = recipe.lines
+    .map((line) => `· ${formatQuantity(line.quantity, line.unit)} ${line.itemName}`)
+    .join("\n");
+
+  const yourPrice = panorama.yourPrice;
+  const statusLabel =
+    yourPrice?.status === "high"
+      ? "sobre meta"
+      : yourPrice?.status === "missing"
+        ? "incompleto"
+        : "dentro de meta";
+
+  return (
+    `**Ficha — ${product.name}**\n` +
+    `**Ingredientes**\n${ingredientLines}\n\n` +
+    `· Costo por porción: **${formatMoney(panorama.portionCost)}**\n` +
+    `· Precio actual: **${formatMoney(product.price)}**\n` +
+    `· Food cost: **${((yourPrice?.foodCostPct ?? 0) * 100).toFixed(1)}%** (${statusLabel})\n` +
+    `· Margen bruto: **${((yourPrice?.grossMarginPct ?? 0) * 100).toFixed(1)}%**\n` +
+    `· Precio sugerido: **${formatMoney(panorama.suggestedSalePriceGross)}**\n\n` +
+    "Para guardar cambios: «ficha [producto]: [cantidad][unidad] [insumo], precio [monto]»."
+  );
+}
+
+export function buildRecipeCostPreviewReply(
+  context: GhostConversationContext,
+  draft: {
+    productId: string;
+    productName: string;
+    price?: string;
+    yieldQuantity?: string;
+    lines: Array<{ itemName: string; quantity: number; unit: string }>;
+  },
+): string {
+  const product = context.menuProducts.find((entry) => entry.id === draft.productId);
+  if (!product) {
+    return "No encontré el producto en la carta.";
+  }
+
+  const itemProfiles = buildItemProfiles(context);
+  const recipeLines = draft.lines.map((line) => {
+    const inventory = context.inventoryItems.find((item) => item.name === line.itemName);
+    return {
+      inventoryItemId: inventory?.id ?? "",
+      itemName: line.itemName,
+      quantity: line.quantity,
+      unit: line.unit as "g" | "ml" | "kg" | "l" | "unit",
+    };
+  });
+
+  const batchCost = calculateRecipeBatchCost(recipeLines, itemProfiles);
+  const yieldQty = Number(draft.yieldQuantity || suggestRecipeYield(product.name));
+  const salePrice = Number(draft.price ?? product.price);
+  const panorama = buildProductCostPanorama({
+    category: product.category as MenuCategory,
+    batchCostNet: batchCost,
+    yieldQuantity: yieldQty,
+    userSalePrice: salePrice,
+    saleTaxCategory: (product.saleTaxCategory ?? "IVA_19") as CoTaxCategory,
+    matrixSettings: context.costMatrixSettings,
+  });
+
+  const ingredientLines = draft.lines
+    .map((line) => `· ${formatQuantity(line.quantity, line.unit)} ${line.itemName}`)
+    .join("\n");
+
+  return (
+    `**Vista previa — ${draft.productName}**\n` +
+    `${ingredientLines}\n\n` +
+    `· Costo por porción: **${formatMoney(panorama.portionCost)}**\n` +
+    `· Precio de venta: **${formatMoney(salePrice)}**\n` +
+    `· Food cost estimado: **${((panorama.yourPrice?.foodCostPct ?? 0) * 100).toFixed(1)}%**\n` +
+    `· Precio sugerido: **${formatMoney(panorama.suggestedSalePriceGross)}**\n\n` +
+    "Si está bien, confirma con **sí** o ajusta cantidades/precio."
+  );
 }
