@@ -1,5 +1,8 @@
 import type { InventoryCostProfile } from "../../inventory/unit-conversion.js";
-import { convertToBaseUnit } from "../../inventory/unit-conversion.js";
+import {
+  convertToBaseUnit,
+  resolveUnitCostPerBase,
+} from "../../inventory/unit-conversion.js";
 import type { RecipeLine } from "../recipe.js";
 
 export interface RecipeLineCostBreakdown {
@@ -21,7 +24,7 @@ export function calculateRecipeLineCost(
     presentationQuantity: item.presentationQuantity,
     purchaseUnit: item.purchaseUnit,
   });
-  const unitCostPerBase = item.averageCost;
+  const unitCostPerBase = resolveUnitCostPerBase(item);
   const lineCost = Math.round(quantityInBase * unitCostPerBase);
 
   return {
