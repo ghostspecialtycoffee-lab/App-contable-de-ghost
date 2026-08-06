@@ -13,6 +13,7 @@ describe("ghost-chat", () => {
   it("greets with assistant name", () => {
     expect(ghostChatGreeting("Ghost Lab")).toContain("Ghost");
     expect(ghostChatGreeting("Ghost Lab")).toContain("Ghost Lab");
+    expect(ghostChatGreeting("Ghost Lab")).toContain("naturalidad");
   });
 
   it("detects global commands", () => {
@@ -31,7 +32,7 @@ describe("ghost-chat", () => {
 
   it("creates empty session at root", () => {
     const session = createEmptyGhostChatSession();
-    expect(session.flowPath).toEqual(["root"]);
+    expect(session.flowPath).toEqual(["conversation"]);
     expect(session.role).toBeNull();
   });
 

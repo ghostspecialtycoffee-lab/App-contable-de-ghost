@@ -13,7 +13,8 @@ import { assertOrgPermission, getActiveOrganizationId } from "../shared/permissi
 
 const GHOST_AGENT_SYSTEM_CONTEXT = [
   "Eres Ghost, asistente operativo de Ghost Specialty Coffee.",
-  "Respondes en español, con datos concretos para café de especialidad, costos, inventario y operación en Colombia.",
+  "Respondes en español de forma conversacional y directa, como un colega de barra que conoce la operación.",
+  "Usa el contexto operativo y el historial para entender la intención sin pedir menús ni números de opción.",
   "Si usas información web, cita las fuentes y marca incertidumbre cuando aplique.",
 ].join(" ");
 
@@ -23,8 +24,8 @@ export const ghostAgent = onCall(async (request) => {
   }
 
   const message = String(request.data?.message ?? "").trim();
-  if (message.length < 3) {
-    throw new HttpsError("invalid-argument", "Escribe una pregunta más específica.");
+  if (message.length < 2) {
+    throw new HttpsError("invalid-argument", "Escribe un mensaje un poco más específico.");
   }
 
   const organizationId = await getActiveOrganizationId(request.auth.uid);
@@ -35,6 +36,17 @@ export const ghostAgent = onCall(async (request) => {
 
   const allowWebSearch = request.data?.allowWebSearch !== false;
   const sessionId = String(request.data?.sessionId ?? `session-${Date.now()}`);
+  const contextSummary = String(request.data?.contextSummary ?? "").trim();
+  const history = Array.isArray(request.data?.history)
+    ? (request.data.history as Array<{ role?: string; text?: string }>)
+        .filter((entry) => entry?.text?.trim())
+        .slice(-6)
+        .map((entry) => ({
+          role: entry.role === "ghost" ? "ghost" : "user",
+          text: String(entry.text).trim(),
+        }))
+    : [];
+
   const db = getDb();
 
   const knowledgeSnap = await db
@@ -70,11 +82,11 @@ export const ghostAgent = onCall(async (request) => {
       .update({ usageCount: FieldValue.increment(1), updatedAt: new Date().toISOString() });
 
     const response: GhostAgentResponse = {
-      answer: bestMatch.answer,
+      answer: formatConversationalAnswer(bestMatch.answer, contextSummary, history),
       usedWebSearch: false,
       sources: bestMatch.sources,
       knowledgeEntryId: bestMatch.id,
-      suggestedFollowUp: "¿Quieres que actualice esta respuesta con una búsqueda web?",
+      suggestedFollowUp: undefined,
     };
 
     await persistAgentSession(db, organizationId, sessionId, request.auth.uid, message, response);
@@ -86,19 +98,23 @@ export const ghostAgent = onCall(async (request) => {
   let usedWebSearch = false;
 
   if (allowWebSearch) {
-    const web = await searchWeb(`${message} café especialidad Colombia`);
+    const enrichedQuery = [message, contextSummary ? `Contexto: ${contextSummary}` : ""]
+      .filter(Boolean)
+      .join(" · ");
+    const web = await searchWeb(`${enrichedQuery} café especialidad Colombia`);
     if (web) {
-      answer = `${GHOST_AGENT_SYSTEM_CONTEXT}\n\n${web.answer}`;
+      answer = formatConversationalAnswer(
+        `${GHOST_AGENT_SYSTEM_CONTEXT}\n\n${web.answer}`,
+        contextSummary,
+        history,
+      );
       sources = web.sources;
       usedWebSearch = true;
     }
   }
 
   if (!answer) {
-    answer =
-      "No encontré una respuesta confiable todavía. " +
-      "Configura TAVILY_API_KEY en Functions para búsqueda web ampliada, " +
-      "o reformula la pregunta con más contexto de Ghost (insumo, bebida, proveedor).";
+    answer = buildFallbackAnswer(message, contextSummary, history);
   }
 
   const knowledgeRef = db
@@ -125,14 +141,69 @@ export const ghostAgent = onCall(async (request) => {
     usedWebSearch,
     sources,
     knowledgeEntryId: knowledgeRef.id,
-    suggestedFollowUp: usedWebSearch
-      ? "Guardé esta respuesta para evolucionar el agente interno."
-      : undefined,
+    suggestedFollowUp: undefined,
   };
 
   await persistAgentSession(db, organizationId, sessionId, request.auth.uid, message, response);
   return response;
 });
+
+function formatHistory(history: Array<{ role: string; text: string }>): string {
+  if (history.length === 0) {
+    return "";
+  }
+
+  return history
+    .map((entry) => `${entry.role === "ghost" ? "Ghost" : "Usuario"}: ${entry.text}`)
+    .join("\n");
+}
+
+function formatConversationalAnswer(
+  base: string,
+  contextSummary: string,
+  history: Array<{ role: string; text: string }>,
+): string {
+  const historyBlock = formatHistory(history);
+  const parts = [base.trim()];
+
+  if (contextSummary && /operacion|inventario|caja|mesa|compra|costo/i.test(base)) {
+    parts.push(`\n\n_Contexto actual:_\n${contextSummary}`);
+  }
+
+  if (historyBlock && base.length < 400) {
+    parts.push(`\n\n_Sigo contigo en la conversación._`);
+  }
+
+  return parts.join("");
+}
+
+function buildFallbackAnswer(
+  message: string,
+  contextSummary: string,
+  history: Array<{ role: string; text: string }>,
+): string {
+  const normalized = normalizeAgentQuestion(message);
+
+  if (contextSummary && /(como va|estado|resumen|operacion)/.test(normalized)) {
+    return `Según lo que veo ahora:\n${contextSummary}\n\n¿Quieres que registre una compra, abra caja o revise algo específico?`;
+  }
+
+  if (/^(hola|buenas|buenos|hey|gracias)/.test(normalized)) {
+    return contextSummary
+      ? `¡Hola! Estoy contigo. ${contextSummary.split("\n")[0]}. ¿Qué hacemos?`
+      : "¡Hola! Cuéntame qué necesitas en la operación y lo resolvemos.";
+  }
+
+  const historyHint = formatHistory(history);
+  const hint = historyHint ? `\n\nRecuerdo lo último que hablamos.` : "";
+
+  return (
+    "Puedo ayudarte con compras, inventario, costos, ventas y comandas. " +
+    "Dime qué quieres hacer en una frase, por ejemplo: «registra factura de proveedor por café» " +
+    "o «vende un cappuccino en efectivo»." +
+    hint
+  );
+}
 
 async function persistAgentSession(
   db: Firestore,

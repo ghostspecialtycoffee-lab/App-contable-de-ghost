@@ -256,6 +256,11 @@ export async function executeGhostChatAction(
         message: action.payload.message,
         sessionId: action.payload.sessionId,
         allowWebSearch: true,
+        contextSummary: action.payload.contextSummary,
+        history: action.payload.history?.map((entry) => ({
+          role: entry.speaker === "user" ? "user" : "ghost",
+          text: entry.text,
+        })),
       });
       const sources =
         response.sources.length > 0
