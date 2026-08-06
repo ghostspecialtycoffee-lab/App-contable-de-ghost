@@ -1,6 +1,7 @@
-import type { BaseUnit, InventoryCostProfile, RecipeLineInput } from "@ghost/domain";
+import type { BaseUnit, InventoryCostProfile, MenuCategory, RecipeLineInput } from "@ghost/domain";
 import {
-  calculateRecipeCostPerPortion,
+  calculatePastryPortionCost,
+  calculateRecipeBatchCost,
   type InventoryItem,
 } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -50,6 +51,7 @@ export async function saveRecipeClient(input: {
   menuProductId: string;
   menuProductName: string;
   yieldQuantity?: number;
+  category?: MenuCategory;
   lines: RecipeLineInput[];
 }): Promise<{ recipeId: string; recipeCost: number }> {
   const userId = requireUserId();
@@ -61,6 +63,14 @@ export async function saveRecipeClient(input: {
   }
 
   const db = getFirestoreDb();
+  const productRef = doc(
+    db,
+    firestorePaths.organizationMenuProduct(organizationId, input.menuProductId),
+  );
+  const productSnap = await getDoc(productRef);
+  const category =
+    input.category ?? (productSnap.data()?.category as MenuCategory | undefined) ?? "other";
+
   const itemProfiles: Record<string, InventoryCostProfile> = {};
 
   for (const line of lines) {
@@ -86,11 +96,12 @@ export async function saveRecipeClient(input: {
     };
   }
 
-  const recipeCost = calculateRecipeCostPerPortion(
-    lines,
-    itemProfiles,
-    input.yieldQuantity,
-  );
+  const batchCost = calculateRecipeBatchCost(lines, itemProfiles);
+  const recipeCost = calculatePastryPortionCost({
+    batchCostNet: batchCost,
+    yieldQuantity: input.yieldQuantity,
+    category,
+  });
   const existingQuery = query(
     collection(db, firestorePaths.organizationRecipes(organizationId)),
     where("menuProductId", "==", input.menuProductId),
@@ -120,10 +131,6 @@ export async function saveRecipeClient(input: {
     updatedBy: userId,
   });
 
-  const productRef = doc(
-    db,
-    firestorePaths.organizationMenuProduct(organizationId, input.menuProductId),
-  );
   await setDoc(
     productRef,
     {

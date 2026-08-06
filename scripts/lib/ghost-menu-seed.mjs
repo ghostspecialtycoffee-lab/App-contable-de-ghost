@@ -7,6 +7,7 @@ const CATALOG_PATH = join(__dirname, "../../data/initial-load/ghost-menu-catalog
 
 const MILK_BOTTLE_ML = 1000;
 const WATER_BOTTLE_ML = 600;
+const PASTRY_DOMICILIO_ALLOCATION_COP = 10_000;
 
 export function loadGhostMenuCatalog(manifestPath = CATALOG_PATH) {
   return JSON.parse(readFileSync(manifestPath, "utf8"));
@@ -272,6 +273,13 @@ function calculateRecipeCost(lines, itemById) {
   }, 0);
 }
 
+function calculatePortionCost(batchCost, yieldQty, category) {
+  if (category !== "pastry" || batchCost <= 0 || yieldQty <= 0) {
+    return Math.round(batchCost / yieldQty);
+  }
+  return Math.round((batchCost + PASTRY_DOMICILIO_ALLOCATION_COP) / yieldQty);
+}
+
 async function saveRecipe(db, FieldValue, organizationId, actorUserId, input) {
   const lines = input.lines.filter((line) => line.quantity > 0);
   if (lines.length === 0) return null;
@@ -296,7 +304,11 @@ async function saveRecipe(db, FieldValue, organizationId, actorUserId, input) {
   const yieldQty = normalizeYieldQuantity(
     input.yieldQuantity ?? suggestRecipeYield(input.menuProductName),
   );
-  const recipeCost = Math.round(batchCost / yieldQty);
+  const productSnap = await db
+    .doc(`organizations/${organizationId}/menuProducts/${input.menuProductId}`)
+    .get();
+  const category = input.category ?? productSnap.data()?.category ?? "other";
+  const recipeCost = calculatePortionCost(batchCost, yieldQty, category);
   const existing = await db
     .collection(`organizations/${organizationId}/recipes`)
     .where("menuProductId", "==", input.menuProductId)

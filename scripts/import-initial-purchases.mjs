@@ -498,8 +498,11 @@ async function createMenuProductsFromFinished(
     const station = inferMenuStation(menuCategory);
     const saleTaxCategory = inferSaleTaxCategory(entry.name, menuCategory);
     const yieldQuantity = suggestRecipeYield(entry.name);
-    const portionCost = Math.round(entry.unitCostNet / yieldQuantity);
-    const price = roundSalePrice(portionCost);
+    const isPastry = menuCategory === "pastry";
+    const portionCost = Math.round(
+      (entry.unitCostNet + (isPastry ? 10000 : 0)) / yieldQuantity,
+    );
+    const price = isPastry ? 0 : roundSalePrice(portionCost);
     const ref = db.collection(`organizations/${organizationId}/menuProducts`).doc();
     const now = FieldValue.serverTimestamp();
 
@@ -509,8 +512,10 @@ async function createMenuProductsFromFinished(
       price,
       category: menuCategory,
       station,
-      description: `Importado desde compras · costo ref. ${entry.unitCostNet}`,
-      status: "active",
+      description: isPastry
+        ? `Repostería · factura ${entry.unitCostNet} + domicilio ÷ ${yieldQuantity} porciones. Define tu precio de venta.`
+        : `Importado desde compras · costo ref. ${entry.unitCostNet}`,
+      status: isPastry ? "inactive" : "active",
       sortOrder,
       saleTaxCategory,
       recipeCost: portionCost,
