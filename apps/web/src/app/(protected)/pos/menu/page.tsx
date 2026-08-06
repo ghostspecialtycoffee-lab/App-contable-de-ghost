@@ -33,7 +33,7 @@ import {
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
   PASTRY_DOMICILIO_ALLOCATION_COP,
-  suggestRecipeYield,
+  suggestRecipeYieldForProduct,
   type BaseUnit,
   type CoTaxCategory,
   type KitchenStation,
@@ -102,10 +102,10 @@ export default function PosMenuPage() {
   useEffect(() => {
     if (name.trim()) {
       setYieldQuantity((current) =>
-        current <= 1 ? suggestRecipeYield(name) : current,
+        current <= 1 ? suggestRecipeYieldForProduct(name, category) : current,
       );
     }
-  }, [name]);
+  }, [name, category]);
 
   const suggestedTaxCategory = useMemo(() => {
     const containsCoffeeIngredient = recipeLines.some((line) => {
@@ -180,7 +180,7 @@ export default function PosMenuPage() {
       quantity: lineDefaultQuantity(item.baseUnit as BaseUnit),
     });
 
-    const suggested = suggestRecipeYield(item.name);
+    const suggested = suggestRecipeYieldForProduct(item.name, category);
     if (suggested > 1) {
       setYieldQuantity((current) => (current <= 1 ? suggested : current));
     }
@@ -481,6 +481,7 @@ export default function PosMenuPage() {
             <div className="space-y-2 border-t border-[var(--ghost-border)] pt-3">
               <RecipeYieldField
                 productName={name || "Producto"}
+                category={category}
                 value={yieldQuantity}
                 onChange={setYieldQuantity}
                 ingredientNames={recipeLines.map((line) => line.itemName).filter(Boolean)}

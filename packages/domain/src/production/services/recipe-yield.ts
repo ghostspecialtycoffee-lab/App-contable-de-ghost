@@ -4,12 +4,19 @@ import type { BaseUnit } from "../../inventory/units.js";
 import type { Recipe, RecipeLine } from "../recipe.js";
 import { calculateRecipeCost } from "./recipe-cost.js";
 
+import type { MenuCategory } from "../../pos/menu-product.js";
+
 export const RECIPE_YIELD_PRESETS = [
   { value: 1, label: "Unidad", hint: "Se vende el lote completo (1:1)" },
-  { value: 8, label: "8 porciones", hint: "Tarta mediana u octavo" },
+  { value: 6, label: "6 porciones", hint: "Porciones individuales" },
+  { value: 8, label: "8 porciones", hint: "Brownies, galletas o croissants" },
+  { value: 10, label: "10 porciones", hint: "Pan o enrollados" },
   { value: 12, label: "12 porciones", hint: "Torta estándar" },
   { value: 16, label: "16 porciones", hint: "Torta grande" },
 ] as const;
+
+/** Porciones por defecto para repostería sin regla por nombre. */
+export const DEFAULT_PASTRY_YIELD = 12;
 
 export function normalizeYieldQuantity(value: number | undefined): number {
   const next = Number(value ?? 1);
@@ -30,7 +37,7 @@ export function suggestRecipeYield(name: string): number {
   if (/torta|tarta|cheesecake|pastel/.test(normalized)) {
     return 12;
   }
-  if (/brownie|galleta/.test(normalized)) {
+  if (/brownie|galleta|croissant|muffin|donut|dona|alfajor/.test(normalized)) {
     return 8;
   }
   if (/pan\b|enrollado/.test(normalized)) {
@@ -40,8 +47,51 @@ export function suggestRecipeYield(name: string): number {
   return 1;
 }
 
-export function isPortionBasedProduct(name: string, yieldQuantity = 1): boolean {
-  return normalizeYieldQuantity(yieldQuantity) > 1 || suggestRecipeYield(name) > 1;
+/** Sugiere porciones según nombre y categoría (repostería → 12 si no hay regla). */
+export function suggestRecipeYieldForProduct(
+  name: string,
+  category?: MenuCategory,
+): number {
+  const fromName = suggestRecipeYield(name);
+  if (fromName > 1) {
+    return fromName;
+  }
+
+  if (category === "pastry") {
+    return DEFAULT_PASTRY_YIELD;
+  }
+
+  return 1;
+}
+
+/**
+ * Resuelve porciones para guardar en receta.
+ * Respeta el valor guardado; si no hay, sugiere según producto.
+ */
+export function resolveRecipeYieldQuantity(input: {
+  productName: string;
+  category?: MenuCategory;
+  savedYield?: number;
+}): number {
+  if (input.savedYield !== undefined && input.savedYield !== null) {
+    const saved = normalizeYieldQuantity(input.savedYield);
+    if (saved >= 1) {
+      return saved;
+    }
+  }
+
+  return suggestRecipeYieldForProduct(input.productName, input.category);
+}
+
+export function isPortionBasedProduct(
+  name: string,
+  yieldQuantity = 1,
+  category?: MenuCategory,
+): boolean {
+  return (
+    normalizeYieldQuantity(yieldQuantity) > 1 ||
+    suggestRecipeYieldForProduct(name, category) > 1
+  );
 }
 
 export function calculateRecipeBatchCost(

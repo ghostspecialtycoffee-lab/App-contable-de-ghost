@@ -1,5 +1,5 @@
 import type { BaseUnit, InventoryItemType, MenuCategory, RecipeLineInput } from "@ghost/domain";
-import { suggestRecipeYield } from "@ghost/domain";
+import { resolveRecipeYieldQuantity } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 
@@ -37,6 +37,7 @@ type MenuProductRow = {
 type RecipeRow = {
   menuProductId: string;
   lines: RecipeLineInput[];
+  yieldQuantity?: number;
 };
 
 export interface SeedCostMatrixResult {
@@ -406,6 +407,7 @@ async function loadRecipes(organizationId: string): Promise<RecipeRow[]> {
     return {
       menuProductId: String(data.menuProductId ?? ""),
       lines: (data.lines ?? []) as RecipeLineInput[],
+      yieldQuantity: Number(data.yieldQuantity ?? 1),
     };
   });
 }
@@ -505,8 +507,11 @@ export async function seedCostMatrixClient(): Promise<SeedCostMatrixResult> {
       continue;
     }
 
-    const yieldQuantity =
-      product.category === "pastry" ? suggestRecipeYield(product.name) : 1;
+    const yieldQuantity = resolveRecipeYieldQuantity({
+      productName: product.name,
+      category: product.category,
+      savedYield: existing?.yieldQuantity,
+    });
 
     await saveRecipeClient({
       menuProductId: product.id,

@@ -26,13 +26,12 @@ import {
   calculatePastryPortionCost,
   calculateRecipeBatchCost,
   calculateRecipeCostBreakdown,
-  calculateRecipeCostPerPortion,
   calculateRecipeLineCost,
   getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
   PASTRY_DOMICILIO_ALLOCATION_COP,
-  suggestRecipeYield,
+  suggestRecipeYieldForProduct,
   type BaseUnit,
   type CoTaxCategory,
   type RecipeLineInput,
@@ -98,7 +97,9 @@ export default function CostingPage() {
       setYieldQuantity(selectedRecipe.yieldQuantity || 1);
     } else {
       setRecipeLines([emptyRecipeLine()]);
-      setYieldQuantity(suggestRecipeYield(selectedProduct.name));
+      setYieldQuantity(
+        suggestRecipeYieldForProduct(selectedProduct.name, selectedProduct.category),
+      );
     }
 
     setSubmitError(null);
@@ -225,7 +226,10 @@ export default function CostingPage() {
       quantity: lineDefaultQuantity(item.baseUnit as BaseUnit),
     });
 
-    const suggested = suggestRecipeYield(item.name);
+    const suggested = suggestRecipeYieldForProduct(
+      item.name,
+      selectedProduct?.category,
+    );
     if (suggested > 1) {
       setYieldQuantity((current) => (current <= 1 ? suggested : current));
     }
@@ -497,6 +501,7 @@ export default function CostingPage() {
 
                 <RecipeYieldField
                   productName={selectedProduct.name}
+                  category={selectedProduct.category}
                   value={yieldQuantity}
                   onChange={setYieldQuantity}
                   ingredientNames={validRecipeLines.map((line) => line.itemName).filter(Boolean)}

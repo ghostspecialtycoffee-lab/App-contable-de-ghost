@@ -1,5 +1,5 @@
 import type { BaseUnit, CoTaxCategory, KitchenStation, MenuCategory } from "@ghost/domain";
-import { suggestRecipeYield } from "@ghost/domain";
+import { calculatePastryPortionCost, resolveRecipeYieldQuantity } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
 
@@ -317,12 +317,20 @@ export async function runBootstrapPurchaseImport(input: {
   let sortOrder = 0;
   for (const entry of finishedProducts.values()) {
     const menuCategory = inferMenuCategory(entry.name);
-    const yieldQuantity = suggestRecipeYield(entry.name);
+    const yieldQuantity = resolveRecipeYieldQuantity({
+      productName: entry.name,
+      category: menuCategory,
+    });
     const isPastry = menuCategory === "pastry";
+    const portionCost = calculatePastryPortionCost({
+      batchCostNet: entry.unitCostNet,
+      yieldQuantity,
+      category: menuCategory,
+    });
 
     await createMenuProduct({
       name: entry.name,
-      price: isPastry ? 0 : roundSalePrice(Math.round(entry.unitCostNet / yieldQuantity)),
+      price: isPastry ? 0 : roundSalePrice(portionCost),
       category: menuCategory,
       station: inferMenuStation(menuCategory),
       status: isPastry ? "inactive" : "active",

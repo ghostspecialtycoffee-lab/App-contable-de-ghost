@@ -2,12 +2,16 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  calculatePastryPortionCost,
+  resolveRecipeYieldQuantity,
+} from "./recipe-yield.mjs";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CATALOG_PATH = join(__dirname, "../../data/initial-load/ghost-menu-catalog.json");
 
 const MILK_BOTTLE_ML = 1000;
 const WATER_BOTTLE_ML = 600;
-const PASTRY_DOMICILIO_ALLOCATION_COP = 10_000;
 
 export function loadGhostMenuCatalog(manifestPath = CATALOG_PATH) {
   return JSON.parse(readFileSync(manifestPath, "utf8"));
@@ -20,29 +24,6 @@ export function normalizeCatalogName(value) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, " ");
-}
-
-/** Tortas → 12 porciones; brownies/galletas → 8; etc. */
-export function suggestRecipeYield(name) {
-  const normalized = normalizeCatalogName(name);
-  if (/torta|tarta|cheesecake|pastel/.test(normalized)) {
-    return 12;
-  }
-  if (/brownie|galleta/.test(normalized)) {
-    return 8;
-  }
-  if (/pan\b|enrollado/.test(normalized)) {
-    return 10;
-  }
-  return 1;
-}
-
-function normalizeYieldQuantity(value) {
-  const next = Number(value ?? 1);
-  if (!Number.isFinite(next) || next <= 0) {
-    return 1;
-  }
-  return Math.round(next * 1000) / 1000;
 }
 
 const PRODUCT_CATALOG_ALIASES = {
@@ -273,13 +254,6 @@ function calculateRecipeCost(lines, itemById) {
   }, 0);
 }
 
-function calculatePortionCost(batchCost, yieldQty, category) {
-  if (category !== "pastry" || batchCost <= 0 || yieldQty <= 0) {
-    return Math.round(batchCost / yieldQty);
-  }
-  return Math.round((batchCost + PASTRY_DOMICILIO_ALLOCATION_COP) / yieldQty);
-}
-
 async function saveRecipe(db, FieldValue, organizationId, actorUserId, input) {
   const lines = input.lines.filter((line) => line.quantity > 0);
   if (lines.length === 0) return null;
@@ -301,19 +275,26 @@ async function saveRecipe(db, FieldValue, organizationId, actorUserId, input) {
   }
 
   const batchCost = calculateRecipeCost(lines, itemById);
-  const yieldQty = normalizeYieldQuantity(
-    input.yieldQuantity ?? suggestRecipeYield(input.menuProductName),
-  );
   const productSnap = await db
     .doc(`organizations/${organizationId}/menuProducts/${input.menuProductId}`)
     .get();
   const category = input.category ?? productSnap.data()?.category ?? "other";
-  const recipeCost = calculatePortionCost(batchCost, yieldQty, category);
   const existing = await db
     .collection(`organizations/${organizationId}/recipes`)
     .where("menuProductId", "==", input.menuProductId)
     .limit(1)
     .get();
+  const existingData = existing.empty ? null : existing.docs[0].data();
+  const yieldQty = resolveRecipeYieldQuantity({
+    productName: input.menuProductName,
+    category,
+    savedYield: input.yieldQuantity ?? existingData?.yieldQuantity,
+  });
+  const recipeCost = calculatePastryPortionCost({
+    batchCostNet: batchCost,
+    yieldQuantity: yieldQty,
+    category,
+  });
 
   const recipeRef = existing.empty
     ? db.collection(`organizations/${organizationId}/recipes`).doc()
@@ -615,6 +596,8 @@ export async function applyMenuPricesAndCostMatrix(db, FieldValue, input) {
       menuProductId: product.id,
       menuProductName: catalogSpec.name,
       lines,
+      category: catalogSpec.category,
+      yieldQuantity: existing?.yieldQuantity,
     });
 
     if (existing?.lines?.length > 0) {
@@ -697,7 +680,8 @@ export async function applyPastryCostMatrix(db, FieldValue, input) {
       menuProductId: product.id,
       menuProductName: product.name,
       lines,
-      yieldQuantity: suggestRecipeYield(product.name),
+      category: "pastry",
+      yieldQuantity: existing?.yieldQuantity,
     });
 
     if (existing?.lines?.length > 0) {

@@ -1,7 +1,7 @@
 import type { MenuCategory } from "../pos/menu-product.js";
 import {
   normalizeYieldQuantity,
-  suggestRecipeYield,
+  suggestRecipeYieldForProduct,
 } from "../production/services/recipe-yield.js";
 
 /** Domicilio fijo sumado al costo del lote de repostería (torta completa). */
@@ -21,7 +21,7 @@ export function getCostMatrixSalePrice(input: {
 
 /** Rendimiento por defecto para fichas de repostería (tortas → 12 porciones). */
 export function getPastryRecipeYield(productName: string): number {
-  return suggestRecipeYield(productName);
+  return suggestRecipeYieldForProduct(productName, "pastry");
 }
 
 /**
