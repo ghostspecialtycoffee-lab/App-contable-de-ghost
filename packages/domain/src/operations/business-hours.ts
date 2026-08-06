@@ -73,8 +73,15 @@ export function weekdayFromDate(date: Date, timezone: string): Weekday {
 }
 
 export function minutesUntilTime(now: Date, targetTime: string, timezone: string): number | null {
-  const [hours, minutes] = targetTime.split(":").map(Number);
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+  const timeParts = targetTime.split(":").map(Number);
+  const hours = timeParts[0];
+  const minutes = timeParts[1];
+  if (
+    hours === undefined ||
+    minutes === undefined ||
+    !Number.isFinite(hours) ||
+    !Number.isFinite(minutes)
+  ) {
     return null;
   }
 
