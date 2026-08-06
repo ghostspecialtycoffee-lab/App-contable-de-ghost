@@ -277,12 +277,17 @@ export default function CostingPage() {
         menuProductId: selectedProduct.id,
         menuProductName: selectedProduct.name,
         yieldQuantity,
+        category: selectedProduct.category,
         lines: validLines,
       });
 
       setSaveMessage(
         `Ficha guardada. Costo por porción: ${formatMoney(result.recipeCost)}` +
-          (yieldQuantity > 1 ? ` (lote ${formatMoney(previewBatchCost)} ÷ ${yieldQuantity})` : "") +
+          (yieldQuantity > 1
+            ? selectedProduct.category === "pastry"
+              ? ` (factura ${formatMoney(previewBatchCost)} + ${formatMoney(PASTRY_DOMICILIO_ALLOCATION_COP)} domicilio ÷ ${yieldQuantity})`
+              : ` (lote ${formatMoney(previewBatchCost)} ÷ ${yieldQuantity})`
+            : "") +
           ".",
       );
     } catch (cause) {
