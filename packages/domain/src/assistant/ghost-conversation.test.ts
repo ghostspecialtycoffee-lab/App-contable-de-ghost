@@ -121,6 +121,55 @@ describe("ghost-conversation", () => {
     }
   });
 
+  it("distingue factura de venta al cliente vs compra a proveedor", () => {
+    const sale = processConversationTurn({
+      message: "factura 2 dirty chai en efectivo",
+      session: createEmptyGhostChatSession(),
+      context: {
+        ...baseContext,
+        cashSessionOpen: true,
+      },
+    });
+
+    expect(sale.kind).toBe("execute");
+    if (sale.kind === "execute") {
+      expect(sale.intent).toBe("create-counter-sale");
+      expect(sale.draft.productId).toBe("prod-2");
+      expect(sale.draft.quantity).toBe("2");
+      expect(sale.draft.documentType).toBe("factura");
+    }
+
+    const purchase = processConversationTurn({
+      message: "registra factura de compra del proveedor Distritcafé por café caturra",
+      session: createEmptyGhostChatSession(),
+      context: baseContext,
+    });
+
+    expect(purchase.kind).toBe("reply");
+    if (purchase.kind === "reply") {
+      expect(purchase.session.pendingIntent).toBe("create-purchase-invoice");
+    }
+  });
+
+  it("factura al cliente con nombre", () => {
+    const result = processConversationTurn({
+      message: "factura al cliente Juan 1 latte tarjeta",
+      session: createEmptyGhostChatSession(),
+      context: {
+        ...baseContext,
+        cashSessionOpen: true,
+      },
+    });
+
+    expect(result.kind).toBe("execute");
+    if (result.kind === "execute") {
+      expect(result.intent).toBe("create-counter-sale");
+      expect(result.draft.customerName).toMatch(/Juan/i);
+      expect(result.draft.paymentMethod).toBe("card");
+      expect(result.draft.documentType).toBe("factura");
+    }
+  });
+
   it("deriva preguntas abiertas al agente", () => {
     const result = processConversationTurn({
       message: "¿qué ratio de extracción recomiendas para espresso?",

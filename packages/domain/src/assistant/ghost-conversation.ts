@@ -257,14 +257,108 @@ function isExplicitOpenTable(normalized: string): boolean {
   return /(abrir mesa|abre la mesa|abre mesa)/.test(normalized);
 }
 
+function isPurchaseInvoiceMessage(
+  normalized: string,
+  message: string,
+  context: GhostConversationContext,
+): boolean {
+  if (mentionsTable(message)) {
+    return false;
+  }
+
+  if (isCustomerSaleMessage(normalized, message, context)) {
+    return false;
+  }
+
+  if (
+    /(proveedor|registr.*compra|compre|llego.*compra|factura de compra|compra de|compra a)/.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+
+  const inventory = findByName(message, context.inventoryItems);
+  const product = findByName(message, context.menuProducts);
+
+  if (/factura/.test(normalized) && inventory && !product) {
+    return true;
+  }
+
+  return false;
+}
+
+function isCustomerSaleMessage(
+  normalized: string,
+  message: string,
+  context: GhostConversationContext,
+): boolean {
+  if (mentionsTable(message)) {
+    return false;
+  }
+
+  if (isTableCheckoutMessage(normalized, message)) {
+    return false;
+  }
+
+  if (/(proveedor|factura de compra|compra de|compra a|registr.*compra)/.test(normalized)) {
+    return false;
+  }
+
+  const product = findByName(message, context.menuProducts);
+
+  if (/(factura de venta|facturar|factura al|emite factura|cuenta de cobro)/.test(normalized)) {
+    return true;
+  }
+
+  if (product && /factura/.test(normalized)) {
+    return true;
+  }
+
+  if (
+    product &&
+    /(vend|cobra|cobro|mostrador|venta de|para llevar|dame|quiero|un |una |dos |tres )/.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+
+  if (!product && /(vend|cobra|mostrador|venta de)/.test(normalized)) {
+    return true;
+  }
+
+  return false;
+}
+
 function parseDocumentType(message: string): string | null {
   const normalized = normalizeText(message);
+  if (/(factura de compra|compra a proveedor)/.test(normalized)) {
+    return null;
+  }
   if (/(cuenta de cobro|cuenta cobro)/.test(normalized)) {
     return "cuenta_cobro";
   }
-  if (/(factura de venta|factura|comprobante)/.test(normalized)) {
+  if (/(factura de venta|facturar|factura|comprobante)/.test(normalized)) {
     return "factura";
   }
+  return null;
+}
+
+function extractCustomerName(message: string): string | null {
+  const patterns = [
+    /(?:cliente|a nombre de|para)\s+([A-Za-záéíóúÁÉÍÓÚñÑ][A-Za-záéíóúÁÉÍÓÚñÑ\s]{1,40})/i,
+    /factura\s+(?:al|para el|para la)\s+cliente\s+([A-Za-záéíóúÁÉÍÓÚñÑ][A-Za-záéíóúÁÉÍÓÚñÑ\s]{1,40})/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = message.match(pattern);
+    const name = match?.[1]?.trim();
+    if (name && !/^(efectivo|tarjeta|transferencia|mesa|un|una|dos|tres|\d+)/i.test(name)) {
+      return name;
+    }
+  }
+
   return null;
 }
 
@@ -375,7 +469,6 @@ function inferBaseUnit(name: string): string {
 
 function classifyIntent(message: string, context: GhostConversationContext): GhostConversationIntent {
   const normalized = normalizeText(message);
-  const mentionedProduct = findByName(message, context.menuProducts);
   const mentionedInventory = findByName(message, context.inventoryItems);
 
   if (/(como vamos|estado|resumen|que tal|operacion|status)/.test(normalized)) {
@@ -393,31 +486,23 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
   if (isTableOrderMessage(normalized, message, context)) {
     return "add-table-order";
   }
-  if (
-    /(factura|proveedor|registr.*compra|compre|llego.*compra)/.test(normalized) &&
-    !mentionsTable(message)
-  ) {
+  if (isCustomerSaleMessage(normalized, message, context)) {
+    return "create-counter-sale";
+  }
+  if (isPurchaseInvoiceMessage(normalized, message, context)) {
     return "create-purchase-invoice";
   }
   if (
     /(nuevo insumo|agregar insumo|crear insumo|anadir insumo)/.test(normalized) ||
     (/(agrega|crea|anota)\s+/i.test(message) &&
       mentionedInventory &&
-      !mentionedProduct &&
+      !findByName(message, context.menuProducts) &&
       !mentionsTable(message))
   ) {
     return "create-inventory-item";
   }
   if (/(nuevo producto|agregar.*catalogo|producto en menu)/.test(normalized)) {
     return "create-menu-product";
-  }
-  if (
-    (/(vend|cobra|cobro|mostrador|venta de)/.test(normalized) ||
-      (mentionedProduct &&
-        /(quiero|dame|un |una |dos |tres |cobr|vend|para llevar)/.test(normalized))) &&
-    !mentionsTable(message)
-  ) {
-    return "create-counter-sale";
   }
   if (isExplicitOpenTable(normalized)) {
     return "open-table";
@@ -462,7 +547,9 @@ function extractDraftForIntent(
     const proveedorExplicit = /proveedor/i.test(message);
     const supplierMatch =
       message.match(/proveedor\s+([^,.\n]{2,40})/i) ??
-      message.match(/factura\s+(?:de|del)\s+([^,.\n]{2,40})/i);
+      (/(factura de compra|compra a)/i.test(message)
+        ? message.match(/(?:compra a|factura de compra(?:\s+de)?)\s+([^,.\n]{2,40})/i)
+        : null);
     if (supplierMatch?.[1] && (!draft.supplierName || proveedorExplicit)) {
       draft.supplierName = supplierMatch[1].trim();
     }
@@ -516,16 +603,39 @@ function extractDraftForIntent(
       draft.productId = product.id;
       draft.productName = product.name;
     }
-    const qtyMatch = message.match(/(\d+)\s*(unidades|uds|x)?/i);
-    if (qtyMatch?.[1]) {
-      draft.quantity = qtyMatch[1];
+
+    const quantity = extractQuantity(message);
+    if (quantity) {
+      draft.quantity = quantity;
     }
     draft.quantity = draft.quantity || "1";
+
     const payment = parsePaymentMethod(message);
     if (payment) {
       draft.paymentMethod = payment;
     }
     draft.paymentMethod = draft.paymentMethod || "cash";
+
+    const documentType = parseDocumentType(message);
+    if (documentType) {
+      draft.documentType = documentType;
+    } else if (/(factur|comprobante|cuenta de cobro)/i.test(message)) {
+      draft.documentType = "factura";
+    }
+
+    const customerName = extractCustomerName(message);
+    if (customerName) {
+      draft.customerName = customerName;
+    }
+
+    if (/(^|\s)(no|sin correo|no enviar)(\s|$)/i.test(normalized)) {
+      draft.customerEmail = "skip";
+    }
+
+    const email = extractEmail(message);
+    if (email) {
+      draft.customerEmail = email;
+    }
   }
 
   if (intent === "open-table") {
@@ -720,8 +830,15 @@ function acknowledgeExecution(intent: GhostConversationIntent, draft: Record<str
       return `Agrego **${draft.name}** al catálogo.`;
     case "open-cash-session":
       return `Abro caja con **$${Number(draft.openingAmount || 0).toLocaleString("es-CO")}**.`;
-    case "create-counter-sale":
-      return `Registro la venta de **${draft.productName ?? "producto"}**.`;
+    case "create-counter-sale": {
+      const documentLabel =
+        draft.documentType === "cuenta_cobro" ? "Cuenta de cobro" : "Factura de venta";
+      const customer = draft.customerName ? ` para **${draft.customerName}**` : "";
+      if (draft.documentType) {
+        return `Emito ${documentLabel} de **${draft.quantity ?? "1"} × ${draft.productName ?? "producto"}**${customer} y registro el cobro.`;
+      }
+      return `Registro la venta de **${draft.quantity ?? "1"} × ${draft.productName ?? "producto"}**${customer}.`;
+    }
     case "open-table":
       return `Abro la **mesa ${draft.tableNumber}**.`;
     case "add-table-order":
@@ -803,7 +920,7 @@ function buildPendingReply(
   }
 
   if (intent === "create-counter-sale") {
-    return `Te ayudo con la venta. ${question}`;
+    return `Te ayudo con la venta al cliente. ${question}`;
   }
 
   return `Perfecto. ${question}`;
