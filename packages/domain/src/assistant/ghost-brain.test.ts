@@ -16,6 +16,11 @@ describe("ghost brain registry", () => {
     expect(classifyBrainQueryIntent("ventas de hoy")).toBe("query-sales-report");
     expect(classifyBrainQueryIntent("ayuda")).toBe("brain-help");
     expect(classifyBrainQueryIntent("estado de caja")).toBe("query-cash-summary");
+    expect(classifyBrainQueryIntent("inventario bajo minimo")).toBe("query-inventory-low-stock");
+    expect(classifyBrainQueryIntent("gastos fijos")).toBe("query-fixed-expenses");
+    expect(classifyBrainQueryIntent("turnos de hoy")).toBe("query-work-shifts");
+    expect(classifyBrainQueryIntent("estado de comandas")).toBe("query-kitchen-status");
+    expect(classifyBrainQueryIntent("informe de compras del mes")).toBe("query-purchases-report");
   });
 
   it("genera guía con ejemplos", () => {
@@ -57,6 +62,9 @@ describe("brain sales response", () => {
         },
       ],
       purchasesSnapshot: [],
+      inventoryStockSnapshot: [],
+      fixedExpensesSnapshot: [],
+      workShiftsSnapshot: [],
     };
 
     const reply = buildSalesReportReply(context);
