@@ -15,6 +15,7 @@ import {
   runTransaction,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
 } from "firebase/firestore";
 
@@ -114,6 +115,76 @@ export async function createInventoryItemClient(input: {
   });
 
   return { itemId: itemRef.id };
+}
+
+export async function updateInventoryItemClient(input: {
+  itemId: string;
+  purchaseUnit?: string;
+  presentationQuantity?: number;
+  presentationLabel?: string;
+  name?: string;
+  category?: string;
+  minStock?: number;
+  maxStock?: number;
+  status?: string;
+}): Promise<void> {
+  const userId = requireUserId();
+  const organizationId = await getOrganizationIdFromProfile();
+  const itemRef = doc(
+    getFirestoreDb(),
+    firestorePaths.organizationInventoryItem(organizationId, input.itemId),
+  );
+  const itemSnap = await getDoc(itemRef);
+
+  if (!itemSnap.exists()) {
+    throw new Error("Ítem no encontrado.");
+  }
+
+  const patch: Record<string, unknown> = {
+    updatedAt: serverTimestamp(),
+    updatedBy: userId,
+  };
+
+  if (input.name !== undefined) {
+    const name = input.name.trim();
+    if (name.length < 2) {
+      throw new Error("El nombre es obligatorio.");
+    }
+    patch.name = name;
+  }
+
+  if (input.category !== undefined) {
+    patch.category = input.category;
+  }
+
+  if (input.minStock !== undefined) {
+    patch.minStock = input.minStock;
+  }
+
+  if (input.maxStock !== undefined) {
+    patch.maxStock = input.maxStock;
+  }
+
+  if (input.status !== undefined) {
+    patch.status = input.status;
+  }
+
+  if (input.purchaseUnit !== undefined) {
+    patch.purchaseUnit = input.purchaseUnit;
+  }
+
+  if (input.presentationQuantity !== undefined) {
+    if (!Number.isFinite(input.presentationQuantity) || input.presentationQuantity <= 0) {
+      throw new Error("La cantidad por unidad debe ser mayor que cero.");
+    }
+    patch.presentationQuantity = input.presentationQuantity;
+  }
+
+  if (input.presentationLabel !== undefined) {
+    patch.presentationLabel = input.presentationLabel.trim();
+  }
+
+  await updateDoc(itemRef, patch);
 }
 
 export async function createWarehouseClient(input: {

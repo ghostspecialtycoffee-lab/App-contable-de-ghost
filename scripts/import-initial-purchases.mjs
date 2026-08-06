@@ -2,9 +2,8 @@
 /**
  * Carga inicial desde data/initial-load/purchase-invoices.manifest.json
  *
- * Modo bootstrap (--bootstrap): carga facturas históricas a bodega, organiza insumos
- * por clase (alimenticio/menaje), crea productos POS desde terminados y registra
- * gastos operativos en compras sin movimiento de bodega.
+ * Modo bootstrap (--bootstrap): importa facturas históricas; bodega solo si el insumo
+ * ya existe en Inventario (creado manualmente con g/ml por unidad).
  *
  * GOOGLE_APPLICATION_CREDENTIALS=/path/serviceAccount.json \
  * node scripts/import-initial-purchases.mjs \
@@ -355,32 +354,17 @@ async function ensureWarehouse(db, organizationId, branchId, actorUserId) {
   return ref.id;
 }
 
-async function ensureInventoryItem(db, organizationId, actorUserId, catalogEntry, skuIndex) {
-  const ref = db.collection(`organizations/${organizationId}/inventoryItems`).doc();
-  const now = FieldValue.serverTimestamp();
-  const unit = VALID_UNITS.has(catalogEntry.unit) ? catalogEntry.unit : "unit";
-  await ref.set({
-    organizationId,
-    sku: slugSku(catalogEntry.name, catalogEntry.productCategory, skuIndex),
-    name: catalogEntry.name,
-    type: TYPE_MAP[catalogEntry.itemType] ?? "supply",
-    baseUnit: unit,
-    category: catalogEntry.productCategory,
-    status: "active",
-    minStock: 0,
-    maxStock: null,
-    averageCost: 0,
-    lastCost: 0,
-    trackLot: false,
-    purchaseUnit: unit,
-    presentationQuantity: 1,
-    presentationLabel: "",
-    createdAt: now,
-    updatedAt: now,
-    createdBy: actorUserId,
-    updatedBy: actorUserId,
-  });
-  return ref.id;
+async function loadExistingInventoryItemIds(db, organizationId) {
+  const snap = await db.collection(`organizations/${organizationId}/inventoryItems`).get();
+  const itemIdByName = new Map();
+  for (const doc of snap.docs) {
+    const name = String(doc.data().name ?? "");
+    const norm = normalizeName(name);
+    if (name && !itemIdByName.has(norm)) {
+      itemIdByName.set(norm, doc.id);
+    }
+  }
+  return itemIdByName;
 }
 
 async function registerEntry(db, organizationId, actorUserId, input) {
@@ -602,29 +586,20 @@ async function main() {
   const branchId = await resolveBranchId(db, args.org, args.branch);
   const warehouseId = await ensureWarehouse(db, args.org, branchId, args.actor);
 
-  const catalog = buildCatalog(manifest);
-  const itemIdByName = new Map();
-  let skuIndex = 1;
-  const categoryCounts = { alimenticio: 0, menaje: 0 };
-
-  for (const [norm, entry] of catalog.entries()) {
-    const itemId = await ensureInventoryItem(db, args.org, args.actor, entry, skuIndex);
-    itemIdByName.set(norm, itemId);
-    categoryCounts[entry.productCategory] = (categoryCounts[entry.productCategory] ?? 0) + 1;
-    skuIndex += 1;
+  const itemIdByName = await loadExistingInventoryItemIds(db, args.org);
+  console.log(`Insumos en inventario (manual): ${itemIdByName.size}`);
+  if (itemIdByName.size === 0) {
+    console.log(
+      "  Aviso: crea insumos en la app (Inventario → Insumos) antes de importar para mover bodega.",
+    );
   }
-
-  console.log(`Insumos creados: ${itemIdByName.size}`);
-  console.log(
-    `  Alimenticio: ${categoryCounts.alimenticio ?? 0} · Menaje: ${categoryCounts.menaje ?? 0}`,
-  );
 
   const seen = new Set();
   let imported = 0;
   let skipped = 0;
   let movements = 0;
+  let unlinkedLines = 0;
   let operativoLines = 0;
-  const finishedProducts = new Map();
 
   for (const inv of manifest.invoices) {
     const key = invoiceKey(inv);
@@ -700,6 +675,9 @@ async function main() {
           continue;
         }
         if (!line.inventoryItemId || line.quantity <= 0) {
+          if (line.productCategory !== "operativo" && line.description) {
+            unlinkedLines += 1;
+          }
           continue;
         }
 
@@ -712,11 +690,7 @@ async function main() {
           line.itemType === "finished_product" &&
           line.productCategory === "alimenticio"
         ) {
-          const norm = normalizeName(line.description);
-          finishedProducts.set(norm, {
-            name: line.description.trim(),
-            unitCostNet: unitCostNetPerBase,
-          });
+          // Productos POS se crean manualmente; no desde facturas.
         }
 
         await registerEntry(db, args.org, args.actor, {
@@ -735,16 +709,6 @@ async function main() {
     imported += 1;
   }
 
-  let menuProductsCreated = 0;
-  if (args.bootstrap && finishedProducts.size > 0) {
-    menuProductsCreated = await createMenuProductsFromFinished(
-      db,
-      args.org,
-      args.actor,
-      finishedProducts,
-    );
-  }
-
   let ghostMenu = null;
   if (args.bootstrap) {
     ghostMenu = await seedGhostMenu(db, FieldValue, {
@@ -757,10 +721,11 @@ async function main() {
   console.log(`  Modo: ${args.bootstrap ? "bootstrap (histórico → bodega)" : "operativo diario"}`);
   console.log(`  Facturas importadas: ${imported}`);
   console.log(`  Omitidas (duplicadas/vacías): ${skipped}`);
+  console.log(`  Insumos en inventario (manual): ${itemIdByName.size}`);
+  console.log(`  Líneas sin insumo vinculado: ${unlinkedLines}`);
   console.log(`  Movimientos de bodega: ${movements}`);
   console.log(`  Líneas operativas (sin bodega): ${operativoLines}`);
   if (args.bootstrap) {
-    console.log(`  Productos POS creados: ${menuProductsCreated}`);
     if (ghostMenu) {
       console.log(
         `  Carta Ghost: ${ghostMenu.productsCreated} bebidas nuevas, ${ghostMenu.recipesCreated} fichas, ${ghostMenu.recipesUpdated} fichas actualizadas`,

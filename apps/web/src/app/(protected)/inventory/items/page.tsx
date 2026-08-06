@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { InitialDataImportPanel } from "@/components/initial-data-import-panel";
+import { InventoryItemPresentationEditor } from "@/components/inventory-item-presentation-editor";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
@@ -49,6 +50,7 @@ export default function InventoryItemsPage() {
   const [minStock, setMinStock] = useState("0");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
   useEffect(() => {
     const suggestion = suggestPresentation(baseUnit);
@@ -212,7 +214,9 @@ export default function InventoryItemsPage() {
               </select>
             </label>
             <label className="block space-y-1">
-              <span className="text-sm font-medium">Cantidad base por compra</span>
+              <span className="text-sm font-medium">
+                Cuántos {baseUnit === "g" ? "gramos" : baseUnit === "ml" ? "ml" : BASE_UNIT_LABELS[baseUnit].toLowerCase()} trae 1 unidad de compra
+              </span>
               <input
                 required
                 type="number"
@@ -223,7 +227,8 @@ export default function InventoryItemsPage() {
                 className="ghost-input"
               />
               <span className="text-xs text-[var(--ghost-text-muted)]">
-                Ej: 1 kg = 1000 g → unidad compra kg, cantidad 1000, base g
+                Ej: bolsa café 2,5 kg → compra <strong>bag</strong>, cantidad <strong>2500</strong>, base g.
+                Leche 1 L → compra <strong>unit</strong>, cantidad <strong>1000</strong>, base ml.
               </span>
             </label>
             <label className="block space-y-1">
@@ -261,6 +266,10 @@ export default function InventoryItemsPage() {
         </Card>
 
         <Card title="Catálogo de insumos">
+          <p className="mb-4 text-sm text-[var(--ghost-text-muted)]">
+            Define aquí cada insumo con su presentación (g/ml por unidad). Las facturas de compra solo
+            vinculan a estos ítems; no crean ni configuran el inventario.
+          </p>
           {loading ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">Cargando ítems...</p>
           ) : error ? (
@@ -287,32 +296,59 @@ export default function InventoryItemsPage() {
                           <th className="px-2 py-2 font-medium">Costeo</th>
                           <th className="px-2 py-2 font-medium">Presentación</th>
                           <th className="px-2 py-2 font-medium">Costo / base</th>
+                          <th className="px-2 py-2 font-medium" />
                         </tr>
                       </thead>
                       <tbody>
                         {groupItems.map((item) => (
-                          <tr
-                            key={item.id}
-                            className="border-b border-[var(--ghost-border)] last:border-0"
-                          >
-                            <td className="px-2 py-2 font-mono text-xs">{item.sku}</td>
-                            <td className="px-2 py-2">{item.name}</td>
-                            <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
-                              {INVENTORY_ITEM_TYPE_LABELS[item.type]}
-                            </td>
-                            <td className="px-2 py-2">{item.baseUnit}</td>
-                            <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
-                              {formatPresentationLabel({
-                                presentationLabel: item.presentationLabel,
-                                purchaseUnit: item.purchaseUnit,
-                                presentationQuantity: item.presentationQuantity,
-                                baseUnit: item.baseUnit,
-                              })}
-                            </td>
-                            <td className="px-2 py-2">
-                              {formatMoney(item.averageCost || item.lastCost)}/{item.baseUnit}
-                            </td>
-                          </tr>
+                          <Fragment key={item.id}>
+                            <tr className="border-b border-[var(--ghost-border)] last:border-0">
+                              <td className="px-2 py-2 font-mono text-xs">{item.sku}</td>
+                              <td className="px-2 py-2">{item.name}</td>
+                              <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
+                                {INVENTORY_ITEM_TYPE_LABELS[item.type]}
+                              </td>
+                              <td className="px-2 py-2">{item.baseUnit}</td>
+                              <td className="px-2 py-2 text-xs text-[var(--ghost-text-muted)]">
+                                {formatPresentationLabel({
+                                  presentationLabel: item.presentationLabel,
+                                  purchaseUnit: item.purchaseUnit,
+                                  presentationQuantity: item.presentationQuantity,
+                                  baseUnit: item.baseUnit,
+                                }) || (
+                                  <span className="text-[var(--ghost-danger)]">Sin definir</span>
+                                )}
+                              </td>
+                              <td className="px-2 py-2">
+                                {formatMoney(item.averageCost || item.lastCost)}/{item.baseUnit}
+                              </td>
+                              <td className="px-2 py-2 text-right">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={editingItemId === item.id ? "secondary" : "ghost"}
+                                  onClick={() =>
+                                    setEditingItemId((current) =>
+                                      current === item.id ? null : item.id,
+                                    )
+                                  }
+                                >
+                                  {editingItemId === item.id ? "Cerrar" : "Editar"}
+                                </Button>
+                              </td>
+                            </tr>
+                            {editingItemId === item.id ? (
+                              <tr key={`${item.id}-edit`} className="border-b border-[var(--ghost-border)]">
+                                <td colSpan={7} className="px-2 py-3">
+                                  <InventoryItemPresentationEditor
+                                    item={item}
+                                    onSaved={() => setEditingItemId(null)}
+                                    onCancel={() => setEditingItemId(null)}
+                                  />
+                                </td>
+                              </tr>
+                            ) : null}
+                          </Fragment>
                         ))}
                       </tbody>
                     </table>

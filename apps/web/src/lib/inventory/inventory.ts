@@ -10,6 +10,7 @@ import {
   createInventoryItemClient,
   createWarehouseClient,
   registerInventoryMovementClient,
+  updateInventoryItemClient,
 } from "./inventory-client";
 
 export interface CreateInventoryItemInput {
@@ -24,6 +25,18 @@ export interface CreateInventoryItemInput {
   purchaseUnit?: BaseUnit;
   presentationQuantity?: number;
   presentationLabel?: string;
+}
+
+export interface UpdateInventoryItemPayload {
+  itemId: string;
+  purchaseUnit?: BaseUnit;
+  presentationQuantity?: number;
+  presentationLabel?: string;
+  name?: string;
+  category?: string;
+  minStock?: number;
+  maxStock?: number;
+  status?: "active" | "inactive";
 }
 
 type CreateWarehouseInput = Parameters<typeof createWarehouseClient>[0];
@@ -64,6 +77,12 @@ export async function createInventoryItem(
     () => callCreateInventoryItem(input),
     () => createInventoryItemClient(input),
   );
+}
+
+export async function updateInventoryItem(
+  input: UpdateInventoryItemPayload,
+): Promise<void> {
+  return updateInventoryItemClient(input);
 }
 
 export async function createWarehouse(
