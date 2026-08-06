@@ -34,6 +34,10 @@ function createLineId(): string {
   return `line-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function stripUndefinedDeep<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
 async function getStaffContext(): Promise<{
   userId: string;
   organizationId: string;
@@ -198,7 +202,7 @@ export async function addTableSessionLinesClient(input: {
   await setDoc(
     sessionRef,
     {
-      lines: [...existingLines, ...newLines],
+      lines: stripUndefinedDeep([...existingLines, ...newLines]),
       updatedAt: serverTimestamp(),
       updatedBy: actorUserId,
     },
