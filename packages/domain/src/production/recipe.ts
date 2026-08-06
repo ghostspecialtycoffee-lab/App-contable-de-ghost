@@ -15,6 +15,8 @@ export interface Recipe {
   menuProductName: string;
   yieldQuantity: number;
   lines: RecipeLine[];
+  /** Respuestas del cuestionario de bebidas no estándar SCA. */
+  advancedSetupAnswers?: Record<string, string>;
 }
 
 export interface RecipeLineInput {

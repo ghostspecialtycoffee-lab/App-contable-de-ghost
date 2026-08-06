@@ -1,3 +1,5 @@
+export * from "./ai/index.js";
+export * from "./assistant/index.js";
 export * from "./audit.js";
 export * from "./branch.js";
 export * from "./brand/index.js";
@@ -5,6 +7,7 @@ export * from "./cash/index.js";
 export * from "./expenses/index.js";
 export * from "./fiscal/index.js";
 export * from "./inventory/index.js";
+export * from "./notifications/index.js";
 export * from "./production/index.js";
 export * from "./purchases/index.js";
 export * from "./reports/index.js";

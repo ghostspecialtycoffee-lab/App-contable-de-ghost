@@ -1,0 +1,132 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+import { useGhostChat } from "@/hooks/use-ghost-chat";
+import { GHOST_ASSISTANT_NAME } from "@/lib/assistant/ghost-chat-engine";
+import { Button } from "@ghost/ui";
+
+function renderGhostText(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*|_[^_]+_)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={index} className="font-semibold text-[var(--ghost-text)]">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("_") && part.endsWith("_")) {
+      return (
+        <em key={index} className="text-[var(--ghost-text-muted)]">
+          {part.slice(1, -1)}
+        </em>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
+}
+
+export function GhostChatPanel() {
+  const { messages, quickReplies, processing, sendMessage, resetChat } = useGhostChat();
+  const [draft, setDraft] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, processing]);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const value = draft.trim();
+    if (!value || processing) {
+      return;
+    }
+    setDraft("");
+    await sendMessage(value);
+  }
+
+  return (
+    <div className="flex h-[min(72vh,720px)] flex-col overflow-hidden rounded-xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)]">
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--ghost-border)] px-4 py-3">
+        <div>
+          <p className="text-sm font-semibold">{GHOST_ASSISTANT_NAME}</p>
+          <p className="text-xs text-[var(--ghost-text-muted)]">
+            Asistente operativo · compras, costos, ventas y comandas
+          </p>
+        </div>
+        <Button type="button" variant="secondary" size="sm" onClick={resetChat}>
+          Reiniciar
+        </Button>
+      </div>
+
+      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+        {messages.map((message) => {
+          const isGhost = message.speaker === "ghost";
+          return (
+            <div
+              key={message.id}
+              className={`flex ${isGhost ? "justify-start" : "justify-end"}`}
+            >
+              <div
+                className={`max-w-[92%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-relaxed sm:max-w-[80%] ${
+                  isGhost
+                    ? "rounded-bl-md bg-[var(--ghost-surface-2)] text-[var(--ghost-text)]"
+                    : "rounded-br-md bg-[var(--ghost-brand-500)] text-white"
+                }`}
+              >
+                {isGhost ? renderGhostText(message.text) : message.text}
+              </div>
+            </div>
+          );
+        })}
+        {processing ? (
+          <p className="text-xs text-[var(--ghost-text-muted)]">{GHOST_ASSISTANT_NAME} escribe…</p>
+        ) : null}
+      </div>
+
+      {quickReplies.length > 0 ? (
+        <div className="flex flex-wrap gap-2 border-t border-[var(--ghost-border)] px-4 py-2">
+          {quickReplies.map((reply) => (
+            <button
+              key={reply}
+              type="button"
+              disabled={processing}
+              onClick={() => sendMessage(reply)}
+              className="rounded-full border border-[var(--ghost-border)] px-3 py-1 text-xs hover:bg-[var(--ghost-surface-2)] disabled:opacity-50"
+            >
+              {reply}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <form
+        onSubmit={handleSubmit}
+        className="flex items-end gap-2 border-t border-[var(--ghost-border)] px-4 py-3"
+      >
+        <label className="sr-only" htmlFor="ghost-chat-input">
+          Mensaje para Ghost
+        </label>
+        <textarea
+          id="ghost-chat-input"
+          rows={2}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
+          placeholder="Escribe tu respuesta… (Enter envía · Shift+Enter nueva línea)"
+          className="ghost-input min-h-[44px] flex-1 resize-none"
+          disabled={processing}
+        />
+        <Button type="submit" disabled={processing || !draft.trim()}>
+          Enviar
+        </Button>
+      </form>
+    </div>
+  );
+}

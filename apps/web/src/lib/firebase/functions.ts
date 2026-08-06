@@ -111,3 +111,33 @@ export async function callCreateWarehouse(
   const result = await callable(input);
   return result.data;
 }
+
+export async function callGhostAgent(input: {
+  message: string;
+  sessionId?: string;
+  allowWebSearch?: boolean;
+}): Promise<{
+  answer: string;
+  usedWebSearch: boolean;
+  sources: Array<{ title: string; url: string; snippet?: string }>;
+  knowledgeEntryId?: string;
+  suggestedFollowUp?: string;
+}> {
+  const callable = httpsCallable<
+    {
+      message: string;
+      sessionId?: string;
+      allowWebSearch?: boolean;
+    },
+    {
+      answer: string;
+      usedWebSearch: boolean;
+      sources: Array<{ title: string; url: string; snippet?: string }>;
+      knowledgeEntryId?: string;
+      suggestedFollowUp?: string;
+    }
+  >(getFirebaseFunctions(), "ghostAgent");
+
+  const result = await callable(input);
+  return result.data;
+}

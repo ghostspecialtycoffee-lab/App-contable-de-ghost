@@ -17,6 +17,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Operación",
     items: [
       { href: "/dashboard", label: "Inicio", description: "Resumen del día" },
+      { href: "/chat", label: "Ghost", description: "Asistente operativo por chat" },
       { href: "/cash", label: "Caja", description: "Apertura y movimientos" },
       { href: "/ventas", label: "Ventas", description: "Cobros y accesos" },
       { href: "/caja", label: "Modo caja", description: "Solo registro de ventas" },
@@ -53,6 +54,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/pos/menu", label: "Catálogo", description: "Productos del menú" },
       { href: "/brand", label: "Identidad", description: "Logo y marca" },
       { href: "/settings/fiscal", label: "Facturación", description: "Datos fiscales" },
+      { href: "/settings/notifications", label: "Notificaciones", description: "Alertas por correo" },
+      { href: "/settings/operations", label: "Horarios y turnos", description: "Atención y personal" },
       { href: "/settings/costing", label: "Matriz costos", description: "Metas food cost" },
       { href: "/guia", label: "Guía operativa", description: "Documentos, flujos y reglas" },
     ],
