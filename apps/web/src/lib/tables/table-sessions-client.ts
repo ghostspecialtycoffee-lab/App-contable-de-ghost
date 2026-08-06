@@ -100,15 +100,13 @@ export async function openTableSessionClient(input: {
   guestToken: string;
   actorUserId?: string;
 }): Promise<{ sessionId: string }> {
-  if (input.actorUserId) {
-    const existing = await findOpenTableSessionClient({
-      organizationId: input.organizationId,
-      tableId: input.tableId,
-    });
+  const existing = await findOpenTableSessionClient({
+    organizationId: input.organizationId,
+    tableId: input.tableId,
+  });
 
-    if (existing) {
-      return { sessionId: existing.sessionId };
-    }
+  if (existing) {
+    return { sessionId: existing.sessionId };
   }
 
   const db = getFirestoreDb();
@@ -206,6 +204,12 @@ export async function addTableSessionLinesClient(input: {
     },
     { merge: true },
   );
+
+  if (actorUserId !== "guest") {
+    await sendTableSessionToKitchenClient({
+      sessionId: input.sessionId,
+    }).catch(() => undefined);
+  }
 }
 
 export async function sendTableSessionToKitchenClient(input: {

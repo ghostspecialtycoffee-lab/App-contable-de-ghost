@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { SaleReceipt } from "@/components/sale-receipt";
@@ -22,13 +23,22 @@ import { Button, Card } from "@ghost/ui";
 type BillingTab = "invoices" | "reports";
 type ReportPreset = "today" | "week" | "month";
 
-export default function BillingPage() {
+function BillingPageContent() {
+  const searchParams = useSearchParams();
+  const saleFromQuery = searchParams.get("sale");
   const { organization } = useAuth();
   const { path, inSalesExtension } = useSalesPaths();
   const { sales, loading, error } = useSales();
   const [tab, setTab] = useState<BillingTab>("reports");
   const [preset, setPreset] = useState<ReportPreset>("today");
-  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(saleFromQuery);
+
+  useEffect(() => {
+    if (saleFromQuery) {
+      setSelectedSaleId(saleFromQuery);
+      setTab("invoices");
+    }
+  }, [saleFromQuery]);
 
   const period = useMemo(() => getReportPeriod(preset), [preset]);
 
@@ -316,5 +326,13 @@ export default function BillingPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-[var(--ghost-text-muted)]">Cargando...</p>}>
+      <BillingPageContent />
+    </Suspense>
   );
 }

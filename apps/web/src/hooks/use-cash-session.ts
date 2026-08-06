@@ -1,16 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  collection,
-  limit,
-  onSnapshot,
-  query,
-  where,
-} from "firebase/firestore";
+import { collection, limit, query, where } from "firebase/firestore";
 
-import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { getFirestoreDb } from "@/lib/firebase/client";
+import { subscribeQueryWithPoll } from "@/lib/realtime/subscribe-query";
 import { useActiveMembership } from "@/providers/auth-provider";
 import type { CashMovement, CashMovementType, CashSession } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -39,20 +33,16 @@ export function useCashSession() {
       limit(1),
     );
 
-    const unsubscribeSession = onSnapshot(
-      sessionQuery,
-      (snapshot) => {
+    return subscribeQueryWithPoll({
+      query: sessionQuery,
+      mapSnapshot: (snapshot) => {
         if (snapshot.empty) {
-          setSession(null);
-          setMovements([]);
-          setLoading(false);
-          setError(null);
-          return;
+          return null;
         }
 
         const document = snapshot.docs[0]!;
         const data = document.data();
-        setSession({
+        return {
           id: document.id,
           organizationId: data.organizationId,
           branchId: data.branchId,
@@ -72,17 +62,21 @@ export function useCashSession() {
           updatedAt: "",
           createdBy: data.createdBy ?? "",
           updatedBy: data.updatedBy ?? "",
-        });
+        } satisfies CashSession;
+      },
+      onData: (nextSession) => {
+        setSession(nextSession);
+        if (!nextSession) {
+          setMovements([]);
+        }
         setLoading(false);
         setError(null);
       },
-      (cause) => {
-        setError(getFirestoreErrorMessage(cause));
+      onError: (message) => {
+        setError(message);
         setLoading(false);
       },
-    );
-
-    return unsubscribeSession;
+    });
   }, [membership?.organizationId, branchId]);
 
   useEffect(() => {
@@ -97,42 +91,36 @@ export function useCashSession() {
       where("cashSessionId", "==", session.id),
     );
 
-    const unsubscribeMovements = onSnapshot(
-      movementsQuery,
-      (snapshot) => {
-        setMovements(
-          snapshot.docs
-            .map((document) => {
-              const data = document.data();
-              return {
-                id: document.id,
-                organizationId: data.organizationId,
-                branchId: data.branchId,
-                cashSessionId: data.cashSessionId,
-                type: data.type as CashMovementType,
-                amount: data.amount ?? 0,
-                reason: data.reason ?? "",
-                reference: data.reference ?? "",
-                occurredAt: data.occurredAt ?? "",
-                actorUserId: data.actorUserId ?? "",
-                createdAt: "",
-                updatedAt: "",
-                createdBy: data.createdBy ?? "",
-                updatedBy: data.updatedBy ?? "",
-              } satisfies CashMovement;
-            })
-            .sort(
-              (left, right) =>
-                new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime(),
-            ),
-        );
-      },
-      (cause) => {
-        setError(getFirestoreErrorMessage(cause));
-      },
-    );
-
-    return unsubscribeMovements;
+    return subscribeQueryWithPoll({
+      query: movementsQuery,
+      mapSnapshot: (snapshot) =>
+        snapshot.docs
+          .map((document) => {
+            const data = document.data();
+            return {
+              id: document.id,
+              organizationId: data.organizationId,
+              branchId: data.branchId,
+              cashSessionId: data.cashSessionId,
+              type: data.type as CashMovementType,
+              amount: data.amount ?? 0,
+              reason: data.reason ?? "",
+              reference: data.reference ?? "",
+              occurredAt: data.occurredAt ?? "",
+              actorUserId: data.actorUserId ?? "",
+              createdAt: "",
+              updatedAt: "",
+              createdBy: data.createdBy ?? "",
+              updatedBy: data.updatedBy ?? "",
+            } satisfies CashMovement;
+          })
+          .sort(
+            (left, right) =>
+              new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime(),
+          ),
+      onData: setMovements,
+      onError: setError,
+    });
   }, [membership?.organizationId, session?.id]);
 
   return { session, movements, loading, error, branchId };
@@ -157,26 +145,25 @@ export function useCashSessionSales(cashSessionId: string | null) {
       where("status", "==", "paid"),
     );
 
-    const unsubscribe = onSnapshot(
-      salesQuery,
-      (snapshot) => {
-        const total = snapshot.docs.reduce((sum, document) => {
+    return subscribeQueryWithPoll({
+      query: salesQuery,
+      mapSnapshot: (snapshot) =>
+        snapshot.docs.reduce((sum, document) => {
           const data = document.data();
           if (data.paymentMethod !== "cash") {
             return sum;
           }
           return sum + Number(data.total ?? 0);
-        }, 0);
+        }, 0),
+      onData: (total) => {
         setCashSalesTotal(total);
         setLoading(false);
       },
-      () => {
+      onError: () => {
         setCashSalesTotal(0);
         setLoading(false);
       },
-    );
-
-    return unsubscribe;
+    });
   }, [membership?.organizationId, cashSessionId]);
 
   return { cashSalesTotal, loading };

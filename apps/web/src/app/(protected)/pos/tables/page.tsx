@@ -26,8 +26,11 @@ function PosTablesContent() {
   const searchParams = useSearchParams();
   const paidSaleNumber = searchParams.get("paid");
   const { tables, loading, error } = useDiningTables();
-  const { sessions } = useTableSessions({ openOnly: true });
   const { sessions: allSessions } = useTableSessions();
+  const sessions = useMemo(
+    () => allSessions.filter((session) => session.status === "open" || session.status === "requested_bill"),
+    [allSessions],
+  );
   const [tableNumber, setTableNumber] = useState("");
   const [tableLabel, setTableLabel] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -294,7 +297,7 @@ function PosTablesContent() {
                   </p>
                 </div>
                 {session.saleId ? (
-                  <Link href="/billing" className="text-xs underline">
+                  <Link href={`${path("records")}?sale=${session.saleId}`} className="text-xs underline">
                     Ver venta
                   </Link>
                 ) : null}

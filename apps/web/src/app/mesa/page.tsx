@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 import { GuestMenuCatalog } from "@/components/guest-menu-catalog";
 import { GuestTableProcessLine, type GuestTableStepId } from "@/components/guest-table-process";
@@ -10,8 +10,10 @@ import { useGuestMenuProducts } from "@/hooks/use-guest-menu-products";
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
 import { getFirestoreDb } from "@/lib/firebase/client";
+import { subscribeDocumentWithPoll } from "@/lib/realtime/subscribe-document";
 import {
   addTableSessionLines,
+  findOpenTableSessionClient,
   openTableSession,
   requestTableBillGuest,
   requestWaiterGuest,
@@ -106,6 +108,21 @@ function GuestTableContent() {
           window.localStorage.removeItem(storageKey);
         }
 
+        try {
+          const existing = await findOpenTableSessionClient({
+            organizationId,
+            tableId: found.tableId,
+          });
+
+          if (existing && !cancelled) {
+            window.localStorage.setItem(storageKey, existing.sessionId);
+            setSessionId(existing.sessionId);
+            return;
+          }
+        } catch {
+          // El invitado puede no tener permiso de consulta; openTableSession deduplica.
+        }
+
         const opened = await openTableSession({
           organizationId,
           branchId: found.branchId,
@@ -146,14 +163,17 @@ function GuestTableContent() {
       firestorePaths.organizationTableSession(organizationId, sessionId),
     );
 
-    return onSnapshot(sessionRef, (snapshot) => {
-      if (!snapshot.exists()) {
-        return;
-      }
-      const data = snapshot.data();
-      setSessionStatus(data.status);
-      setWaiterRequestedAt((data.waiterRequestedAt as string | undefined) ?? null);
-      setLines((data.lines as Array<Record<string, unknown>>) ?? []);
+    return subscribeDocumentWithPoll({
+      reference: sessionRef,
+      mapSnapshot: (snapshot) => (snapshot.exists() ? snapshot.data() : null),
+      onData: (data) => {
+        if (!data) {
+          return;
+        }
+        setSessionStatus(String(data.status ?? "open"));
+        setWaiterRequestedAt((data.waiterRequestedAt as string | undefined) ?? null);
+        setLines((data.lines as Array<Record<string, unknown>>) ?? []);
+      },
     });
   }, [organizationId, sessionId]);
 
@@ -209,7 +229,7 @@ function GuestTableContent() {
         lines: orderLines,
       });
       setCartQty({});
-      setMessage("Ítems agregados a tu cuenta. El staff enviará la comanda a cocina.");
+      setMessage("Ítems agregados a tu cuenta. El equipo enviará la comanda a cocina.");
     } catch (cause) {
       setError(getFirestoreErrorMessage(cause));
     } finally {
