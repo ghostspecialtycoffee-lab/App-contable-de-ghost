@@ -27,8 +27,9 @@ import {
   openTableSession,
   sendTableSessionToKitchen,
 } from "@/lib/tables/table-sessions";
-import { callGhostAgent, callSendSaleDocument } from "@/lib/firebase/functions";
+import { callGhostAgent } from "@/lib/firebase/functions";
 import { resolveGhostAgentQuery } from "@/lib/assistant/ghost-agent-client";
+import { sendSaleDocument } from "@/lib/sales/send-sale-document";
 import type { GhostChatAction } from "@/lib/assistant/ghost-chat-engine";
 
 type RecipeSnapshot = {
@@ -232,19 +233,17 @@ export async function executeGhostChatAction(
       let emailNote = "";
 
       if (documentType && customerEmail && customerEmail !== "skip") {
-        try {
-          const emailResult = await callSendSaleDocument({
-            saleId: result.saleId,
-            email: customerEmail,
-            documentType: documentType === "cuenta_cobro" ? "cuenta_cobro" : "factura",
-          });
-          emailNote = emailResult.sent
-            ? `\nEnvié el comprobante a **${customerEmail}**.`
-            : `\nNo pude enviar el correo. Puedes imprimirlo en **Registros**.`;
-        } catch {
-          emailNote =
-            "\nVenta registrada. Imprime el comprobante en **Registros** (correo requiere Functions).";
-        }
+        const emailResult = await sendSaleDocument({
+          organizationId: context.organizationId,
+          saleId: result.saleId,
+          email: customerEmail,
+          documentType: documentType === "cuenta_cobro" ? "cuenta_cobro" : "factura",
+        });
+        emailNote = emailResult.sent
+          ? emailResult.method === "mailto"
+            ? `\nAbrí tu correo con el comprobante para **${customerEmail}**. Revisa y envía el mensaje.`
+            : `\nEnvié el comprobante a **${customerEmail}**.`
+          : `\nNo pude preparar el correo (${emailResult.message ?? "revisa el email"}). Puedes imprimirlo en **Registros**.`;
       } else if (documentType) {
         emailNote = "\nPuedes imprimir el comprobante en **Registros** o dime un correo para enviarlo.";
       }
@@ -335,19 +334,17 @@ export async function executeGhostChatAction(
       let emailNote = "";
 
       if (customerEmail && customerEmail !== "skip") {
-        try {
-          const emailResult = await callSendSaleDocument({
-            saleId: result.saleId,
-            email: customerEmail,
-            documentType: documentType === "cuenta_cobro" ? "cuenta_cobro" : "factura",
-          });
-          emailNote = emailResult.sent
-            ? `\nEnvié el PDF a **${customerEmail}**.`
-            : `\nNo pude enviar el correo (${emailResult.message ?? "revisa configuración de email"}). Puedes imprimirlo en Registros.`;
-        } catch {
-          emailNote =
-            `\nEl cobro quedó registrado. El envío por correo requiere Cloud Functions desplegadas; imprime en **Registros**.`;
-        }
+        const emailResult = await sendSaleDocument({
+          organizationId: context.organizationId,
+          saleId: result.saleId,
+          email: customerEmail,
+          documentType: documentType === "cuenta_cobro" ? "cuenta_cobro" : "factura",
+        });
+        emailNote = emailResult.sent
+          ? emailResult.method === "mailto"
+            ? `\nAbrí tu correo con la cuenta para **${customerEmail}**. Revisa y envía el mensaje.`
+            : `\nEnvié el PDF a **${customerEmail}**.`
+          : `\nNo pude preparar el correo (${emailResult.message ?? "revisa el email"}). Puedes imprimirlo en Registros.`;
       } else {
         emailNote = "\nPuedes imprimir el comprobante en **Registros** o decirme un correo para enviarlo.";
       }

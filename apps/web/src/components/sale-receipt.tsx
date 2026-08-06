@@ -1,19 +1,81 @@
 "use client";
 
 import { DocumentFooter, DocumentHeader } from "@/components/document-header";
-import { CO_TAX_CATEGORY_LABELS, PAYMENT_METHOD_LABELS, type Sale } from "@ghost/domain";
+import {
+  buildSaleDocumentWhatsAppUrl,
+  CO_TAX_CATEGORY_LABELS,
+  PAYMENT_METHOD_LABELS,
+  type Sale,
+  type SaleDocumentType,
+} from "@ghost/domain";
 import { Button } from "@ghost/ui";
 
 import { formatDateTime, formatMoney } from "@/lib/format";
+import {
+  buildMailtoUrlForSale,
+  openMailtoUrl,
+} from "@/lib/sales/send-sale-document";
+import { useAuth } from "@/providers/auth-provider";
 
 interface SaleReceiptProps {
   sale: Sale;
   showPrint?: boolean;
+  documentType?: SaleDocumentType;
 }
 
-export function SaleReceipt({ sale, showPrint = true }: SaleReceiptProps) {
+export function SaleReceipt({
+  sale,
+  showPrint = true,
+  documentType = "factura",
+}: SaleReceiptProps) {
+  const { organization } = useAuth();
+
   function handlePrint() {
     window.print();
+  }
+
+  function buildDocumentInput() {
+    return {
+      sale,
+      organizationName: organization?.name ?? "Ghost Contable",
+      documentType,
+    };
+  }
+
+  function handleEmailShare() {
+    const email = window.prompt("Correo del cliente:")?.trim();
+    if (!email) {
+      return;
+    }
+
+    const mailtoUrl = buildMailtoUrlForSale({
+      ...buildDocumentInput(),
+      email,
+    });
+    openMailtoUrl(mailtoUrl);
+  }
+
+  function handleWhatsAppShare() {
+    const url = buildSaleDocumentWhatsAppUrl({
+      document: {
+        documentType,
+        saleNumber: sale.saleNumber,
+        soldAt: formatDateTime(sale.soldAt ?? sale.createdAt),
+        organizationName: organization?.name ?? "Ghost Contable",
+        tableNumber: sale.tableNumber,
+        customerName: sale.customerName || undefined,
+        lines: sale.lines.map((line) => ({
+          name: line.name,
+          quantity: line.quantity,
+          lineTotal: line.lineTotal,
+        })),
+        subtotal: sale.subtotal,
+        taxAmount: sale.taxAmount,
+        total: sale.total,
+        paymentMethod: sale.paymentMethod,
+      },
+    });
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   const taxLines =
@@ -77,9 +139,17 @@ export function SaleReceipt({ sale, showPrint = true }: SaleReceiptProps) {
       </div>
 
       {showPrint ? (
-        <Button variant="secondary" fullWidth onClick={handlePrint} className="print:hidden">
-          Imprimir comprobante
-        </Button>
+        <div className="grid gap-2 print:hidden">
+          <Button variant="secondary" fullWidth onClick={handlePrint}>
+            Imprimir comprobante
+          </Button>
+          <Button variant="secondary" fullWidth onClick={handleEmailShare}>
+            Enviar por correo (gratis)
+          </Button>
+          <Button variant="secondary" fullWidth onClick={handleWhatsAppShare}>
+            Compartir por WhatsApp
+          </Button>
+        </div>
       ) : null}
     </div>
   );
