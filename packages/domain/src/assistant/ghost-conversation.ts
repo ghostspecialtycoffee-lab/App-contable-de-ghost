@@ -6,6 +6,7 @@ import {
   parsePaymentMethod,
   type GhostChatSession,
 } from "./ghost-chat.js";
+import { buildGhostAgentFallbackAnswer } from "../ai/agent.js";
 
 export type GhostConversationIntent =
   | "org-status"
@@ -909,10 +910,29 @@ export function processConversationTurn(input: {
 
   if (intent === "agent-query") {
     const agentSessionId = session.agentSessionId ?? `chat-${Date.now()}`;
+    const normalized = normalizeText(trimmed);
+
+    if (/(ayuda|que puedes|que sabes|como funciona|ejemplos)/.test(normalized)) {
+      return {
+        kind: "reply",
+        session: clearPending(session),
+        messages: [
+          buildGhostAgentFallbackAnswer(
+            trimmed,
+            buildConversationContextSummary(context),
+            (input.history ?? []).map((entry) => ({
+              role: entry.speaker === "user" ? "user" : "ghost",
+              text: entry.text,
+            })),
+          ),
+        ],
+      };
+    }
+
     return {
       kind: "agent",
       session: { ...clearPending(session), agentSessionId },
-      messages: ["Dame un segundo, reviso tu operación y lo que sé del negocio…"],
+      messages: ["Un momento…"],
       message: trimmed,
     };
   }

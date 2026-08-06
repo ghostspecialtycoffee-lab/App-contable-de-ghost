@@ -28,6 +28,7 @@ import {
   sendTableSessionToKitchen,
 } from "@/lib/tables/table-sessions";
 import { callGhostAgent, callSendSaleDocument } from "@/lib/firebase/functions";
+import { resolveGhostAgentQuery } from "@/lib/assistant/ghost-agent-client";
 import type { GhostChatAction } from "@/lib/assistant/ghost-chat-engine";
 
 type RecipeSnapshot = {
@@ -288,14 +289,19 @@ export async function executeGhostChatAction(
       let emailNote = "";
 
       if (customerEmail && customerEmail !== "skip") {
-        const emailResult = await callSendSaleDocument({
-          saleId: result.saleId,
-          email: customerEmail,
-          documentType: documentType === "cuenta_cobro" ? "cuenta_cobro" : "factura",
-        });
-        emailNote = emailResult.sent
-          ? `\nEnvié el PDF a **${customerEmail}**.`
-          : `\nNo pude enviar el correo (${emailResult.message ?? "revisa configuración de email"}). Puedes imprimirlo en Registros.`;
+        try {
+          const emailResult = await callSendSaleDocument({
+            saleId: result.saleId,
+            email: customerEmail,
+            documentType: documentType === "cuenta_cobro" ? "cuenta_cobro" : "factura",
+          });
+          emailNote = emailResult.sent
+            ? `\nEnvié el PDF a **${customerEmail}**.`
+            : `\nNo pude enviar el correo (${emailResult.message ?? "revisa configuración de email"}). Puedes imprimirlo en Registros.`;
+        } catch {
+          emailNote =
+            `\nEl cobro quedó registrado. El envío por correo requiere Cloud Functions desplegadas; imprime en **Registros**.`;
+        }
       } else {
         emailNote = "\nPuedes imprimir el comprobante en **Registros** o decirme un correo para enviarlo.";
       }
@@ -324,10 +330,10 @@ export async function executeGhostChatAction(
     }
 
     case "ghost-agent-query": {
-      const response = await callGhostAgent({
+      const response = await resolveGhostAgentQuery({
+        organizationId: context.organizationId,
         message: action.payload.message,
         sessionId: action.payload.sessionId,
-        allowWebSearch: true,
         contextSummary: action.payload.contextSummary,
         history: action.payload.history?.map((entry) => ({
           role: entry.speaker === "user" ? "user" : "ghost",
