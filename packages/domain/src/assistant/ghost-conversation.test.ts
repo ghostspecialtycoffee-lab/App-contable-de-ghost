@@ -97,6 +97,20 @@ describe("ghost-conversation", () => {
     }
   });
 
+  it("interpreta pedido de producto del menú como venta", () => {
+    const result = processConversationTurn({
+      message: "dame un latte en efectivo",
+      session: createEmptyGhostChatSession(),
+      context: baseContext,
+    });
+
+    expect(result.kind).toBe("execute");
+    if (result.kind === "execute") {
+      expect(result.intent).toBe("create-counter-sale");
+      expect(result.draft.productId).toBe("prod-1");
+    }
+  });
+
   it("deriva preguntas abiertas al agente", () => {
     const result = processConversationTurn({
       message: "¿qué ratio de extracción recomiendas para espresso?",

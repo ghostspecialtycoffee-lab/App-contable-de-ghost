@@ -62,7 +62,7 @@ export function GhostChatPanel({ variant = "page", onClose }: GhostChatPanelProp
         <div>
           <p className="text-sm font-semibold">{GHOST_ASSISTANT_NAME}</p>
           <p className="text-xs text-[var(--ghost-text-muted)]">
-            Asistente operativo · compras, costos, ventas y comandas
+            Conversación fluida · compras, ventas, mesas y costos
           </p>
         </div>
         <div className="flex items-center gap-1">

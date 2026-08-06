@@ -238,9 +238,12 @@ export function useGhostChat() {
 
             const successMessage = createGhostChatMessage(
               "ghost",
-              formatGhostActionSuccess(turn.action, detail),
+              detail?.message ?? formatGhostActionSuccess(turn.action, detail?.message),
             );
             setMessages((current) => [...current, successMessage]);
+            if (detail?.suggestions?.length) {
+              setQuickReplies(detail.suggestions);
+            }
           } catch (cause) {
             const errorMessage = createGhostChatMessage(
               "ghost",
@@ -259,6 +262,7 @@ export function useGhostChat() {
       processing,
       session,
       context,
+      messages,
       recipes,
       inventoryItems,
       warehouses,

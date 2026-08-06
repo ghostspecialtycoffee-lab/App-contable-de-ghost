@@ -68,6 +68,11 @@ async function loadRecipeForProduct(
   };
 }
 
+export interface GhostChatActionResult {
+  message?: string;
+  suggestions?: string[];
+}
+
 export async function executeGhostChatAction(
   action: GhostChatAction,
   context: {
@@ -78,7 +83,7 @@ export async function executeGhostChatAction(
     inventoryItems: Array<{ id: string; baseUnit: string }>;
     defaultWarehouseId?: string;
   },
-): Promise<string | undefined> {
+): Promise<GhostChatActionResult | undefined> {
   switch (action.type) {
     case "create-inventory-item": {
       await createInventoryItem({
@@ -165,9 +170,11 @@ export async function executeGhostChatAction(
       });
 
       const progress = getBeverageAdvancedSetupProgress(productName, answers);
-      return progress.isComplete
-        ? "Confirmación completa guardada en la ficha de costos."
-        : `Guardado parcial (${progress.answered}/${progress.total}).`;
+      return {
+        message: progress.isComplete
+          ? "Confirmación completa guardada en la ficha de costos."
+          : `Guardado parcial (${progress.answered}/${progress.total}).`,
+      };
     }
 
     case "seed-ghost-menu": {
@@ -177,7 +184,9 @@ export async function executeGhostChatAction(
         result.recipesCreated > 0 ? `${result.recipesCreated} fichas nuevas` : null,
         result.recipesUpdated > 0 ? `${result.recipesUpdated} fichas actualizadas` : null,
       ].filter(Boolean);
-      return parts.length > 0 ? parts.join(" · ") : "Sin cambios (revisa inventario).";
+      return {
+        message: parts.length > 0 ? parts.join(" · ") : "Sin cambios (revisa inventario).",
+      };
     }
 
     case "open-cash-session": {
@@ -266,7 +275,12 @@ export async function executeGhostChatAction(
         response.sources.length > 0
           ? `\n\nFuentes:\n${response.sources.map((source) => `· ${source.title}: ${source.url}`).join("\n")}`
           : "";
-      return `${response.answer}${sources}`;
+      return {
+        message: `${response.answer}${sources}`,
+        suggestions: response.suggestedFollowUp
+          ? [response.suggestedFollowUp]
+          : ["¿Cómo va la operación?", "Registra una compra"],
+      };
     }
 
     default:
