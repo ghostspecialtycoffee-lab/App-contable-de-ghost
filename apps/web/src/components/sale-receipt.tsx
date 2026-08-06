@@ -9,12 +9,10 @@ import {
   type SaleDocumentType,
 } from "@ghost/domain";
 import { Button } from "@ghost/ui";
+import { useState } from "react";
 
 import { formatDateTime, formatMoney } from "@/lib/format";
-import {
-  buildMailtoUrlForSale,
-  openMailtoUrl,
-} from "@/lib/sales/send-sale-document";
+import { sendSaleDocument } from "@/lib/sales/send-sale-document";
 import { useAuth } from "@/providers/auth-provider";
 
 interface SaleReceiptProps {
@@ -29,30 +27,44 @@ export function SaleReceipt({
   documentType = "factura",
 }: SaleReceiptProps) {
   const { organization } = useAuth();
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailMessage, setEmailMessage] = useState<string | null>(null);
 
   function handlePrint() {
     window.print();
   }
 
-  function buildDocumentInput() {
-    return {
-      sale,
-      organizationName: organization?.name ?? "Ghost Contable",
-      documentType,
-    };
-  }
-
-  function handleEmailShare() {
+  async function handleEmailShare() {
     const email = window.prompt("Correo del cliente:")?.trim();
-    if (!email) {
+    if (!email || !organization?.id) {
       return;
     }
 
-    const mailtoUrl = buildMailtoUrlForSale({
-      ...buildDocumentInput(),
-      email,
-    });
-    openMailtoUrl(mailtoUrl);
+    setSendingEmail(true);
+    setEmailMessage(null);
+
+    try {
+      const result = await sendSaleDocument({
+        organizationId: organization.id,
+        saleId: sale.id,
+        email,
+        documentType,
+      });
+
+      if (result.sent) {
+        setEmailMessage(
+          result.method === "emailjs" || result.method === "cloud"
+            ? `Correo enviado a ${email}.`
+            : "Se abrió tu app de correo. Revisa y envía el mensaje.",
+        );
+      } else {
+        setEmailMessage(result.message ?? "No se pudo enviar el correo.");
+      }
+    } catch {
+      setEmailMessage("Error al enviar el correo.");
+    } finally {
+      setSendingEmail(false);
+    }
   }
 
   function handleWhatsAppShare() {
@@ -143,12 +155,15 @@ export function SaleReceipt({
           <Button variant="secondary" fullWidth onClick={handlePrint}>
             Imprimir comprobante
           </Button>
-          <Button variant="secondary" fullWidth onClick={handleEmailShare}>
-            Enviar por correo (gratis)
+          <Button variant="secondary" fullWidth onClick={handleEmailShare} disabled={sendingEmail}>
+            {sendingEmail ? "Enviando correo…" : "Enviar por correo automático"}
           </Button>
           <Button variant="secondary" fullWidth onClick={handleWhatsAppShare}>
             Compartir por WhatsApp
           </Button>
+          {emailMessage ? (
+            <p className="text-center text-xs text-[var(--ghost-text-muted)]">{emailMessage}</p>
+          ) : null}
         </div>
       ) : null}
     </div>

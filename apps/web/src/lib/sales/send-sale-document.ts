@@ -1,6 +1,8 @@
 import {
   buildSaleDocumentMailtoUrl,
   PAYMENT_METHOD_LABELS,
+  resolveEmailDeliveryConfig,
+  type OrganizationEmailDeliveryConfig,
   type Sale,
   type SaleDocumentInput,
   type SaleDocumentType,
@@ -8,13 +10,15 @@ import {
 import { firestorePaths } from "@ghost/infrastructure";
 import { doc, getDoc } from "firebase/firestore";
 
+import { sendEmailViaEmailJs } from "@/lib/email/emailjs-client";
+import { getEmailDeliveryConfigFromEnv } from "@/lib/email/emailjs-config";
 import { formatDateTime } from "@/lib/format";
 import { getFirestoreDb } from "@/lib/firebase/client";
 import { callSendSaleDocument } from "@/lib/firebase/functions";
 
 export interface SendSaleDocumentResult {
   sent: boolean;
-  method: "cloud" | "mailto";
+  method: "cloud" | "emailjs" | "mailto";
   message?: string;
 }
 
@@ -33,7 +37,11 @@ function isCallableUnavailable(error: unknown): boolean {
   );
 }
 
-function mapSaleDocument(sale: Sale, organizationName: string, documentType: SaleDocumentType): SaleDocumentInput {
+function mapSaleDocument(
+  sale: Sale,
+  organizationName: string,
+  documentType: SaleDocumentType,
+): SaleDocumentInput {
   return {
     documentType,
     saleNumber: sale.saleNumber,
@@ -90,7 +98,7 @@ async function loadSaleDocumentContext(
   organizationId: string,
   saleId: string,
   documentType: SaleDocumentType,
-): Promise<{ document: SaleDocumentInput } | null> {
+): Promise<{ document: SaleDocumentInput; emailDelivery?: OrganizationEmailDeliveryConfig } | null> {
   const db = getFirestoreDb();
   const saleSnap = await getDoc(doc(db, firestorePaths.organizationSale(organizationId, saleId)));
   if (!saleSnap.exists()) {
@@ -98,11 +106,14 @@ async function loadSaleDocumentContext(
   }
 
   const orgSnap = await getDoc(doc(db, firestorePaths.organization(organizationId)));
-  const organizationName = String(orgSnap.data()?.name ?? "Ghost Contable");
+  const orgData = orgSnap.data() ?? {};
+  const organizationName = String(orgData.name ?? "Ghost Contable");
   const sale = mapSaleFromFirestore(saleSnap.id, saleSnap.data() as Record<string, unknown>);
+  const emailDelivery = orgData.emailDelivery as OrganizationEmailDeliveryConfig | undefined;
 
   return {
     document: mapSaleDocument(sale, organizationName, documentType),
+    emailDelivery,
   };
 }
 
@@ -145,8 +156,58 @@ export async function sendSaleDocumentViaMailto(input: {
   return {
     sent: true,
     method: "mailto",
-    message:
-      "Abrí tu app de correo con el comprobante listo. Revisa el mensaje y pulsa enviar.",
+    message: "Abrí tu app de correo con el comprobante listo. Revisa el mensaje y pulsa enviar.",
+  };
+}
+
+export async function sendSaleDocumentViaEmailJs(input: {
+  organizationId: string;
+  saleId: string;
+  email: string;
+  documentType: SaleDocumentType;
+}): Promise<SendSaleDocumentResult> {
+  const email = input.email.trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { sent: false, method: "emailjs", message: "Correo no válido." };
+  }
+
+  const context = await loadSaleDocumentContext(
+    input.organizationId,
+    input.saleId,
+    input.documentType,
+  );
+  if (!context) {
+    return { sent: false, method: "emailjs", message: "Venta no encontrada." };
+  }
+
+  const config = resolveEmailDeliveryConfig(context.emailDelivery, getEmailDeliveryConfigFromEnv());
+  if (!config) {
+    return {
+      sent: false,
+      method: "emailjs",
+      message: "Configura EmailJS en Ajustes → Notificaciones (gratis, 200 correos/mes).",
+    };
+  }
+
+  const delivery = await sendEmailViaEmailJs({
+    config,
+    to: email,
+    document: context.document,
+    replyToEmail: context.emailDelivery?.replyToEmail,
+  });
+
+  if (!delivery.ok) {
+    return {
+      sent: false,
+      method: "emailjs",
+      message: delivery.errorMessage ?? "No se pudo enviar el correo.",
+    };
+  }
+
+  return {
+    sent: true,
+    method: "emailjs",
+    message: `Correo enviado automáticamente a ${email}.`,
   };
 }
 
@@ -170,6 +231,11 @@ export async function sendSaleDocument(input: {
     if (!isCallableUnavailable(error)) {
       throw error;
     }
+  }
+
+  const emailJsResult = await sendSaleDocumentViaEmailJs(input);
+  if (emailJsResult.sent) {
+    return emailJsResult;
   }
 
   return sendSaleDocumentViaMailto(input);

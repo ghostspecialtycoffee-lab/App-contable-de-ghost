@@ -240,10 +240,10 @@ export async function executeGhostChatAction(
           documentType: documentType === "cuenta_cobro" ? "cuenta_cobro" : "factura",
         });
         emailNote = emailResult.sent
-          ? emailResult.method === "mailto"
-            ? `\nAbrí tu correo con el comprobante para **${customerEmail}**. Revisa y envía el mensaje.`
-            : `\nEnvié el comprobante a **${customerEmail}**.`
-          : `\nNo pude preparar el correo (${emailResult.message ?? "revisa el email"}). Puedes imprimirlo en **Registros**.`;
+          ? emailResult.method === "emailjs" || emailResult.method === "cloud"
+            ? `\nEnvié el comprobante a **${customerEmail}**.`
+            : `\nAbrí tu correo con el comprobante para **${customerEmail}**. Revisa y envía el mensaje.`
+          : `\nNo pude enviar el correo (${emailResult.message ?? "revisa configuración en Ajustes → Notificaciones"}). Puedes imprimirlo en **Registros**.`;
       } else if (documentType) {
         emailNote = "\nPuedes imprimir el comprobante en **Registros** o dime un correo para enviarlo.";
       }
@@ -341,10 +341,10 @@ export async function executeGhostChatAction(
           documentType: documentType === "cuenta_cobro" ? "cuenta_cobro" : "factura",
         });
         emailNote = emailResult.sent
-          ? emailResult.method === "mailto"
-            ? `\nAbrí tu correo con la cuenta para **${customerEmail}**. Revisa y envía el mensaje.`
-            : `\nEnvié el PDF a **${customerEmail}**.`
-          : `\nNo pude preparar el correo (${emailResult.message ?? "revisa el email"}). Puedes imprimirlo en Registros.`;
+          ? emailResult.method === "emailjs" || emailResult.method === "cloud"
+            ? `\nEnvié el comprobante a **${customerEmail}**.`
+            : `\nAbrí tu correo con la cuenta para **${customerEmail}**. Revisa y envía el mensaje.`
+          : `\nNo pude enviar el correo (${emailResult.message ?? "revisa configuración en Ajustes → Notificaciones"}). Puedes imprimirlo en Registros.`;
       } else {
         emailNote = "\nPuedes imprimir el comprobante en **Registros** o decirme un correo para enviarlo.";
       }

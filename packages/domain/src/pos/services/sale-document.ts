@@ -30,6 +30,11 @@ function formatDocumentMoney(value: number): string {
   return `$${Math.round(value).toLocaleString("es-CO")}`;
 }
 
+export function buildSaleDocumentSubject(input: SaleDocumentInput): string {
+  const title = getSaleDocumentTitle(input.documentType);
+  return `${title} ${input.saleNumber} — ${input.organizationName}`;
+}
+
 export function buildSaleDocumentPlainText(input: SaleDocumentInput): string {
   const title = getSaleDocumentTitle(input.documentType);
   const paymentLabel = PAYMENT_METHOD_LABELS[input.paymentMethod] ?? input.paymentMethod;
@@ -63,12 +68,41 @@ export function buildSaleDocumentPlainText(input: SaleDocumentInput): string {
     .trim();
 }
 
+export function buildSaleDocumentHtml(input: SaleDocumentInput): string {
+  const title = getSaleDocumentTitle(input.documentType);
+  const paymentLabel = PAYMENT_METHOD_LABELS[input.paymentMethod] ?? input.paymentMethod;
+  const lineRows = input.lines
+    .map(
+      (line) =>
+        `<tr><td>${line.quantity} × ${line.name}</td><td style="text-align:right">${formatDocumentMoney(line.lineTotal)}</td></tr>`,
+    )
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<body style="font-family:Arial,sans-serif;color:#111;max-width:640px;margin:0 auto;padding:24px">
+  <h1 style="font-size:20px;margin-bottom:4px">${input.organizationName}</h1>
+  <h2 style="font-size:16px;font-weight:600;margin-top:0">${title}</h2>
+  <p style="font-size:13px;color:#444">N.º ${input.saleNumber}<br>${input.soldAt}</p>
+  ${input.tableNumber ? `<p style="font-size:13px">Mesa ${input.tableNumber}</p>` : ""}
+  ${input.customerName ? `<p style="font-size:13px">Cliente: ${input.customerName}</p>` : ""}
+  <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px">
+    <tbody>${lineRows}</tbody>
+  </table>
+  <p style="font-size:14px">Base gravable: ${formatDocumentMoney(input.subtotal)}</p>
+  <p style="font-size:14px">Impuestos: ${formatDocumentMoney(input.taxAmount)}</p>
+  <p style="font-size:16px;font-weight:700">Total: ${formatDocumentMoney(input.total)}</p>
+  <p style="font-size:13px;color:#444">Medio de pago: ${paymentLabel}</p>
+  <p style="font-size:12px;color:#666;margin-top:24px">Generado por Ghost Contable</p>
+</body>
+</html>`;
+}
+
 export function buildSaleDocumentMailtoUrl(input: {
   to: string;
   document: SaleDocumentInput;
 }): string {
-  const title = getSaleDocumentTitle(input.document.documentType);
-  const subject = `${title} ${input.document.saleNumber} — ${input.document.organizationName}`;
+  const subject = buildSaleDocumentSubject(input.document);
   const body = buildSaleDocumentPlainText(input.document);
 
   return `mailto:${input.to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
