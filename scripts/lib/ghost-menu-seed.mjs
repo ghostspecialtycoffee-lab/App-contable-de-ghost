@@ -7,8 +7,6 @@ import { buildCatalogRecipeLines } from "./beverage-recipe-lines.mjs";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CATALOG_PATH = join(__dirname, "../../data/initial-load/ghost-menu-catalog.json");
 
-const MILK_BOTTLE_ML = 1000;
-const WATER_BOTTLE_ML = 600;
 const PASTRY_DOMICILIO_ALLOCATION_COP = 10_000;
 
 export function loadGhostMenuCatalog(manifestPath = CATALOG_PATH) {
