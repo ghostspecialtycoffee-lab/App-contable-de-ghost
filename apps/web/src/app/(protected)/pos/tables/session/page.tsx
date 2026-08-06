@@ -30,10 +30,12 @@ import {
   openTableSession,
   sendTableSessionToKitchen,
 } from "@/lib/tables/table-sessions";
+import { useSalesPaths } from "@/hooks/use-sales-paths";
 import { Button, Card } from "@ghost/ui";
 
 function TableSessionContent() {
   const router = useRouter();
+  const { path, inSalesExtension } = useSalesPaths();
   const searchParams = useSearchParams();
   const tableId = searchParams.get("id") ?? "";
   const { tables, loading: tablesLoading } = useDiningTables();
@@ -176,7 +178,7 @@ function TableSessionContent() {
         paymentMethod,
       });
       setSuccess(`Cuenta cobrada · ${result.saleNumber} · ${formatMoney(result.total)}`);
-      router.push(`/pos/tables?paid=${encodeURIComponent(result.saleNumber)}`);
+      router.push(`${path("tables")}?paid=${encodeURIComponent(result.saleNumber)}`);
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -203,7 +205,7 @@ function TableSessionContent() {
 
     try {
       await cancelTableSession({ sessionId: session.id });
-      router.push("/pos/tables");
+      router.push(path("tables"));
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -215,7 +217,7 @@ function TableSessionContent() {
     return (
       <div className="space-y-4">
         <p className="text-sm text-[var(--ghost-danger)]">Mesa no indicada.</p>
-        <Link href="/pos/tables" className="underline">
+        <Link href={path("tables")} className="underline">
           Volver a mesas
         </Link>
       </div>
@@ -230,7 +232,7 @@ function TableSessionContent() {
     return (
       <div className="space-y-4">
         <p className="text-sm text-[var(--ghost-danger)]">Mesa no encontrada.</p>
-        <Link href="/pos/tables" className="underline">
+        <Link href={path("tables")} className="underline">
           Volver a mesas
         </Link>
       </div>
@@ -241,11 +243,11 @@ function TableSessionContent() {
     <div className="space-y-6 pb-24">
       <div>
         <p className="text-sm text-[var(--ghost-text-muted)]">
-          <Link href="/pos" className="underline">
+          <Link href={path("counter")} className="underline">
             Mostrador
           </Link>
           {" · "}
-          <Link href="/pos/tables" className="underline">
+          <Link href={path("tables")} className="underline">
             Mesas
           </Link>
         </p>
@@ -253,13 +255,15 @@ function TableSessionContent() {
           Mesa {table.number}
           {table.label ? ` · ${table.label}` : ""}
         </h1>
-        <div className="mt-2">
-          <Link href="/pos/menu#nuevo-producto">
-            <Button size="sm" variant="secondary">
-              Crear producto
-            </Button>
-          </Link>
-        </div>
+        {!inSalesExtension ? (
+          <div className="mt-2">
+            <Link href="/pos/menu#nuevo-producto">
+              <Button size="sm" variant="secondary">
+                Crear producto
+              </Button>
+            </Link>
+          </div>
+        ) : null}
         {session ? (
           <p className="mt-1 text-sm text-[var(--ghost-brand-500)]">
             {TABLE_SESSION_STATUS_LABELS[session.status]}

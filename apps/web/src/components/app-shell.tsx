@@ -5,11 +5,13 @@ import { usePathname } from "next/navigation";
 
 import { DesktopSidebar } from "@/components/desktop-sidebar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { SalesExtensionShell } from "@/components/sales-extension-shell";
 import { BrandLogo } from "@/components/brand-logo";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useBrandAssets } from "@/hooks/use-brand-assets";
 import { useAuth } from "@/providers/auth-provider";
+import { isSalesExtensionPath } from "@/lib/navigation/sales-extension";
 
 const publicNavItems = [
   { href: "/", label: "Inicio" },
@@ -22,6 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { firebaseUser, organization } = useAuth();
   const { primaryLogo } = useBrandAssets();
   const isGuestRoute = pathname.startsWith("/mesa") || pathname.startsWith("/menu");
+  const isSalesRoute = isSalesExtensionPath(pathname);
 
   if (isGuestRoute) {
     const title = pathname.startsWith("/menu") ? "Menú digital" : "Menú · mesa";
@@ -63,6 +66,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main className="ghost-shell-main-public">{children}</main>
       </div>
     );
+  }
+
+  if (isSalesRoute) {
+    return <SalesExtensionShell>{children}</SalesExtensionShell>;
   }
 
   return (

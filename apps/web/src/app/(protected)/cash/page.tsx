@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { useCashSession, useCashSessionSales } from "@/hooks/use-cash-session";
+import { useSalesPaths } from "@/hooks/use-sales-paths";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import {
   closeCashSession,
@@ -20,6 +21,7 @@ import {
 import { Button, Card } from "@ghost/ui";
 
 export default function CashPage() {
+  const { path } = useSalesPaths();
   const { session, movements, loading, error } = useCashSession();
   const { cashSalesTotal, loading: salesLoading } = useCashSessionSales(session?.id ?? null);
 
@@ -222,10 +224,10 @@ export default function CashPage() {
               </ul>
             ) : null}
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link href="/pos">
+              <Link href={path("counter")}>
                 <Button variant="secondary">Mostrador</Button>
               </Link>
-              <Link href="/pos/tables">
+              <Link href={path("tables")}>
                 <Button variant="secondary">Mesas</Button>
               </Link>
             </div>
