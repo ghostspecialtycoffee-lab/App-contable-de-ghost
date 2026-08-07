@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { createEmptyGhostChatSession } from "./ghost-chat.js";
 import {
+  createInitialConversationTurn,
   processConversationTurn,
   type GhostConversationContext,
 } from "./ghost-conversation.js";
@@ -560,6 +561,48 @@ describe("ghost-conversation", () => {
     if (result.kind === "reply") {
       expect(result.messages[0]).toContain("Latte");
       expect(result.messages[0]).toContain("Catálogo");
+    }
+  });
+
+  it("responde briefing del día", () => {
+    const result = processConversationTurn({
+      message: "resumen del día",
+      session: createEmptyGhostChatSession(),
+      context: {
+        ...baseContext,
+        cashSessionOpen: false,
+      },
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.messages[0]).toContain("Buenos días");
+      expect(result.messages[0]).toContain("caja");
+    }
+  });
+
+  it("saludo inicial incluye briefing cuando hay novedades", () => {
+    const result = createInitialConversationTurn({
+      ...baseContext,
+      cashSessionOpen: false,
+      menuProducts: [
+        {
+          id: "prod-1",
+          name: "Latte",
+          price: 12_000,
+          category: "beverage",
+          station: "bar",
+          recipeCost: 5_000,
+        },
+      ],
+      recipesSnapshot: [],
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.messages.length).toBe(2);
+      expect(result.messages[0]).toContain("Ghost");
+      expect(result.messages[1]).toContain("novedad");
     }
   });
 });

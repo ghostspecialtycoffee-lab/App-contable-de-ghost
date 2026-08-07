@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { PageSection } from "@/components/page-section";
 import { DailyOperationsPanel } from "@/components/daily-operations-panel";
+import { ProactiveBriefingPanel } from "@/components/proactive-briefing-panel";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useSales } from "@/hooks/use-sales";
 import { formatMoney } from "@/lib/format";
@@ -42,6 +43,8 @@ export default function DashboardPage() {
   return (
     <div className="ghost-page-stack">
       <PageHeader title="Inicio" />
+
+      <ProactiveBriefingPanel />
 
       <DailyOperationsPanel />
 

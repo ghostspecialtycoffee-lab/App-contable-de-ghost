@@ -21,6 +21,7 @@ import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useFixedExpenses } from "@/hooks/use-fixed-expenses";
 import { useInventoryBalances } from "@/hooks/use-inventory-balances";
+import { useInventoryMovements } from "@/hooks/use-inventory-movements";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useKitchenOrders } from "@/hooks/use-kitchen-orders";
 import { useMenuProducts } from "@/hooks/use-menu-products";
@@ -87,6 +88,7 @@ export function useGhostChat() {
   const { recipes } = useRecipes();
   const { items: inventoryItems } = useInventoryItems();
   const { balances: inventoryBalances } = useInventoryBalances();
+  const { movements: inventoryMovements } = useInventoryMovements();
   const { expenses: fixedExpenses } = useFixedExpenses();
   const { warehouses } = useWarehouses();
   const { invoices } = usePurchaseInvoices();
@@ -273,6 +275,12 @@ export function useGhostChat() {
         presentationQuantity: item.presentationQuantity,
       })),
       costMatrixSettings,
+      inventoryMovementsSnapshot: inventoryMovements.map((movement) => ({
+        itemId: movement.itemId,
+        type: movement.type,
+        quantity: movement.quantity,
+        occurredAt: movement.occurredAt,
+      })),
     };
   }, [
     organization?.name,
@@ -292,6 +300,7 @@ export function useGhostChat() {
     invoices,
     recipes,
     costMatrixSettings,
+    inventoryMovements,
   ]);
 
   useEffect(() => {

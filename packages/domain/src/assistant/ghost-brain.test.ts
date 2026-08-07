@@ -25,6 +25,8 @@ describe("ghost brain registry", () => {
     expect(classifyBrainQueryIntent("que hay en el menu")).toBe("query-menu-catalog");
     expect(classifyBrainQueryIntent("lista de inventario")).toBe("query-inventory-catalog");
     expect(classifyBrainQueryIntent("estado de mesas")).toBe("query-tables-status");
+    expect(classifyBrainQueryIntent("resumen del dia")).toBe("query-daily-briefing");
+    expect(classifyBrainQueryIntent("que novedades hay")).toBe("query-daily-briefing");
   });
 
   it("genera guía con ejemplos", () => {

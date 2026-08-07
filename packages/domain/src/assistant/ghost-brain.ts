@@ -44,6 +44,16 @@ export const GHOST_BRAIN_SKILLS: GhostBrainSkill[] = [
     examples: ["¿cómo vamos?", "estado de la operación"],
   },
   {
+    id: "query-daily-briefing",
+    domain: "operaciones",
+    kind: "query",
+    title: "Briefing del día",
+    description: "Novedades de ventas, inventario, caja y márgenes.",
+    keywords:
+      /(resumen del dia|novedades|briefing|buenos dias|como amanec|que paso hoy|alertas del dia|que hay de nuevo)/,
+    examples: ["resumen del día", "¿qué novedades hay?", "briefing"],
+  },
+  {
     id: "query-sales-report",
     domain: "ventas",
     kind: "query",
@@ -402,6 +412,7 @@ export function classifyBrainQueryIntent(message: string): string | null {
     "query-menu-catalog",
     "query-inventory-catalog",
     "query-tables-status",
+    "query-daily-briefing",
     "org-status",
   ]);
 

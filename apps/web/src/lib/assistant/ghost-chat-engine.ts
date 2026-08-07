@@ -105,6 +105,12 @@ export interface GhostChatContext {
   recipesSnapshot: GhostConversationRecipeSnapshot[];
   inventoryCostSnapshot: GhostConversationInventoryCostSnapshot[];
   costMatrixSettings?: GhostConversationCostMatrixSettings;
+  inventoryMovementsSnapshot?: Array<{
+    itemId: string;
+    type: string;
+    quantity: number;
+    occurredAt: string;
+  }>;
 }
 
 export type GhostChatAction =
