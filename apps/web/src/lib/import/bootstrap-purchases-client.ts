@@ -159,6 +159,7 @@ export interface BootstrapImportResult {
   movements: number;
   menuProducts: number;
   skipped: number;
+  unlinkedLines: number;
   ghostMenuProducts: number;
   ghostRecipesCreated: number;
   ghostRecipesUpdated: number;
@@ -366,6 +367,7 @@ export async function runBootstrapPurchaseImport(input: {
     movements,
     menuProducts,
     skipped,
+    unlinkedLines: 0,
     ghostMenuProducts,
     ghostRecipesCreated,
     ghostRecipesUpdated,

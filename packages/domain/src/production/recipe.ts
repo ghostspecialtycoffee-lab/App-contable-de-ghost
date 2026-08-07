@@ -13,8 +13,12 @@ export interface Recipe {
   organizationId: EntityId;
   menuProductId: EntityId;
   menuProductName: string;
+  currentVersion?: number;
+  recipeCost?: number;
   yieldQuantity: number;
   lines: RecipeLine[];
+  /** Respuestas del cuestionario de bebidas no estándar SCA. */
+  advancedSetupAnswers?: Record<string, string>;
 }
 
 export interface RecipeLineInput {

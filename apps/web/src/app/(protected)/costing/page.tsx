@@ -6,13 +6,14 @@ import { useEffect, useMemo, useState } from "react";
 
 import { RecipeYieldField } from "@/components/recipe-yield-field";
 import { ProductCostPanoramaPanel } from "@/components/product-cost-panorama-panel";
+import { BeverageAdvancedSetupPanel } from "@/components/beverage-advanced-setup-panel";
 import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useRecipes } from "@/hooks/use-recipes";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
-import { buildInventoryCostProfiles } from "@/lib/costing/recipe-costing";
+import { buildInventoryCostProfiles, getResolvedUnitCost } from "@/lib/costing/recipe-costing";
 import { seedCostMatrix } from "@/lib/costing/seed-cost-matrix";
 import { updateMenuProduct } from "@/lib/pos/pos";
 import { saveRecipe } from "@/lib/recipes/recipes";
@@ -27,14 +28,19 @@ import {
   calculateRecipeBatchCost,
   calculateRecipeCostBreakdown,
   calculateRecipeLineCost,
+  getCostBasisNote,
   getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
   PASTRY_DOMICILIO_ALLOCATION_COP,
   suggestRecipeYieldForProduct,
   type BaseUnit,
+  type BeverageAdvancedSetupAnswers,
   type CoTaxCategory,
   type RecipeLineInput,
+  getBeverageAdvancedSetupProgress,
+  getBeverageAdvancedSetupSpec,
+  needsBeverageAdvancedSetup,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
@@ -56,6 +62,9 @@ export default function CostingPage() {
   const [saleTaxCategory, setSaleTaxCategory] = useState<CoTaxCategory>("IVA_19");
   const [recipeLines, setRecipeLines] = useState<RecipeLineInput[]>([emptyRecipeLine()]);
   const [yieldQuantity, setYieldQuantity] = useState(1);
+  const [advancedSetupAnswers, setAdvancedSetupAnswers] = useState<BeverageAdvancedSetupAnswers>(
+    {},
+  );
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -66,6 +75,12 @@ export default function CostingPage() {
   const selectedProduct = products.find((product) => product.id === productId) ?? products[0];
   const selectedRecipe = selectedProduct
     ? recipes.find((recipe) => recipe.menuProductId === selectedProduct.id)
+    : null;
+  const advancedSetupSpec = selectedProduct
+    ? getBeverageAdvancedSetupSpec(selectedProduct.name)
+    : null;
+  const advancedSetupProgress = selectedProduct
+    ? getBeverageAdvancedSetupProgress(selectedProduct.name, advancedSetupAnswers)
     : null;
 
   useEffect(() => {
@@ -95,11 +110,13 @@ export default function CostingPage() {
         })),
       );
       setYieldQuantity(selectedRecipe.yieldQuantity || 1);
+      setAdvancedSetupAnswers(selectedRecipe.advancedSetupAnswers ?? {});
     } else {
       setRecipeLines([emptyRecipeLine()]);
       setYieldQuantity(
         suggestRecipeYieldForProduct(selectedProduct.name, selectedProduct.category),
       );
+      setAdvancedSetupAnswers({});
     }
 
     setSubmitError(null);
@@ -307,16 +324,22 @@ export default function CostingPage() {
         yieldQuantity,
         category: selectedProduct.category,
         lines: validLines,
+        advancedSetupAnswers: advancedSetupSpec ? advancedSetupAnswers : undefined,
       });
 
+      const setupNote =
+        advancedSetupSpec && advancedSetupProgress && !advancedSetupProgress.isComplete
+          ? " Confirma las preguntas de barra para cerrar la ficha."
+          : "";
+
       setSaveMessage(
-        `Ficha guardada. Costo por porción: ${formatMoney(result.recipeCost)}` +
+        `Ficha guardada (receta v${result.recipeVersion}). Costo por porción: ${formatMoney(result.recipeCost)}` +
           (yieldQuantity > 1
             ? selectedProduct.category === "pastry"
               ? ` (factura ${formatMoney(previewBatchCost)} + ${formatMoney(PASTRY_DOMICILIO_ALLOCATION_COP)} domicilio ÷ ${yieldQuantity})`
               : ` (lote ${formatMoney(previewBatchCost)} ÷ ${yieldQuantity})`
             : "") +
-          ".",
+          `.${setupNote}`,
       );
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
@@ -328,6 +351,9 @@ export default function CostingPage() {
   const productSummaries = useMemo(() => {
     return products.map((product) => {
       const recipe = recipes.find((entry) => entry.menuProductId === product.id);
+      const setupProgress = needsBeverageAdvancedSetup(product.name)
+        ? getBeverageAdvancedSetupProgress(product.name, recipe?.advancedSetupAnswers)
+        : null;
       const batchCost =
         recipe && recipe.lines.length > 0
           ? calculateRecipeBatchCost(recipe.lines, itemProfiles)
@@ -347,6 +373,7 @@ export default function CostingPage() {
         product,
         hasRecipe: Boolean(recipe?.lines.length),
         foodCostPct,
+        setupProgress,
       };
     });
   }, [products, recipes, itemProfiles]);
@@ -426,7 +453,7 @@ export default function CostingPage() {
             </p>
           ) : (
             <ul className="space-y-1">
-              {productSummaries.map(({ product, hasRecipe, foodCostPct }) => {
+              {productSummaries.map(({ product, hasRecipe, foodCostPct, setupProgress }) => {
                 const active = (productId || products[0]?.id) === product.id;
                 return (
                   <li key={product.id}>
@@ -446,6 +473,9 @@ export default function CostingPage() {
                         {foodCostPct !== null
                           ? ` · FC ${(foodCostPct * 100).toFixed(0)}%`
                           : ""}
+                        {setupProgress && !setupProgress.isComplete
+                          ? ` · confirmar barra ${setupProgress.answered}/${setupProgress.total}`
+                          : ""}
                       </p>
                     </button>
                   </li>
@@ -457,7 +487,11 @@ export default function CostingPage() {
 
         <div className="space-y-4">
           {selectedProduct ? (
-            <Card title={`Ficha: ${selectedProduct.name}`}>
+            <Card
+              title={`Ficha: ${selectedProduct.name}${
+                selectedRecipe?.currentVersion ? ` · v${selectedRecipe.currentVersion}` : ""
+              }`}
+            >
               <form className="space-y-4" onSubmit={handleSave}>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block space-y-1">
@@ -507,6 +541,15 @@ export default function CostingPage() {
                   ingredientNames={validRecipeLines.map((line) => line.itemName).filter(Boolean)}
                 />
 
+                {advancedSetupSpec ? (
+                  <BeverageAdvancedSetupPanel
+                    spec={advancedSetupSpec}
+                    answers={advancedSetupAnswers}
+                    onChange={setAdvancedSetupAnswers}
+                    disabled={submitting}
+                  />
+                ) : null}
+
                 <div className="space-y-2 border-t border-[var(--ghost-border)] pt-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium">Receta (lote completo)</span>
@@ -548,7 +591,7 @@ export default function CostingPage() {
                           <option value="">Seleccionar insumo</option>
                           {inventoryItems.map((item) => (
                             <option key={item.id} value={item.id}>
-                              {item.name} · {formatMoney(item.averageCost || item.lastCost)}/
+                              {item.name} · {formatMoney(getResolvedUnitCost(item))}/
                               {item.baseUnit}
                             </option>
                           ))}
@@ -584,18 +627,32 @@ export default function CostingPage() {
                           </select>
                         </div>
                         {line.inventoryItemId && line.quantity > 0 ? (
-                          <p className="text-xs text-[var(--ghost-text-muted)]">
+                          <div className="space-y-0.5">
+                            <p className="text-xs text-[var(--ghost-text-muted)]">
+                              {(() => {
+                                const profile =
+                                  itemProfiles[line.inventoryItemId] ?? {
+                                    baseUnit: line.unit,
+                                    averageCost: 0,
+                                  };
+                                const breakdown = calculateRecipeLineCost(line, profile);
+                                return `${breakdown.quantityInBase.toLocaleString("es-CO")} ${breakdown.baseUnit} × ${formatMoney(breakdown.unitCostPerBase)} = ${formatMoney(breakdown.lineCost)}`;
+                              })()}
+                            </p>
                             {(() => {
-                              const breakdown = calculateRecipeLineCost(
-                                line,
+                              const profile =
                                 itemProfiles[line.inventoryItemId] ?? {
                                   baseUnit: line.unit,
                                   averageCost: 0,
-                                },
-                              );
-                              return `${breakdown.quantityInBase.toLocaleString("es-CO")} ${breakdown.baseUnit} × ${formatMoney(breakdown.unitCostPerBase)} = ${formatMoney(breakdown.lineCost)}`;
+                                };
+                              const note = getCostBasisNote(profile);
+                              return note ? (
+                                <p className="text-xs text-amber-700 dark:text-amber-400">
+                                  {note}
+                                </p>
+                              ) : null;
                             })()}
-                          </p>
+                          </div>
                         ) : null}
                       </div>
                     ))

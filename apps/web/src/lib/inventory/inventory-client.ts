@@ -1,5 +1,8 @@
 import {
+  buildInventoryLotDocId,
+  buildInventoryMovementRegisteredEvent,
   calculateWeightedAverageCost,
+  LEGACY_LOT_CODE,
   validateMovementQuantity,
   validateSku,
   type InventoryMovementType,
@@ -15,10 +18,13 @@ import {
   runTransaction,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
+import { recordInventoryMovementAnalyticsSafe } from "@/lib/analytics/analytics-client";
+import { publishDomainEventSafe } from "@/lib/events/domain-events";
 
 function requireUserId(): string {
   const uid = getFirebaseAuth().currentUser?.uid;
@@ -116,6 +122,76 @@ export async function createInventoryItemClient(input: {
   return { itemId: itemRef.id };
 }
 
+export async function updateInventoryItemClient(input: {
+  itemId: string;
+  purchaseUnit?: string;
+  presentationQuantity?: number;
+  presentationLabel?: string;
+  name?: string;
+  category?: string;
+  minStock?: number;
+  maxStock?: number;
+  status?: string;
+}): Promise<void> {
+  const userId = requireUserId();
+  const organizationId = await getOrganizationIdFromProfile();
+  const itemRef = doc(
+    getFirestoreDb(),
+    firestorePaths.organizationInventoryItem(organizationId, input.itemId),
+  );
+  const itemSnap = await getDoc(itemRef);
+
+  if (!itemSnap.exists()) {
+    throw new Error("Ítem no encontrado.");
+  }
+
+  const patch: Record<string, unknown> = {
+    updatedAt: serverTimestamp(),
+    updatedBy: userId,
+  };
+
+  if (input.name !== undefined) {
+    const name = input.name.trim();
+    if (name.length < 2) {
+      throw new Error("El nombre es obligatorio.");
+    }
+    patch.name = name;
+  }
+
+  if (input.category !== undefined) {
+    patch.category = input.category;
+  }
+
+  if (input.minStock !== undefined) {
+    patch.minStock = input.minStock;
+  }
+
+  if (input.maxStock !== undefined) {
+    patch.maxStock = input.maxStock;
+  }
+
+  if (input.status !== undefined) {
+    patch.status = input.status;
+  }
+
+  if (input.purchaseUnit !== undefined) {
+    patch.purchaseUnit = input.purchaseUnit;
+  }
+
+  if (input.presentationQuantity !== undefined) {
+    if (!Number.isFinite(input.presentationQuantity) || input.presentationQuantity <= 0) {
+      throw new Error("La cantidad por unidad debe ser mayor que cero.");
+    }
+    patch.presentationQuantity = input.presentationQuantity;
+  }
+
+  if (input.presentationLabel !== undefined) {
+    patch.presentationLabel = input.presentationLabel.trim();
+  }
+
+  await updateDoc(itemRef, patch);
+}
+
 export async function createWarehouseClient(input: {
   branchId: string;
   name: string;
@@ -162,6 +238,7 @@ export async function registerInventoryMovementClient(input: {
   unitCost?: number;
   reference?: string;
   notes?: string;
+  lotCode?: string;
 }): Promise<{ movementId: string; balanceAfter: number }> {
   const userId = requireUserId();
   const organizationId = await getOrganizationIdFromProfile();
@@ -198,11 +275,23 @@ export async function registerInventoryMovementClient(input: {
   const movementRef = doc(
     collection(db, firestorePaths.organizationInventoryMovements(organizationId)),
   );
+  const lotCode = input.lotCode?.trim() || "";
+  const trackLot = lotCode.length > 0 && lotCode !== LEGACY_LOT_CODE;
+  const lotRef = trackLot
+    ? doc(
+        db,
+        firestorePaths.organizationInventoryLot(
+          organizationId,
+          buildInventoryLotDocId(input.warehouseId, input.itemId, lotCode),
+        ),
+      )
+    : null;
 
   const balanceAfter = await runTransaction(db, async (transaction) => {
     const itemSnap = await transaction.get(itemRef);
     const warehouseSnap = await transaction.get(warehouseRef);
     const balanceSnap = await transaction.get(balanceRef);
+    const lotSnap = lotRef ? await transaction.get(lotRef) : null;
 
     if (!itemSnap.exists()) {
       throw new Error("Ítem no encontrado.");
@@ -239,6 +328,49 @@ export async function registerInventoryMovementClient(input: {
     const now = serverTimestamp();
     const totalCost = Math.abs(signedQuantity) * (unitCost || averageCost);
 
+    if (trackLot && lotRef) {
+      const absQuantity = Math.abs(signedQuantity);
+      if (signedQuantity > 0) {
+        const currentLotQty = lotSnap?.exists()
+          ? Number(lotSnap.data()?.quantityRemaining ?? 0)
+          : 0;
+        transaction.set(
+          lotRef,
+          {
+            organizationId,
+            branchId: input.branchId,
+            warehouseId: input.warehouseId,
+            itemId: input.itemId,
+            lotCode,
+            quantityRemaining: currentLotQty + absQuantity,
+            unitCost: unitCost || averageCost,
+            sourceReference: input.reference ?? "",
+            sourceMovementId: movementRef.id,
+            receivedAt: lotSnap?.exists()
+              ? lotSnap.data()?.receivedAt ?? new Date().toISOString()
+              : new Date().toISOString(),
+            updatedAt: now,
+          },
+          { merge: true },
+        );
+      } else {
+        const currentLotQty = lotSnap?.exists()
+          ? Number(lotSnap.data()?.quantityRemaining ?? 0)
+          : 0;
+        const nextLotQty = Math.max(0, currentLotQty - absQuantity);
+        if (lotSnap?.exists()) {
+          transaction.set(
+            lotRef,
+            {
+              quantityRemaining: nextLotQty,
+              updatedAt: now,
+            },
+            { merge: true },
+          );
+        }
+      }
+    }
+
     transaction.set(movementRef, {
       organizationId,
       branchId: input.branchId,
@@ -251,7 +383,7 @@ export async function registerInventoryMovementClient(input: {
       balanceAfter: nextBalance,
       reference: input.reference ?? "",
       notes: input.notes ?? "",
-      lotCode: "",
+      lotCode,
       actorUserId: userId,
       occurredAt: now,
     });
@@ -283,6 +415,26 @@ export async function registerInventoryMovementClient(input: {
 
     return nextBalance;
   });
+
+  await recordInventoryMovementAnalyticsSafe({
+    organizationId,
+    occurredAt: new Date().toISOString(),
+  });
+
+  await publishDomainEventSafe(
+    buildInventoryMovementRegisteredEvent({
+      organizationId,
+      branchId: input.branchId,
+      actorUserId: userId,
+      movementId: movementRef.id,
+      itemId: input.itemId,
+      warehouseId: input.warehouseId,
+      movementType: input.type,
+      quantity: signedQuantity,
+      balanceAfter,
+      reference: input.reference,
+    }),
+  );
 
   return { movementId: movementRef.id, balanceAfter };
 }

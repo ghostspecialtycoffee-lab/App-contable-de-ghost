@@ -17,6 +17,23 @@ describe("table session helpers", () => {
     expect(isTableSessionActive("cancelled")).toBe(false);
   });
 
+  it("asigna categoría fiscal por defecto sin undefined", () => {
+    const line = buildTableSessionLine(
+      {
+        productId: "p1",
+        name: "Dirty chai",
+        unitPrice: 12000,
+        quantity: 2,
+        station: "bar",
+        source: "staff",
+      },
+      "l1",
+    );
+
+    expect(line.saleTaxCategory).toBe("IVA_19");
+    expect(Object.values(line).some((value) => value === undefined)).toBe(false);
+  });
+
   it("calcula subtotal de líneas activas", () => {
     const lines = [
       buildTableSessionLine(

@@ -44,7 +44,10 @@ export function InitialDataImportPanel({
     }
 
     const confirmed = window.confirm(
-      "¿Cargar las 41 facturas del manifiesto? Se crearán insumos, entradas de bodega, compras confirmadas y productos POS.",
+      "¿Importar las facturas del manifiesto?\n\n" +
+        "1. Crea primero tus insumos en Inventario → Insumos (nombre, g/ml por unidad).\n" +
+        "2. Las líneas de factura solo entran a bodega si el nombre coincide con un insumo existente.\n" +
+        "3. Se cargará la carta Ghost si ya tienes café y leche en bodega.",
     );
     if (!confirmed) {
       return;
@@ -61,12 +64,17 @@ export function InitialDataImportPanel({
         warehouseId,
       });
       setImportResult(
-        `Listo: ${result.invoices} facturas, ${result.inventoryItems} insumos, ${result.movements} movimientos, ${result.menuProducts} productos POS` +
+        `Listo: ${result.invoices} facturas importadas` +
+          (result.movements > 0 ? `, ${result.movements} entradas a bodega` : "") +
+          (result.unlinkedLines > 0
+            ? ` · ${result.unlinkedLines} líneas sin insumo vinculado (créalos en Inventario y reimporta o registra compras manualmente)`
+            : "") +
           (result.ghostMenuProducts > 0 || result.ghostRecipesCreated > 0
-            ? ` y carta Ghost (${result.ghostMenuProducts} bebidas, ${result.ghostRecipesCreated} fichas).`
+            ? ` · carta Ghost (${result.ghostMenuProducts} bebidas, ${result.ghostRecipesCreated} fichas)`
             : result.ghostRecipesUpdated > 0
-              ? ` · ${result.ghostRecipesUpdated} fichas de costo actualizadas.`
-              : "."),
+              ? ` · ${result.ghostRecipesUpdated} fichas actualizadas`
+              : "") +
+          ".",
       );
     } catch (cause) {
       setImportError(getCallableErrorMessage(cause));
@@ -113,11 +121,11 @@ export function InitialDataImportPanel({
 
   return (
     <Card
-      title="Carga inicial desde tus facturas"
+      title="Carga inicial"
       description={
         compact
-          ? "Faltan datos en tu cuenta. Importa el manifiesto una vez para ver compras, bodega y carta."
-          : "Tus facturas fotografiadas están en el manifiesto del proyecto. La app lee Firebase: hasta que importes, verás listas vacías."
+          ? "Primero define insumos en Inventario; luego importa facturas para contabilidad y bodega."
+          : "Las facturas son registro contable. Los insumos (g/ml por unidad) se crean manualmente en Inventario → Insumos."
       }
     >
       {!setup.hasPurchases || !setup.hasInventory || !setup.hasGhostMenu ? (
@@ -138,7 +146,8 @@ export function InitialDataImportPanel({
         <div className="mb-4 rounded-xl border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-2)] p-4">
           <p className="text-sm font-medium">Opción rápida (desde la app)</p>
           <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            Un clic carga facturas, insumos por clase, stock en bodega y productos de venta.
+            Importa facturas históricas. Solo mueve bodega si ya creaste el insumo con el mismo nombre en
+            Inventario.
           </p>
           <Button className="mt-3" fullWidth disabled={importing} onClick={handleInAppImport}>
             {importing ? "Importando facturas..." : "Cargar facturas ahora"}

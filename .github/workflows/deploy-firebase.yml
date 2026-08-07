@@ -5,39 +5,82 @@ on:
   push:
     branches:
       - main
+  schedule:
+    # Respaldo automático: publica main si hubo merges que no dispararon Actions
+    - cron: "*/20 * * * *"
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
 
 concurrency:
   group: firebase-deploy
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git fetch --depth=1 origin main
+          git checkout FETCH_HEAD
+
+      - name: Skip if main already deployed (scheduled only)
+        if: github.event_name == 'schedule'
+        id: deploy_gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          CURRENT=$(git rev-parse HEAD)
+          LAST=$(
+            gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/deploy-firebase.yml/runs?status=success&branch=main&per_page=1" \
+              --jq '.workflow_runs[0].head_sha // empty' 2>/dev/null || true
+          )
+          if [ -n "$LAST" ] && [ "$CURRENT" = "$LAST" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Sin cambios en main ($CURRENT). Omitiendo deploy programado."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Deploy programado: ${LAST:-ninguno} -> $CURRENT"
+          fi
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.6.5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
+        if: steps.deploy_gate.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@10.6.5 --activate
+          node --version
+          pnpm --version
 
       - name: Install dependencies
+        if: steps.deploy_gate.outputs.skip != 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Test
+        if: steps.deploy_gate.outputs.skip != 'true'
         run: pnpm test
 
       - name: Build
+        if: steps.deploy_gate.outputs.skip != 'true'
         run: pnpm build
 
       - name: Deploy to Firebase
+        if: steps.deploy_gate.outputs.skip != 'true'
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
@@ -111,20 +154,21 @@ jobs:
   bootstrap-import:
     needs: deploy
     runs-on: ubuntu-latest
+    if: needs.deploy.result == 'success'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git fetch --depth=1 origin main
+          git checkout FETCH_HEAD
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.6.5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@10.6.5 --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

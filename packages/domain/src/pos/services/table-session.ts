@@ -22,7 +22,7 @@ export function buildTableSessionLine(
     unitPrice: input.unitPrice,
     quantity: input.quantity,
     station: input.station,
-    saleTaxCategory: input.saleTaxCategory,
+    saleTaxCategory: input.saleTaxCategory ?? "IVA_19",
     status: "pending",
     source: input.source,
     notes: input.notes?.trim() ?? "",
