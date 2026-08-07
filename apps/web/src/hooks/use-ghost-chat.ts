@@ -83,7 +83,7 @@ export function useGhostChat() {
   const membership = useActiveMembership();
   const organizationId = organization?.id ?? "";
   const branchId = membership?.branchIds?.[0] ?? "";
-  const { products } = useMenuProducts();
+  const { products } = useMenuProducts({ includeInactive: true });
   const { recipes } = useRecipes();
   const { items: inventoryItems } = useInventoryItems();
   const { balances: inventoryBalances } = useInventoryBalances();
@@ -166,6 +166,7 @@ export function useGhostChat() {
         price: product.price,
         category: product.category,
         station: product.station,
+        status: product.status,
         saleTaxCategory: product.saleTaxCategory,
         recipeCost: product.recipeCost,
       })),

@@ -512,4 +512,54 @@ describe("ghost-conversation", () => {
       expect(result.draft.amount).toBe("100000");
     }
   });
+
+  it("elimina producto del menú por nombre", () => {
+    const result = processConversationTurn({
+      message: "elimina torta de zanahoria del menú",
+      session: createEmptyGhostChatSession(),
+      context: {
+        ...baseContext,
+        menuProducts: [
+          {
+            id: "prod-torta",
+            name: "Torta de zanahoria",
+            price: 8000,
+            category: "pastry",
+            station: "counter",
+          },
+        ],
+      },
+    });
+
+    expect(result.kind).toBe("execute");
+    if (result.kind === "execute") {
+      expect(result.intent).toBe("delete-menu-product");
+      expect(result.draft.productId).toBe("prod-torta");
+    }
+  });
+
+  it("lista catálogo de productos", () => {
+    const result = processConversationTurn({
+      message: "qué hay en el menú",
+      session: createEmptyGhostChatSession(),
+      context: {
+        ...baseContext,
+        menuProducts: [
+          {
+            id: "prod-1",
+            name: "Latte",
+            price: 12000,
+            category: "beverage",
+            station: "bar",
+          },
+        ],
+      },
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.messages[0]).toContain("Latte");
+      expect(result.messages[0]).toContain("Catálogo");
+    }
+  });
 });

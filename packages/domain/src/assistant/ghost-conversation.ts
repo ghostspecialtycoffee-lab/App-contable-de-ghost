@@ -21,6 +21,9 @@ import {
   buildCostMatrixOverviewReply,
   buildRecipeCostPreviewReply,
   buildSingleProductCostReply,
+  buildInventoryCatalogReply,
+  buildMenuCatalogReply,
+  buildTablesStatusReply,
 } from "./brain-responses.js";
 import {
   extractRecipePriceFromMessage,
@@ -61,6 +64,16 @@ export type GhostConversationIntent =
   | "send-kitchen"
   | "update-kitchen-order"
   | "seed-ghost-menu"
+  | "delete-menu-product"
+  | "update-menu-product"
+  | "register-inventory-movement"
+  | "create-fixed-expense"
+  | "cancel-table-session"
+  | "create-dining-table"
+  | "create-warehouse"
+  | "query-menu-catalog"
+  | "query-inventory-catalog"
+  | "query-tables-status"
   | "agent-query";
 
 export interface GhostConversationInventoryItem {
@@ -103,6 +116,7 @@ export interface GhostConversationProduct {
   price: number;
   category: string;
   station: string;
+  status?: string;
   saleTaxCategory?: string;
   recipeCost?: number;
 }
@@ -269,6 +283,9 @@ type ExecutableGhostConversationIntent = Exclude<
   | "query-work-shifts"
   | "query-kitchen-status"
   | "query-cost-matrix"
+  | "query-menu-catalog"
+  | "query-inventory-catalog"
+  | "query-tables-status"
   | "agent-query"
 >;
 
@@ -289,6 +306,13 @@ const INTENT_FLOW_KEY: Record<ExecutableGhostConversationIntent, string> = {
   "seed-ghost-menu": "admin/seed-ghost-menu",
   "build-recipe-cost": "admin/build-recipe-cost",
   "save-recipe-cost": "admin/save-recipe-cost",
+  "delete-menu-product": "admin/delete-menu-product",
+  "update-menu-product": "admin/update-menu-product",
+  "register-inventory-movement": "admin/inventory-movement",
+  "create-fixed-expense": "admin/create-fixed-expense",
+  "cancel-table-session": "waiter/cancel-table",
+  "create-dining-table": "admin/create-dining-table",
+  "create-warehouse": "admin/create-warehouse",
 };
 
 const REQUIRED_FIELDS: Record<string, string[]> = {
@@ -307,6 +331,13 @@ const REQUIRED_FIELDS: Record<string, string[]> = {
   "update-kitchen-order": ["orderId", "status"],
   "build-recipe-cost": ["productId"],
   "save-recipe-cost": ["productId", "recipeLines"],
+  "delete-menu-product": ["productId"],
+  "update-menu-product": ["productId"],
+  "register-inventory-movement": ["inventoryItemId", "quantity", "movementType"],
+  "create-fixed-expense": ["name", "amount"],
+  "cancel-table-session": ["sessionId"],
+  "create-dining-table": ["tableNumber"],
+  "create-warehouse": ["name"],
 };
 
 const FIELD_PROMPTS: Record<string, string> = {
@@ -331,6 +362,8 @@ const FIELD_PROMPTS: Record<string, string> = {
     "¿A qué correo envío el comprobante en PDF? Si no hace falta, di **no**.",
   recipeLines:
     "¿Qué ingredientes lleva? Ejemplo: «18g café caturra, 200ml leche entera, precio 12000».",
+  movementType: "¿Es entrada, salida, merma o ajuste de inventario?",
+  tableNumber: "¿Qué número de mesa?",
 };
 
 function normalizeText(value: string): string {
@@ -681,6 +714,15 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
   if (brainQuery === "query-cost-matrix") {
     return "query-cost-matrix";
   }
+  if (brainQuery === "query-menu-catalog") {
+    return "query-menu-catalog";
+  }
+  if (brainQuery === "query-inventory-catalog") {
+    return "query-inventory-catalog";
+  }
+  if (brainQuery === "query-tables-status") {
+    return "query-tables-status";
+  }
   if (brainQuery === "query-financial-overview") {
     return "query-financial-overview";
   }
@@ -690,6 +732,41 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
 
   if (/(cargar carta|carta ghost|seed|menu ghost|actualiza matriz de costos|refresca matriz de costos)/.test(normalized)) {
     return "seed-ghost-menu";
+  }
+  if (
+    (/(elimina|borra|quita|remueve)/.test(normalized) &&
+      (/(del menu|de la carta|del catalogo|producto)/.test(normalized) ||
+        findByName(message, context.menuProducts))) ||
+    /elimina\s+.+\s+del\s+menu/i.test(message)
+  ) {
+    return "delete-menu-product";
+  }
+  if (
+    (/(cambia|actualiza|ajusta|pon)\s+(el\s+)?precio/.test(normalized) ||
+      /(desactiva|activa|inactiva)\s+/.test(normalized)) &&
+    findByName(message, context.menuProducts)
+  ) {
+    return "update-menu-product";
+  }
+  if (
+    /(entrada de|ingreso de|salida de|egreso de|merma de|ajuste de|registra entrada|registra salida)/.test(
+      normalized,
+    ) &&
+    findByName(message, context.inventoryItems)
+  ) {
+    return "register-inventory-movement";
+  }
+  if (/(nuevo gasto fijo|crear gasto fijo|registra gasto fijo|gasto recurrente)/.test(normalized)) {
+    return "create-fixed-expense";
+  }
+  if (/(cancela|anula|cierra sin cobrar).{0,16}mesa/.test(normalized)) {
+    return "cancel-table-session";
+  }
+  if (/(nueva mesa|crea mesa|agrega mesa|crear mesa)/.test(normalized)) {
+    return "create-dining-table";
+  }
+  if (/(nueva bodega|crea bodega|agrega bodega|crear bodega)/.test(normalized)) {
+    return "create-warehouse";
   }
   if (isSaveRecipeCostMessage(message, normalized)) {
     return "save-recipe-cost";
@@ -1074,6 +1151,118 @@ function extractDraftForIntent(
     }
   }
 
+  if (intent === "delete-menu-product" || intent === "update-menu-product") {
+    const cleanedQuery = message
+      .replace(
+        /(elimina|borra|quita|remueve|del menu|de la carta|del catalogo|cambia|actualiza|ajusta|precio|desactiva|activa|inactiva)/gi,
+        " ",
+      )
+      .trim();
+    const product =
+      findByName(cleanedQuery, context.menuProducts) ??
+      findByName(message, context.menuProducts);
+    if (product) {
+      draft.productId = product.id;
+      draft.productName = product.name;
+    }
+    const price = extractNumber(message);
+    if (price !== null) {
+      draft.price = String(price);
+    }
+    if (/(desactiva|inactiva)/.test(normalized)) {
+      draft.status = "inactive";
+    } else if (/(activa)\s+/.test(normalized) && !/(desactiva)/.test(normalized)) {
+      draft.status = "active";
+    }
+  }
+
+  if (intent === "register-inventory-movement") {
+    const item = findByName(message, context.inventoryItems);
+    if (item) {
+      draft.inventoryItemId = item.id;
+      draft.itemName = item.name;
+    }
+    const quantityMatch = message.match(/(\d+(?:[.,]\d+)?)\s*(kg|g|gramos|ml|l|litros|unidades|u)?/i);
+    if (quantityMatch?.[1] && !draft.quantity) {
+      draft.quantity = quantityMatch[1].replace(",", ".");
+    }
+    if (/(entrada|ingreso)/.test(normalized)) {
+      draft.movementType = "entry";
+    } else if (/(salida|egreso)/.test(normalized)) {
+      draft.movementType = "exit";
+    } else if (/merma/.test(normalized)) {
+      draft.movementType = "waste";
+    } else if (/ajuste/.test(normalized)) {
+      draft.movementType = "adjustment";
+    }
+  }
+
+  if (intent === "create-fixed-expense") {
+    const amount = extractNumber(message);
+    if (amount !== null) {
+      draft.amount = String(amount);
+    }
+    if (/mensual|mes/.test(normalized)) {
+      draft.frequency = "monthly";
+    } else if (/anual|ano|año/.test(normalized)) {
+      draft.frequency = "annual";
+    } else if (/semanal/.test(normalized)) {
+      draft.frequency = "weekly";
+    } else {
+      draft.frequency = draft.frequency || "monthly";
+    }
+    if (/arriendo/.test(normalized)) {
+      draft.category = "rent";
+      draft.name = draft.name || "Arriendo";
+    } else if (/nomina|sueldo|salario/.test(normalized)) {
+      draft.category = "payroll";
+      draft.name = draft.name || "Nómina";
+    }
+    if (!draft.name) {
+      const cleaned = message
+        .replace(/(nuevo gasto fijo|crear gasto fijo|registra gasto fijo|gasto recurrente)/gi, "")
+        .replace(/(?:\$|cop)?\s*[\d][\d.,]*/gi, "")
+        .replace(/\b(mensual|anual|semanal)\b/gi, "")
+        .trim();
+      if (cleaned.length >= 2) {
+        draft.name = cleaned;
+      }
+    }
+  }
+
+  if (intent === "cancel-table-session") {
+    const session = resolveTableSession(message, context);
+    if (session) {
+      draft.sessionId = session.sessionId;
+      draft.tableNumber = String(session.tableNumber);
+    }
+    const table = resolveTableByMessage(message, context);
+    if (table) {
+      draft.tableId = table.id;
+      draft.tableNumber = String(table.number);
+    }
+  }
+
+  if (intent === "create-dining-table") {
+    const tableNumber = extractTableNumber(message);
+    if (tableNumber) {
+      draft.tableNumber = String(tableNumber);
+    }
+    const labelMatch = message.match(/mesa\s*\d+\s+(.+)/i);
+    if (labelMatch?.[1]) {
+      draft.label = labelMatch[1].trim();
+    }
+  }
+
+  if (intent === "create-warehouse") {
+    const cleaned = message
+      .replace(/(nueva bodega|crea bodega|agrega bodega|crear bodega)/gi, "")
+      .trim();
+    if (cleaned.length >= 2) {
+      draft.name = cleaned;
+    }
+  }
+
   return draft;
 }
 
@@ -1102,6 +1291,25 @@ function missingFields(intent: string, draft: Record<string, string>): string[] 
     }
     if (!String(draft.customerEmail ?? "").trim()) {
       missing.push("customerEmail");
+    }
+    return missing;
+  }
+
+  if (intent === "update-menu-product") {
+    const missing: string[] = [];
+    if (!String(draft.productId ?? "").trim()) {
+      missing.push("productId");
+    }
+    if (!String(draft.price ?? "").trim() && !String(draft.status ?? "").trim()) {
+      missing.push("price");
+    }
+    return missing;
+  }
+
+  if (intent === "cancel-table-session") {
+    const missing: string[] = [];
+    if (!String(draft.sessionId ?? "").trim() && !String(draft.tableId ?? "").trim()) {
+      missing.push("sessionId");
     }
     return missing;
   }
@@ -1213,6 +1421,26 @@ function acknowledgeExecution(intent: GhostConversationIntent, draft: Record<str
       return `Genero la ficha de costos de **${draft.productName ?? "producto"}** desde inventario.`;
     case "save-recipe-cost":
       return `Guardo la ficha de **${draft.productName ?? "producto"}** y actualizo precio en carta y reportes.`;
+    case "delete-menu-product":
+      return `Elimino **${draft.productName ?? "producto"}** del menú y su ficha de costos.`;
+    case "update-menu-product":
+      if (draft.status === "inactive") {
+        return `Desactivo **${draft.productName ?? "producto"}** en el menú.`;
+      }
+      if (draft.status === "active") {
+        return `Activo **${draft.productName ?? "producto"}** en el menú.`;
+      }
+      return `Actualizo precio de **${draft.productName ?? "producto"}** a **$${Number(draft.price || 0).toLocaleString("es-CO")}**.`;
+    case "register-inventory-movement":
+      return `Registro ${draft.movementType === "entry" ? "entrada" : draft.movementType === "exit" ? "salida" : draft.movementType} de **${draft.quantity ?? "?"}** de **${draft.itemName ?? "insumo"}**.`;
+    case "create-fixed-expense":
+      return `Creo gasto fijo **${draft.name}** por **$${Number(draft.amount || 0).toLocaleString("es-CO")}**.`;
+    case "cancel-table-session":
+      return `Cancelo la sesión de la **mesa ${draft.tableNumber ?? ""}** sin cobrar.`;
+    case "create-dining-table":
+      return `Creo la **mesa ${draft.tableNumber ?? ""}**.`;
+    case "create-warehouse":
+      return `Creo la bodega **${draft.name}**.`;
     default:
       return "Listo.";
   }
@@ -1467,6 +1695,30 @@ export function processConversationTurn(input: {
           ? buildSingleProductCostReply(context, product.id)
           : buildCostMatrixOverviewReply(context),
       ],
+    };
+  }
+
+  if (intent === "query-menu-catalog") {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildMenuCatalogReply(context)],
+    };
+  }
+
+  if (intent === "query-inventory-catalog") {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildInventoryCatalogReply(context)],
+    };
+  }
+
+  if (intent === "query-tables-status") {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildTablesStatusReply(context)],
     };
   }
 
