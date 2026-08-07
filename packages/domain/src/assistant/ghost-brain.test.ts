@@ -17,6 +17,8 @@ describe("ghost brain registry", () => {
     expect(classifyBrainQueryIntent("ayuda")).toBe("brain-help");
     expect(classifyBrainQueryIntent("estado de caja")).toBe("query-cash-summary");
     expect(classifyBrainQueryIntent("inventario bajo minimo")).toBe("query-inventory-low-stock");
+    expect(classifyBrainQueryIntent("que debo comprar")).toBe("query-purchase-suggestions");
+    expect(classifyBrainQueryIntent("me quedo sin leche")).toBe("query-purchase-suggestions");
     expect(classifyBrainQueryIntent("gastos fijos")).toBe("query-fixed-expenses");
     expect(classifyBrainQueryIntent("turnos de hoy")).toBe("query-work-shifts");
     expect(classifyBrainQueryIntent("estado de comandas")).toBe("query-kitchen-status");

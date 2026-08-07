@@ -1,4 +1,4 @@
-import type { Recipe, SaleLotConsumption } from "@ghost/domain";
+import type { Recipe, SaleLotConsumption, SaleRecipeSnapshot } from "@ghost/domain";
 import {
   allocateLotsFifo,
   calculateRecipeConsumption,
@@ -34,6 +34,43 @@ async function getDefaultWarehouseId(organizationId: string): Promise<string> {
   return anySnap.docs[0]!.id;
 }
 
+async function loadRecipesByProduct(organizationId: string): Promise<Map<string, Recipe>> {
+  const db = getFirestoreDb();
+  const recipesSnap = await getDocs(
+    collection(db, firestorePaths.organizationRecipes(organizationId)),
+  );
+  const recipesByProduct = new Map<string, Recipe>();
+
+  for (const document of recipesSnap.docs) {
+    const data = document.data();
+    recipesByProduct.set(data.menuProductId as string, {
+      id: document.id,
+      organizationId: data.organizationId,
+      menuProductId: data.menuProductId,
+      menuProductName: data.menuProductName,
+      currentVersion: data.currentVersion ?? 1,
+      recipeCost: data.recipeCost ?? 0,
+      yieldQuantity: data.yieldQuantity ?? 1,
+      lines: data.lines ?? [],
+    });
+  }
+
+  return recipesByProduct;
+}
+
+function recipeFromSnapshot(snapshot: SaleRecipeSnapshot): Recipe {
+  return {
+    id: snapshot.recipeId,
+    organizationId: "",
+    menuProductId: snapshot.productId,
+    menuProductName: "",
+    currentVersion: snapshot.recipeVersion,
+    recipeCost: snapshot.recipeCost,
+    yieldQuantity: snapshot.yieldQuantity,
+    lines: snapshot.lines,
+  };
+}
+
 export interface PlannedSaleInventoryExit {
   itemId: string;
   itemName: string;
@@ -49,27 +86,18 @@ export async function planSaleInventoryConsumption(input: {
   branchId: string;
   saleNumber: string;
   lines: Array<{ productId: string; quantity: number }>;
+  recipeSnapshots?: SaleRecipeSnapshot[];
 }): Promise<{
   lotConsumptions: SaleLotConsumption[];
   plannedExits: PlannedSaleInventoryExit[];
 }> {
-  const db = getFirestoreDb();
-  const recipesSnap = await getDocs(
-    collection(db, firestorePaths.organizationRecipes(input.organizationId)),
+  const snapshotsByProduct = new Map(
+    (input.recipeSnapshots ?? []).map((snapshot) => [snapshot.productId, snapshot]),
   );
-  const recipesByProduct = new Map<string, Recipe>();
-
-  for (const document of recipesSnap.docs) {
-    const data = document.data();
-    recipesByProduct.set(data.menuProductId as string, {
-      id: document.id,
-      organizationId: data.organizationId,
-      menuProductId: data.menuProductId,
-      menuProductName: data.menuProductName,
-      yieldQuantity: data.yieldQuantity ?? 1,
-      lines: data.lines ?? [],
-    });
-  }
+  const recipesByProduct =
+    snapshotsByProduct.size > 0
+      ? null
+      : await loadRecipesByProduct(input.organizationId);
 
   const consumptionByItem = new Map<
     string,
@@ -77,7 +105,11 @@ export async function planSaleInventoryConsumption(input: {
   >();
 
   for (const saleLine of input.lines) {
-    const recipe = recipesByProduct.get(saleLine.productId);
+    const snapshot = snapshotsByProduct.get(saleLine.productId);
+    const recipe = snapshot
+      ? recipeFromSnapshot(snapshot)
+      : recipesByProduct?.get(saleLine.productId);
+
     if (!recipe || recipe.lines.length === 0) {
       continue;
     }
@@ -88,7 +120,10 @@ export async function planSaleInventoryConsumption(input: {
         continue;
       }
       const itemSnap = await getDoc(
-        doc(db, firestorePaths.organizationInventoryItem(input.organizationId, line.inventoryItemId)),
+        doc(
+          getFirestoreDb(),
+          firestorePaths.organizationInventoryItem(input.organizationId, line.inventoryItemId),
+        ),
       );
       if (!itemSnap.exists()) {
         continue;
@@ -197,6 +232,7 @@ export async function consumeInventoryForSale(input: {
   branchId: string;
   saleNumber: string;
   lines: Array<{ productId: string; quantity: number }>;
+  recipeSnapshots?: SaleRecipeSnapshot[];
 }): Promise<{ movements: number; lotConsumptions: SaleLotConsumption[] }> {
   const plan = await planSaleInventoryConsumption(input);
   const movements = await applySaleInventoryConsumption({

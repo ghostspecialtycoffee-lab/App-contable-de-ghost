@@ -1,4 +1,5 @@
-import type { AnalyticsPeriodSummary, AnalyticsTrendPoint, AnalyticsDelta, DailyAnalyticsSnapshot } from "./types.js";
+import type { DailyAnalyticsSnapshot } from "../events/types.js";
+import type { AnalyticsDelta, AnalyticsPeriodSummary, AnalyticsTrendPoint } from "./types.js";
 
 export function emptyDailyAnalytics(date: string): DailyAnalyticsSnapshot {
   return {

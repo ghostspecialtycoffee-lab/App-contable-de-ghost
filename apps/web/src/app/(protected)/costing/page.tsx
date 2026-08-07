@@ -29,6 +29,7 @@ import {
   calculateRecipeCostBreakdown,
   calculateRecipeCostPerPortion,
   calculateRecipeLineCost,
+  getCostBasisNote,
   getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
@@ -328,7 +329,7 @@ export default function CostingPage() {
           : "";
 
       setSaveMessage(
-        `Ficha guardada. Costo por porción: ${formatMoney(result.recipeCost)}` +
+        `Ficha guardada (receta v${result.recipeVersion}). Costo por porción: ${formatMoney(result.recipeCost)}` +
           (yieldQuantity > 1
             ? selectedProduct.category === "pastry"
               ? ` (factura ${formatMoney(previewBatchCost)} + ${formatMoney(PASTRY_DOMICILIO_ALLOCATION_COP)} domicilio ÷ ${yieldQuantity})`
@@ -482,7 +483,11 @@ export default function CostingPage() {
 
         <div className="space-y-4">
           {selectedProduct ? (
-            <Card title={`Ficha: ${selectedProduct.name}`}>
+            <Card
+              title={`Ficha: ${selectedProduct.name}${
+                selectedRecipe?.currentVersion ? ` · v${selectedRecipe.currentVersion}` : ""
+              }`}
+            >
               <form className="space-y-4" onSubmit={handleSave}>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block space-y-1">
@@ -617,18 +622,32 @@ export default function CostingPage() {
                           </select>
                         </div>
                         {line.inventoryItemId && line.quantity > 0 ? (
-                          <p className="text-xs text-[var(--ghost-text-muted)]">
+                          <div className="space-y-0.5">
+                            <p className="text-xs text-[var(--ghost-text-muted)]">
+                              {(() => {
+                                const profile =
+                                  itemProfiles[line.inventoryItemId] ?? {
+                                    baseUnit: line.unit,
+                                    averageCost: 0,
+                                  };
+                                const breakdown = calculateRecipeLineCost(line, profile);
+                                return `${breakdown.quantityInBase.toLocaleString("es-CO")} ${breakdown.baseUnit} × ${formatMoney(breakdown.unitCostPerBase)} = ${formatMoney(breakdown.lineCost)}`;
+                              })()}
+                            </p>
                             {(() => {
-                              const breakdown = calculateRecipeLineCost(
-                                line,
+                              const profile =
                                 itemProfiles[line.inventoryItemId] ?? {
                                   baseUnit: line.unit,
                                   averageCost: 0,
-                                },
-                              );
-                              return `${breakdown.quantityInBase.toLocaleString("es-CO")} ${breakdown.baseUnit} × ${formatMoney(breakdown.unitCostPerBase)} = ${formatMoney(breakdown.lineCost)}`;
+                                };
+                              const note = getCostBasisNote(profile);
+                              return note ? (
+                                <p className="text-xs text-amber-700 dark:text-amber-400">
+                                  {note}
+                                </p>
+                              ) : null;
                             })()}
-                          </p>
+                          </div>
                         ) : null}
                       </div>
                     ))

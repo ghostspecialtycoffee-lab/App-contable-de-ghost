@@ -26,6 +26,7 @@ import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useKitchenOrders } from "@/hooks/use-kitchen-orders";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { usePurchaseInvoices } from "@/hooks/use-purchase-invoices";
+import { usePurchasePriceHistory } from "@/hooks/use-purchase-price-history";
 import { useRecipes } from "@/hooks/use-recipes";
 import { useSales } from "@/hooks/use-sales";
 import { useTableSessions } from "@/hooks/use-table-sessions";
@@ -88,7 +89,8 @@ export function useGhostChat() {
   const { recipes } = useRecipes();
   const { items: inventoryItems } = useInventoryItems();
   const { balances: inventoryBalances } = useInventoryBalances();
-  const { movements: inventoryMovements } = useInventoryMovements();
+  const { movements: inventoryMovements } = useInventoryMovements(400);
+  const { entries: purchasePriceHistory } = usePurchasePriceHistory(200);
   const { expenses: fixedExpenses } = useFixedExpenses();
   const { warehouses } = useWarehouses();
   const { invoices } = usePurchaseInvoices();
@@ -274,18 +276,26 @@ export function useGhostChat() {
         purchaseUnit: item.purchaseUnit,
         presentationQuantity: item.presentationQuantity,
       })),
-      costMatrixSettings,
       inventoryMovementsSnapshot: inventoryMovements.map((movement) => ({
         itemId: movement.itemId,
         type: movement.type,
         quantity: movement.quantity,
         occurredAt: movement.occurredAt,
       })),
+      purchasePriceHistorySnapshot: purchasePriceHistory.map((entry) => ({
+        inventoryItemId: entry.inventoryItemId,
+        supplierName: entry.supplierName,
+        unitPriceNet: entry.unitPriceNet,
+        purchasedAt: entry.purchasedAt,
+      })),
+      costMatrixSettings,
     };
   }, [
     organization?.name,
     inventoryItems,
     inventoryBalances,
+    inventoryMovements,
+    purchasePriceHistory,
     fixedExpenses,
     workShifts,
     products,

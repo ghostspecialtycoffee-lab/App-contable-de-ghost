@@ -1,11 +1,4 @@
-export interface DailyAnalyticsSnapshot {
-  date: string;
-  salesCount: number;
-  salesTotal: number;
-  purchasesCount: number;
-  purchasesTotal: number;
-  inventoryMovements: number;
-}
+import type { DailyAnalyticsSnapshot } from "../events/types.js";
 
 export type AnalyticsDelta = Partial<
   Pick<

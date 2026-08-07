@@ -248,7 +248,17 @@ service cloud.firestore {
           && resource.data.organizationId == organizationId;
         allow delete: if canAccessOrg(organizationId)
           && resource.data.organizationId == organizationId;
+
+        match /versions/{versionId} {
+          allow read: if canAccessOrg(organizationId);
+          allow create: if canAccessOrg(organizationId)
+            && request.resource.data.organizationId == organizationId
+            && request.resource.data.createdBy == request.auth.uid;
+          allow update, delete: if false;
+        }
       }
+
+      match /purchaseInvoices/{invoiceId} {
         allow read: if canAccessOrg(organizationId);
         allow create: if canAccessOrg(organizationId)
           && request.resource.data.organizationId == organizationId
@@ -258,6 +268,25 @@ service cloud.firestore {
           && resource.data.organizationId == organizationId
           && resource.data.status == 'draft';
         allow delete: if false;
+      }
+
+      match /suppliers/{supplierId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.isActive == true;
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
+      match /purchasePriceHistory/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update, delete: if false;
       }
 
       match /fixedExpenses/{expenseId} {
@@ -338,6 +367,20 @@ service cloud.firestore {
         allow create: if canAccessOrg(organizationId)
           && request.resource.data.organizationId == organizationId;
         allow update, delete: if false;
+      }
+
+      match /domainEventOutbox/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.status == 'pending'
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      match /analyticsDaily/{dateId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update, delete: if false;
       }
 
       match /notificationPreferences/{userId} {

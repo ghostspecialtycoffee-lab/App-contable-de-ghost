@@ -59,10 +59,22 @@ export const firestorePaths = {
     `organizations/${organizationId}/recipes`,
   organizationRecipe: (organizationId: string, recipeId: string) =>
     `organizations/${organizationId}/recipes/${recipeId}`,
+  organizationRecipeVersions: (organizationId: string, recipeId: string) =>
+    `organizations/${organizationId}/recipes/${recipeId}/versions`,
+  organizationRecipeVersion: (organizationId: string, recipeId: string, version: number | string) =>
+    `organizations/${organizationId}/recipes/${recipeId}/versions/${version}`,
   organizationPurchaseInvoices: (organizationId: string) =>
     `organizations/${organizationId}/purchaseInvoices`,
   organizationPurchaseInvoice: (organizationId: string, invoiceId: string) =>
     `organizations/${organizationId}/purchaseInvoices/${invoiceId}`,
+  organizationSuppliers: (organizationId: string) =>
+    `organizations/${organizationId}/suppliers`,
+  organizationSupplier: (organizationId: string, supplierId: string) =>
+    `organizations/${organizationId}/suppliers/${supplierId}`,
+  organizationPurchasePriceHistory: (organizationId: string) =>
+    `organizations/${organizationId}/purchasePriceHistory`,
+  organizationPurchasePriceHistoryEntry: (organizationId: string, entryId: string) =>
+    `organizations/${organizationId}/purchasePriceHistory/${entryId}`,
   organizationFixedExpenses: (organizationId: string) =>
     `organizations/${organizationId}/fixedExpenses`,
   organizationFixedExpense: (organizationId: string, expenseId: string) =>
@@ -89,6 +101,10 @@ export const firestorePaths = {
     `organizations/${organizationId}/notificationOutbox`,
   organizationNotificationOutboxEntry: (organizationId: string, entryId: string) =>
     `organizations/${organizationId}/notificationOutbox/${entryId}`,
+  organizationDomainEventOutbox: (organizationId: string) =>
+    `organizations/${organizationId}/domainEventOutbox`,
+  organizationDomainEventOutboxEntry: (organizationId: string, entryId: string) =>
+    `organizations/${organizationId}/domainEventOutbox/${entryId}`,
   organizationNotificationPreferences: (organizationId: string) =>
     `organizations/${organizationId}/notificationPreferences`,
   organizationNotificationPreference: (organizationId: string, userId: string) =>

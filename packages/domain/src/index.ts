@@ -6,6 +6,7 @@ export * from "./branch.js";
 export * from "./brand/index.js";
 export * from "./cash/index.js";
 export * from "./expenses/index.js";
+export * from "./events/index.js";
 export * from "./fiscal/index.js";
 export * from "./inventory/index.js";
 export * from "./notifications/index.js";

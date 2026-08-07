@@ -61,6 +61,20 @@ export interface Sale extends AuditMetadata {
     unitCost: number;
     sourceReference?: string;
   }>;
+  /** Recetas congeladas al momento de la venta (trazabilidad de costo). */
+  recipeSnapshots?: Array<{
+    productId: EntityId;
+    recipeId: EntityId;
+    recipeVersion: number;
+    recipeCost: number;
+    yieldQuantity: number;
+    lines: Array<{
+      inventoryItemId: EntityId;
+      itemName: string;
+      quantity: number;
+      unit: string;
+    }>;
+  }>;
   tableId?: EntityId;
   tableNumber?: number;
   tableLabel?: string;

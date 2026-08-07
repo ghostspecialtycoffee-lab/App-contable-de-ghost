@@ -16,6 +16,7 @@ import {
   buildKitchenStatusReply,
   buildPurchasesReportReply,
   buildPurchasesReviewReply,
+  buildPurchaseSuggestionsReply,
   buildSalesReportReply,
   buildWorkShiftsReply,
   buildCostMatrixOverviewReply,
@@ -46,6 +47,7 @@ export type GhostConversationIntent =
   | "query-sales-report"
   | "query-purchases-review"
   | "query-purchases-report"
+  | "query-purchase-suggestions"
   | "query-cash-summary"
   | "query-financial-overview"
   | "query-inventory-low-stock"
@@ -96,6 +98,20 @@ export interface GhostConversationInventoryStockSnapshot {
   baseUnit: string;
   quantity: number;
   minStock: number;
+}
+
+export interface GhostConversationMovementSnapshot {
+  itemId: string;
+  type: string;
+  quantity: number;
+  occurredAt: string;
+}
+
+export interface GhostConversationPriceHistorySnapshot {
+  inventoryItemId: string;
+  supplierName: string;
+  unitPriceNet: number;
+  purchasedAt: string;
 }
 
 export interface GhostConversationFixedExpenseSnapshot {
@@ -246,13 +262,9 @@ export interface GhostConversationContext {
   workShiftsSnapshot: GhostConversationWorkShiftSnapshot[];
   recipesSnapshot: GhostConversationRecipeSnapshot[];
   inventoryCostSnapshot: GhostConversationInventoryCostSnapshot[];
+  inventoryMovementsSnapshot?: GhostConversationMovementSnapshot[];
+  purchasePriceHistorySnapshot?: GhostConversationPriceHistorySnapshot[];
   costMatrixSettings?: GhostConversationCostMatrixSettings;
-  inventoryMovementsSnapshot?: Array<{
-    itemId: string;
-    type: string;
-    quantity: number;
-    occurredAt: string;
-  }>;
 }
 
 export interface GhostConversationHistoryMessage {
@@ -288,6 +300,7 @@ type ExecutableGhostConversationIntent = Exclude<
   | "query-sales-report"
   | "query-purchases-review"
   | "query-purchases-report"
+  | "query-purchase-suggestions"
   | "query-cash-summary"
   | "query-financial-overview"
   | "query-inventory-low-stock"
@@ -708,6 +721,9 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
   }
   if (brainQuery === "query-purchases-report") {
     return "query-purchases-report";
+  }
+  if (brainQuery === "query-purchase-suggestions") {
+    return "query-purchase-suggestions";
   }
   if (brainQuery === "query-cash-summary") {
     return "query-cash-summary";
@@ -1667,6 +1683,14 @@ export function processConversationTurn(input: {
       kind: "reply",
       session: clearPending(session),
       messages: [buildPurchasesReportReply(context)],
+    };
+  }
+
+  if (intent === "query-purchase-suggestions") {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildPurchaseSuggestionsReply(context)],
     };
   }
 

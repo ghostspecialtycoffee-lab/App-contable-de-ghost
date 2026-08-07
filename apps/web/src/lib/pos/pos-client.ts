@@ -1,5 +1,6 @@
 import {
   buildSaleNumber,
+  buildSaleRecordedEvent,
   calculateSaleTotals,
   groupKitchenLines,
   inferMenuProductTaxCategory,
@@ -26,9 +27,14 @@ import {
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 import { normalizeCatalogName } from "@/lib/costing/ghost-menu-catalog";
-import { planSaleInventoryConsumption, applySaleInventoryConsumption } from "@/lib/inventory/sale-inventory-consumption";
 import { recordSaleAnalyticsSafe } from "@/lib/analytics/analytics-client";
 import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
+import { publishDomainEventSafe } from "@/lib/events/domain-events";
+import {
+  applySaleInventoryConsumption,
+  planSaleInventoryConsumption,
+} from "@/lib/inventory/sale-inventory-consumption";
+import { loadSaleRecipeSnapshots } from "@/lib/recipes/sale-recipe-snapshots";
 import { COLOMBIA_SODAS_CATALOG } from "./colombia-sodas-catalog";
 
 function requireUserId(): string {
@@ -280,6 +286,10 @@ export async function createSaleClient(input: {
   const saleNumber = buildSaleNumber();
   const soldAt = new Date().toISOString();
   const soldOn = soldAt.slice(0, 10);
+  const recipeSnapshots = await loadSaleRecipeSnapshots(
+    organizationId,
+    totals.lines.map((line) => line.productId),
+  );
   const inventoryPlan = await planSaleInventoryConsumption({
     organizationId,
     branchId,
@@ -288,6 +298,7 @@ export async function createSaleClient(input: {
       productId: line.productId,
       quantity: line.quantity,
     })),
+    recipeSnapshots,
   }).catch(() => ({ lotConsumptions: [], plannedExits: [] }));
   const db = getFirestoreDb();
   const saleRef = doc(
@@ -305,6 +316,7 @@ export async function createSaleClient(input: {
       saleNumber,
       status: "paid",
       lines: totals.lines,
+      recipeSnapshots,
       subtotal: totals.subtotal,
       taxRate: totals.taxRate,
       taxAmount: totals.taxAmount,
@@ -368,6 +380,23 @@ export async function createSaleClient(input: {
     soldOn,
     total: totals.total,
   });
+
+  await publishDomainEventSafe(
+    buildSaleRecordedEvent({
+      organizationId,
+      branchId,
+      actorUserId: userId,
+      saleId: saleRef.id,
+      saleNumber,
+      total: totals.total,
+      subtotal: totals.subtotal,
+      taxAmount: totals.taxAmount,
+      paymentMethod: input.paymentMethod,
+      lineCount: totals.lines.length,
+      soldOn,
+      occurredAt: soldAt,
+    }),
+  );
 
   return {
     saleId: saleRef.id,

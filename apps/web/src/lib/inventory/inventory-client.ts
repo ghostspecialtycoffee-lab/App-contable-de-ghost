@@ -1,5 +1,6 @@
 import {
   buildInventoryLotDocId,
+  buildInventoryMovementRegisteredEvent,
   calculateWeightedAverageCost,
   LEGACY_LOT_CODE,
   validateMovementQuantity,
@@ -23,6 +24,7 @@ import {
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 import { recordInventoryMovementAnalyticsSafe } from "@/lib/analytics/analytics-client";
+import { publishDomainEventSafe } from "@/lib/events/domain-events";
 
 function requireUserId(): string {
   const uid = getFirebaseAuth().currentUser?.uid;
@@ -418,6 +420,21 @@ export async function registerInventoryMovementClient(input: {
     organizationId,
     occurredAt: new Date().toISOString(),
   });
+
+  await publishDomainEventSafe(
+    buildInventoryMovementRegisteredEvent({
+      organizationId,
+      branchId: input.branchId,
+      actorUserId: userId,
+      movementId: movementRef.id,
+      itemId: input.itemId,
+      warehouseId: input.warehouseId,
+      movementType: input.type,
+      quantity: signedQuantity,
+      balanceAfter,
+      reference: input.reference,
+    }),
+  );
 
   return { movementId: movementRef.id, balanceAfter };
 }

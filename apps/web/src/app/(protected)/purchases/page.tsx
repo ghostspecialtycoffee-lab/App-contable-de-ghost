@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { InitialDataImportPanel } from "@/components/initial-data-import-panel";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { usePurchaseInvoices } from "@/hooks/use-purchase-invoices";
+import { useSuppliers } from "@/hooks/use-suppliers";
 import { useWarehouses } from "@/hooks/use-warehouses";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatDate, formatMoney, todayIsoDate } from "@/lib/format";
@@ -50,8 +51,10 @@ export default function PurchasesPage() {
   const { items: inventoryItems } = useInventoryItems();
   const { warehouses } = useWarehouses();
   const { invoices, loading, error } = usePurchaseInvoices();
+  const { suppliers } = useSuppliers();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [supplierId, setSupplierId] = useState("");
   const [supplierName, setSupplierName] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(todayIsoDate());
@@ -87,6 +90,7 @@ export default function PurchasesPage() {
 
   function resetForm() {
     setEditingInvoiceId(null);
+    setSupplierId("");
     setSupplierName("");
     setInvoiceNumber("");
     setInvoiceDate(todayIsoDate());
@@ -103,6 +107,7 @@ export default function PurchasesPage() {
     }
 
     setEditingInvoiceId(invoice.id);
+    setSupplierId(invoice.supplierId ?? "");
     setSupplierName(invoice.supplierName);
     setInvoiceNumber(invoice.invoiceNumber);
     setInvoiceDate(invoice.invoiceDate);
@@ -216,6 +221,7 @@ export default function PurchasesPage() {
       }
 
       const payload = {
+        supplierId: supplierId || undefined,
         supplierName,
         invoiceNumber,
         invoiceDate,
@@ -309,12 +315,41 @@ export default function PurchasesPage() {
           ) : null}
           <form className="space-y-3" onSubmit={handleSubmit}>
             <label className="block space-y-1">
-              <span className="text-sm font-medium">Proveedor</span>
+              <span className="text-sm font-medium">
+                Proveedor{" "}
+                <Link href="/purchases/suppliers" className="text-xs underline">
+                  catálogo
+                </Link>
+              </span>
+              {suppliers.filter((supplier) => supplier.isActive).length > 0 ? (
+                <select
+                  value={supplierId}
+                  onChange={(event) => {
+                    const nextId = event.target.value;
+                    setSupplierId(nextId);
+                    const selected = suppliers.find((supplier) => supplier.id === nextId);
+                    if (selected) {
+                      setSupplierName(selected.name);
+                    }
+                  }}
+                  className="ghost-input mb-2"
+                >
+                  <option value="">Seleccionar del catálogo…</option>
+                  {suppliers
+                    .filter((supplier) => supplier.isActive)
+                    .map((supplier) => (
+                      <option key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </option>
+                    ))}
+                </select>
+              ) : null}
               <input
                 required
                 value={supplierName}
                 onChange={(event) => setSupplierName(event.target.value)}
                 className="ghost-input"
+                placeholder="Nombre del proveedor"
               />
             </label>
             <div className="grid grid-cols-2 gap-3">

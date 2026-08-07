@@ -1,5 +1,6 @@
 import {
   buildPurchaseInvoiceLines,
+  buildPurchaseConfirmedEvent,
   generatePurchaseLotCode,
   purchaseInvoiceAffectsInventory,
   resolvePurchaseInventoryEntry,
@@ -19,6 +20,8 @@ import {
 
 import { registerInventoryMovementClient } from "@/lib/inventory/inventory-client";
 import { recordPurchaseAnalyticsSafe } from "@/lib/analytics/analytics-client";
+import { recordPurchasePriceHistoryClient } from "@/lib/purchases/price-history-client";
+import { publishDomainEventSafe } from "@/lib/events/domain-events";
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 
 function requireUserId(): string {
@@ -61,6 +64,7 @@ async function getActiveContext(): Promise<{
 }
 
 export async function createPurchaseInvoiceClient(input: {
+  supplierId?: string;
   supplierName: string;
   invoiceNumber: string;
   invoiceDate: string;
@@ -93,6 +97,7 @@ export async function createPurchaseInvoiceClient(input: {
   await setDoc(invoiceRef, {
     organizationId,
     branchId,
+    supplierId: input.supplierId ?? "",
     supplierName,
     invoiceNumber,
     invoiceDate: input.invoiceDate,
@@ -115,6 +120,7 @@ export async function createPurchaseInvoiceClient(input: {
 
 export async function updatePurchaseInvoiceClient(input: {
   invoiceId: string;
+  supplierId?: string;
   supplierName: string;
   invoiceNumber: string;
   invoiceDate: string;
@@ -158,6 +164,7 @@ export async function updatePurchaseInvoiceClient(input: {
   await setDoc(
     invoiceRef,
     {
+      supplierId: input.supplierId ?? "",
       supplierName,
       invoiceNumber,
       invoiceDate: input.invoiceDate,
@@ -218,12 +225,44 @@ export async function confirmPurchaseInvoiceClient(input: {
     });
   });
 
+  const priceHistoryEntries = lines
+    .filter((line) => line.inventoryItemId && line.quantity > 0)
+    .map((line) => ({
+      inventoryItemId: line.inventoryItemId!,
+      supplierName: invoice.supplierName as string,
+      supplierId: (invoice.supplierId as string) || undefined,
+      unitPriceNet: line.unitPriceNet,
+      unit: line.unit,
+      quantity: line.quantity,
+      invoiceId: input.invoiceId,
+      invoiceNumber: invoice.invoiceNumber as string,
+      purchasedAt: invoiceDate,
+    }));
+
+  await recordPurchasePriceHistoryClient(organizationId, priceHistoryEntries);
+
   if (!inventoryApplied) {
     await recordPurchaseAnalyticsSafe({
       organizationId,
       invoiceDate,
       total: Number(invoice.total ?? 0),
     });
+    await publishDomainEventSafe(
+      buildPurchaseConfirmedEvent({
+        organizationId,
+        branchId,
+        actorUserId: userId,
+        invoiceId: input.invoiceId,
+        invoiceNumber: invoice.invoiceNumber as string,
+        supplierName: invoice.supplierName as string,
+        total: Number(invoice.total ?? 0),
+        subtotal: Number(invoice.subtotal ?? 0),
+        lineCount: lines.length,
+        inventoryApplied: false,
+        movements: 0,
+        invoiceDate,
+      }),
+    );
     return { movements: 0, inventoryApplied: false };
   }
 
@@ -282,6 +321,22 @@ export async function confirmPurchaseInvoiceClient(input: {
     invoiceDate,
     total: Number(invoice.total ?? 0),
   });
+  await publishDomainEventSafe(
+    buildPurchaseConfirmedEvent({
+      organizationId,
+      branchId,
+      actorUserId: userId,
+      invoiceId: input.invoiceId,
+      invoiceNumber: invoice.invoiceNumber as string,
+      supplierName: invoice.supplierName as string,
+      total: Number(invoice.total ?? 0),
+      subtotal: Number(invoice.subtotal ?? 0),
+      lineCount: lines.length,
+      inventoryApplied,
+      movements,
+      invoiceDate,
+    }),
+  );
 
   return { movements, inventoryApplied: true };
 }
