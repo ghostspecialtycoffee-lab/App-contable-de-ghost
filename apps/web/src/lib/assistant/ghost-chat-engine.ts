@@ -104,6 +104,18 @@ export interface GhostChatContext {
   workShiftsSnapshot: GhostConversationWorkShiftSnapshot[];
   recipesSnapshot: GhostConversationRecipeSnapshot[];
   inventoryCostSnapshot: GhostConversationInventoryCostSnapshot[];
+  inventoryMovementsSnapshot?: Array<{
+    itemId: string;
+    type: string;
+    quantity: number;
+    occurredAt: string;
+  }>;
+  purchasePriceHistorySnapshot?: Array<{
+    inventoryItemId: string;
+    supplierName: string;
+    unitPriceNet: number;
+    purchasedAt: string;
+  }>;
   costMatrixSettings?: GhostConversationCostMatrixSettings;
 }
 

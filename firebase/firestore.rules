@@ -255,6 +255,25 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /suppliers/{supplierId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.isActive == true;
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
+      match /purchasePriceHistory/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update, delete: if false;
+      }
+
       match /fixedExpenses/{expenseId} {
         allow read: if canAccessOrg(organizationId);
         allow create: if canAccessOrg(organizationId)

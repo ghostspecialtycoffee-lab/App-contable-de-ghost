@@ -21,6 +21,7 @@ export interface PurchaseInvoice extends AuditMetadata {
   id: EntityId;
   organizationId: EntityId;
   branchId: EntityId;
+  supplierId?: EntityId;
   supplierName: string;
   invoiceNumber: string;
   invoiceDate: string;

@@ -33,6 +33,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Contabilidad",
     items: [
       { href: "/purchases", label: "Compras", description: "Facturas proveedor" },
+      { href: "/purchases/suppliers", label: "Proveedores", description: "Catálogo de compras" },
       {
         href: "/inventory",
         label: "Inventario",

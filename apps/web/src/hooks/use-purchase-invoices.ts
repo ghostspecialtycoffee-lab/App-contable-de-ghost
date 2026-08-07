@@ -41,6 +41,7 @@ export function usePurchaseInvoices() {
               id: document.id,
               organizationId: data.organizationId,
               branchId: data.branchId,
+              supplierId: data.supplierId || undefined,
               supplierName: data.supplierName,
               invoiceNumber: data.invoiceNumber,
               invoiceDate: data.invoiceDate,
