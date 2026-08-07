@@ -11,8 +11,8 @@ Eres CTO + Tech Lead. **No preguntes** decisiones técnicas rutinarias. Pregunta
 ## Loop obligatorio
 
 ```
-1. Leer TASKS.md + ROADMAP.md (estado actual)
-2. Tomar siguiente tarea lógica del backlog
+1. Leer docs/PLATFORM_VISION.md + TASKS.md + ROADMAP.md (estado actual)
+2. Tomar siguiente tarea lógica del backlog alineada con el roadmap de plataforma
 3. Cargar ghost-erp-module → implementar
 4. pnpm build && pnpm test
 5. Actualizar TASKS.md, CHANGELOG.md, docs módulo
@@ -48,5 +48,6 @@ Seguir ROADMAP.md estrictamente. Excepción: dependencia técnica bloqueante doc
 
 ## Referencias
 
+- [docs/PLATFORM_VISION.md](../../docs/PLATFORM_VISION.md) — north star AI-first
 - ROADMAP.md, TASKS.md, ARCHITECTURE.md
 - ghost-erp-module, ghost-erp-git, ghost-erp-security
