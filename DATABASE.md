@@ -135,6 +135,22 @@ Stock desnormalizado — **1 doc = 1 lectura.**
 }
 ```
 
+### `inventoryLots/{lotId}`
+
+Lotes abiertos por bodega e insumo (FIFO en ventas).
+
+```typescript
+{
+  organizationId, branchId, warehouseId, itemId
+  lotCode: string
+  quantityRemaining: number
+  unitCost: number
+  sourceReference?: string   // factura de compra
+  sourceMovementId?: string
+  receivedAt: Timestamp
+}
+```
+
 ### `inventoryMovements/{movementId}`
 
 Kardex append-only.
@@ -150,7 +166,18 @@ Kardex append-only.
 }
 ```
 
-## Índices compuestos
+### `sales/{saleId}` — trazabilidad
+
+Campo opcional `lotConsumptions[]` con los lotes consumidos al cobrar (enlaza compra → venta).
+
+```typescript
+lotConsumptions?: Array<{
+  inventoryItemId, itemName, lotCode, lotId?, quantity, unitCost,
+  sourceReference?  // factura origen del lote
+}>
+```
+
+### Índices compuestos
 
 Archivo: `firebase/firestore.indexes.json`
 

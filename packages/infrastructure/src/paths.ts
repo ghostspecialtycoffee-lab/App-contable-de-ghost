@@ -31,6 +31,10 @@ export const firestorePaths = {
     itemId: string,
   ) =>
     `organizations/${organizationId}/inventoryBalances/${warehouseId}_${itemId}`,
+  organizationInventoryLots: (organizationId: string) =>
+    `organizations/${organizationId}/inventoryLots`,
+  organizationInventoryLot: (organizationId: string, lotId: string) =>
+    `organizations/${organizationId}/inventoryLots/${lotId}`,
   organizationMenuProducts: (organizationId: string) =>
     `organizations/${organizationId}/menuProducts`,
   organizationMenuProduct: (organizationId: string, productId: string) =>

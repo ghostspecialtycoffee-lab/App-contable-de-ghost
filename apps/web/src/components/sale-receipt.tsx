@@ -12,6 +12,7 @@ import { Button } from "@ghost/ui";
 import { useState } from "react";
 
 import { formatDateTime, formatMoney } from "@/lib/format";
+import { SaleLotTracePanel } from "@/components/sale-lot-trace-panel";
 import { sendSaleDocument } from "@/lib/sales/send-sale-document";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -148,6 +149,10 @@ export function SaleReceipt({
         </div>
 
         <DocumentFooter className="mt-4" />
+      </div>
+
+      <div className="print:hidden">
+        <SaleLotTracePanel sale={sale} />
       </div>
 
       {showPrint ? (

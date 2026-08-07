@@ -1,4 +1,6 @@
 export * from "./item.js";
+export * from "./lot.js";
+export * from "./lot-allocation.js";
 export * from "./movement.js";
 export * from "./product-categories.js";
 export * from "./services/inventory.js";

@@ -1,5 +1,6 @@
 import {
   buildPurchaseInvoiceLines,
+  generatePurchaseLotCode,
   purchaseInvoiceAffectsInventory,
   resolvePurchaseInventoryEntry,
   summarizePurchaseInvoice,
@@ -221,6 +222,7 @@ export async function confirmPurchaseInvoiceClient(input: {
   }
 
   let movements = 0;
+  let lineIndex = 0;
   for (const line of lines) {
     if (!line.inventoryItemId || line.quantity <= 0) {
       continue;
@@ -248,6 +250,12 @@ export async function confirmPurchaseInvoiceClient(input: {
       continue;
     }
 
+    const lotCode = generatePurchaseLotCode({
+      invoiceNumber: String(invoice.invoiceNumber ?? "COMPRA"),
+      itemId: line.inventoryItemId,
+      lineIndex,
+    });
+
     await registerInventoryMovementClient({
       branchId,
       warehouseId,
@@ -257,8 +265,10 @@ export async function confirmPurchaseInvoiceClient(input: {
       unitCost: entry.unitCostNetPerBase,
       reference: invoice.invoiceNumber as string,
       notes: line.description,
+      lotCode,
     });
     movements += 1;
+    lineIndex += 1;
   }
 
   return { movements, inventoryApplied: true };

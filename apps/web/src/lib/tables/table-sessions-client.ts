@@ -23,7 +23,10 @@ import {
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
-import { consumeInventoryForSale } from "@/lib/inventory/sale-inventory-consumption";
+import {
+  applySaleInventoryConsumption,
+  planSaleInventoryConsumption,
+} from "@/lib/inventory/sale-inventory-consumption";
 import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
 import { refreshTableQrLookupClient } from "./table-qr-lookup-client";
 
@@ -358,6 +361,15 @@ export async function checkoutTableSessionClient(input: {
   const saleNumber = `M${session.tableNumber}-${new Date().toISOString().slice(11, 19).replace(/:/g, "")}`;
   const soldAt = new Date().toISOString();
   const soldOn = soldAt.slice(0, 10);
+  const inventoryPlan = await planSaleInventoryConsumption({
+    organizationId,
+    branchId,
+    saleNumber,
+    lines: totals.lines.map((line) => ({
+      productId: line.productId,
+      quantity: line.quantity,
+    })),
+  }).catch(() => ({ lotConsumptions: [], plannedExits: [] }));
   const saleRef = doc(collection(db, firestorePaths.organizationSales(organizationId)));
   const now = serverTimestamp();
 
@@ -384,6 +396,7 @@ export async function checkoutTableSessionClient(input: {
       tableSessionId: input.sessionId,
       soldAt,
       soldOn,
+      lotConsumptions: inventoryPlan.lotConsumptions,
       createdAt: now,
       updatedAt: now,
       createdBy: userId,
@@ -414,14 +427,11 @@ export async function checkoutTableSessionClient(input: {
     tableId: session.tableId as string,
   }).catch(() => undefined);
 
-  await consumeInventoryForSale({
+  await applySaleInventoryConsumption({
     organizationId,
     branchId,
     saleNumber,
-    lines: totals.lines.map((line) => ({
-      productId: line.productId,
-      quantity: line.quantity,
-    })),
+    plannedExits: inventoryPlan.plannedExits,
   }).catch(() => {
     // Venta registrada; consumo de bodega opcional si falta stock o receta.
   });

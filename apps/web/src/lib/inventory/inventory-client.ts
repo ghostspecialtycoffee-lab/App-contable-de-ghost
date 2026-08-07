@@ -1,5 +1,7 @@
 import {
+  buildInventoryLotDocId,
   calculateWeightedAverageCost,
+  LEGACY_LOT_CODE,
   validateMovementQuantity,
   validateSku,
   type InventoryMovementType,
@@ -233,6 +235,7 @@ export async function registerInventoryMovementClient(input: {
   unitCost?: number;
   reference?: string;
   notes?: string;
+  lotCode?: string;
 }): Promise<{ movementId: string; balanceAfter: number }> {
   const userId = requireUserId();
   const organizationId = await getOrganizationIdFromProfile();
@@ -269,11 +272,23 @@ export async function registerInventoryMovementClient(input: {
   const movementRef = doc(
     collection(db, firestorePaths.organizationInventoryMovements(organizationId)),
   );
+  const lotCode = input.lotCode?.trim() || "";
+  const trackLot = lotCode.length > 0 && lotCode !== LEGACY_LOT_CODE;
+  const lotRef = trackLot
+    ? doc(
+        db,
+        firestorePaths.organizationInventoryLot(
+          organizationId,
+          buildInventoryLotDocId(input.warehouseId, input.itemId, lotCode),
+        ),
+      )
+    : null;
 
   const balanceAfter = await runTransaction(db, async (transaction) => {
     const itemSnap = await transaction.get(itemRef);
     const warehouseSnap = await transaction.get(warehouseRef);
     const balanceSnap = await transaction.get(balanceRef);
+    const lotSnap = lotRef ? await transaction.get(lotRef) : null;
 
     if (!itemSnap.exists()) {
       throw new Error("Ítem no encontrado.");
@@ -310,6 +325,49 @@ export async function registerInventoryMovementClient(input: {
     const now = serverTimestamp();
     const totalCost = Math.abs(signedQuantity) * (unitCost || averageCost);
 
+    if (trackLot && lotRef) {
+      const absQuantity = Math.abs(signedQuantity);
+      if (signedQuantity > 0) {
+        const currentLotQty = lotSnap?.exists()
+          ? Number(lotSnap.data()?.quantityRemaining ?? 0)
+          : 0;
+        transaction.set(
+          lotRef,
+          {
+            organizationId,
+            branchId: input.branchId,
+            warehouseId: input.warehouseId,
+            itemId: input.itemId,
+            lotCode,
+            quantityRemaining: currentLotQty + absQuantity,
+            unitCost: unitCost || averageCost,
+            sourceReference: input.reference ?? "",
+            sourceMovementId: movementRef.id,
+            receivedAt: lotSnap?.exists()
+              ? lotSnap.data()?.receivedAt ?? new Date().toISOString()
+              : new Date().toISOString(),
+            updatedAt: now,
+          },
+          { merge: true },
+        );
+      } else {
+        const currentLotQty = lotSnap?.exists()
+          ? Number(lotSnap.data()?.quantityRemaining ?? 0)
+          : 0;
+        const nextLotQty = Math.max(0, currentLotQty - absQuantity);
+        if (lotSnap?.exists()) {
+          transaction.set(
+            lotRef,
+            {
+              quantityRemaining: nextLotQty,
+              updatedAt: now,
+            },
+            { merge: true },
+          );
+        }
+      }
+    }
+
     transaction.set(movementRef, {
       organizationId,
       branchId: input.branchId,
@@ -322,7 +380,7 @@ export async function registerInventoryMovementClient(input: {
       balanceAfter: nextBalance,
       reference: input.reference ?? "",
       notes: input.notes ?? "",
-      lotCode: "",
+      lotCode,
       actorUserId: userId,
       occurredAt: now,
     });

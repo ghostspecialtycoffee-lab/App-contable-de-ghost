@@ -26,7 +26,7 @@ import {
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 import { normalizeCatalogName } from "@/lib/costing/ghost-menu-catalog";
-import { consumeInventoryForSale } from "@/lib/inventory/sale-inventory-consumption";
+import { planSaleInventoryConsumption, applySaleInventoryConsumption } from "@/lib/inventory/sale-inventory-consumption";
 import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
 import { COLOMBIA_SODAS_CATALOG } from "./colombia-sodas-catalog";
 
@@ -279,6 +279,15 @@ export async function createSaleClient(input: {
   const saleNumber = buildSaleNumber();
   const soldAt = new Date().toISOString();
   const soldOn = soldAt.slice(0, 10);
+  const inventoryPlan = await planSaleInventoryConsumption({
+    organizationId,
+    branchId,
+    saleNumber,
+    lines: totals.lines.map((line) => ({
+      productId: line.productId,
+      quantity: line.quantity,
+    })),
+  }).catch(() => ({ lotConsumptions: [], plannedExits: [] }));
   const db = getFirestoreDb();
   const saleRef = doc(
     collection(db, firestorePaths.organizationSales(organizationId)),
@@ -306,6 +315,7 @@ export async function createSaleClient(input: {
       notes: input.notes?.trim() ?? "",
       soldAt,
       soldOn,
+      lotConsumptions: inventoryPlan.lotConsumptions,
       createdAt: now,
       updatedAt: now,
       createdBy: userId,
@@ -343,14 +353,11 @@ export async function createSaleClient(input: {
     }
   });
 
-  await consumeInventoryForSale({
+  await applySaleInventoryConsumption({
     organizationId,
     branchId,
     saleNumber,
-    lines: totals.lines.map((line) => ({
-      productId: line.productId,
-      quantity: line.quantity,
-    })),
+    plannedExits: inventoryPlan.plannedExits,
   }).catch(() => {
     // Venta registrada; consumo de bodega opcional si falta stock o receta.
   });
