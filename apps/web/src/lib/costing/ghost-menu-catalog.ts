@@ -1,26 +1,21 @@
+import type { BeverageCatalogSpec } from "@ghost/domain";
 import type { CoTaxCategory, KitchenStation, MenuCategory } from "@ghost/domain";
-import { needsBeverageAdvancedSetup } from "@ghost/domain";
+import { needsBeverageAdvancedSetup, usesTapWaterForCoffeePrep as domainUsesTapWaterForCoffeePrep } from "@ghost/domain";
 
 import catalogData from "@/data/ghost-menu-catalog.json";
 
-/** Espresso base — Ghost bar (máquina 220 V, molino Quality, taza espresso). */
+/** Espresso base — Ghost bar (SCA: 18 g dosis · 30 ml rendimiento por shot). */
 export const GHOST_ESPRESSO_BASE = catalogData.espressoBase;
 
 export type GhostBeverageKind = "espresso_bar" | "cold" | "brew_method" | "other";
 
-export interface GhostBeverageSpec {
+export interface GhostBeverageSpec extends BeverageCatalogSpec {
   name: string;
   price: number;
   category: MenuCategory;
   station: KitchenStation;
   saleTaxCategory: CoTaxCategory;
   kind: GhostBeverageKind;
-  usesEspressoBase?: boolean;
-  espressoShots?: number;
-  coffeeGrams?: number;
-  waterMl?: number;
-  extraWaterMl?: number;
-  milkMl?: number;
   description?: string;
   /** Bebida fuera del estándar SCA: requiere cuestionario en ficha de costos. */
   needsAdvancedSetup?: boolean;
@@ -69,14 +64,5 @@ export function catalogNeedsAdvancedSetup(productName: string): boolean {
 export function usesTapWaterForCoffeePrep(
   spec: Pick<GhostBeverageSpec, "usesEspressoBase" | "kind" | "coffeeGrams">,
 ): boolean {
-  if (spec.usesEspressoBase) {
-    return true;
-  }
-  if (spec.kind === "brew_method") {
-    return true;
-  }
-  if ((spec.coffeeGrams ?? 0) > 0) {
-    return true;
-  }
-  return false;
+  return domainUsesTapWaterForCoffeePrep(spec);
 }

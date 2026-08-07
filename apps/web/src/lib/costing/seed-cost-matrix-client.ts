@@ -1,5 +1,11 @@
 import type { BaseUnit, InventoryItemType, MenuCategory, RecipeLineInput } from "@ghost/domain";
-import { resolveRecipeYieldQuantity, suggestRecipeYieldForProduct } from "@ghost/domain";
+import {
+  buildBeverageRecipeLineSpecs,
+  resolveRecipeYieldQuantity,
+  suggestRecipeYieldForProduct,
+  type BeverageIngredientKind,
+  type BeverageRecipeLineSpec,
+} from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 
@@ -9,7 +15,6 @@ import {
   GHOST_ESPRESSO_BASE,
   isCatalogBeverage,
   normalizeCatalogName,
-  usesTapWaterForCoffeePrep,
   type GhostBeverageSpec,
 } from "@/lib/costing/ghost-menu-catalog";
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
@@ -18,6 +23,9 @@ import { saveRecipeClient } from "@/lib/recipes/recipes-client";
 
 const MILK_BOTTLE_ML = 1000;
 const WATER_BOTTLE_ML = 600;
+const ICE_BAG_GRAMS = 5000;
+const LEMON_JUICE_BOTTLE_ML = 250;
+const SODA_UNIT_ML = 350;
 
 type InventoryRow = {
   id: string;
@@ -142,6 +150,69 @@ function findWaterItem(items: InventoryRow[]): InventoryRow | null {
   return pickBestItem(items, (item) => /agua/i.test(item.name), scoreWaterItem);
 }
 
+function scoreIceItem(item: InventoryRow): number {
+  let score = 0;
+  const name = normalizeCatalogName(item.name);
+  if (/hielo kolbitos/.test(name)) {
+    score += 12;
+  } else if (/hielo/.test(name)) {
+    score += 8;
+  }
+  if (item.averageCost > 0) {
+    score += 2;
+  }
+  return score;
+}
+
+function findIceItem(items: InventoryRow[]): InventoryRow | null {
+  return pickBestItem(items, (item) => /hielo/i.test(item.name), scoreIceItem);
+}
+
+function findIceCreamItem(items: InventoryRow[]): InventoryRow | null {
+  return pickBestItem(
+    items,
+    (item) => /helado/i.test(item.name),
+    (item) => (/vainilla/.test(normalizeCatalogName(item.name)) ? 10 : 5) + (item.averageCost > 0 ? 2 : 0),
+  );
+}
+
+function findLemonJuiceItem(items: InventoryRow[]): InventoryRow | null {
+  return pickBestItem(
+    items,
+    (item) => /jugo de limon|limon tahiti/i.test(normalizeCatalogName(item.name)),
+    (item) => (/jugo de limon/.test(normalizeCatalogName(item.name)) ? 10 : 6) + (item.averageCost > 0 ? 2 : 0),
+  );
+}
+
+function findSodaItem(items: InventoryRow[]): InventoryRow | null {
+  return pickBestItem(
+    items,
+    (item) => /soda izots|gaseosa.*soda|tonica|isotonica/i.test(normalizeCatalogName(item.name)),
+    (item) => {
+      const name = normalizeCatalogName(item.name);
+      if (/soda izots/.test(name)) return 12;
+      if (/isotonica/.test(name)) return 8;
+      return 5;
+    },
+  );
+}
+
+function findChocolateItem(items: InventoryRow[]): InventoryRow | null {
+  return pickBestItem(
+    items,
+    (item) => /chocolate|cacao|cacao en polvo/i.test(normalizeCatalogName(item.name)),
+    (item) => (item.type === "raw_material" ? 8 : 4) + (item.averageCost > 0 ? 2 : 0),
+  );
+}
+
+function findSugarItem(items: InventoryRow[]): InventoryRow | null {
+  return pickBestItem(
+    items,
+    (item) => /azucar/i.test(normalizeCatalogName(item.name)),
+    (item) => (item.averageCost > 0 ? 5 : 2),
+  );
+}
+
 function coffeeBagGramsForItem(item: InventoryRow): number {
   if (
     item.presentationQuantity &&
@@ -166,6 +237,14 @@ function bottleMlForItem(item: InventoryRow, fallback: number): number {
   return fallback;
 }
 
+function weightPerBagUnit(item: InventoryRow): number {
+  const name = normalizeCatalogName(item.name);
+  if (/hielo/.test(name)) {
+    return ICE_BAG_GRAMS;
+  }
+  return coffeeBagGramsForItem(item);
+}
+
 function buildGramLine(item: InventoryRow, grams: number): RecipeLineInput {
   if (item.baseUnit === "g") {
     return {
@@ -185,7 +264,7 @@ function buildGramLine(item: InventoryRow, grams: number): RecipeLineInput {
     };
   }
 
-  const bagGrams = coffeeBagGramsForItem(item);
+  const bagGrams = weightPerBagUnit(item);
   return {
     inventoryItemId: item.id,
     itemName: item.name,
@@ -277,25 +356,117 @@ function findFinishedInventoryMatch(
   );
 }
 
-function resolveSpecAmounts(spec: GhostBeverageSpec): {
-  coffeeGrams: number;
-  waterMl: number;
-  milkMl: number;
-} {
-  if (spec.usesEspressoBase) {
-    const shots = spec.espressoShots ?? 1;
-    return {
-      coffeeGrams: GHOST_ESPRESSO_BASE.coffeeGrams * shots,
-      waterMl: GHOST_ESPRESSO_BASE.waterMl + (spec.extraWaterMl ?? 0),
-      milkMl: spec.milkMl ?? 0,
-    };
-  }
-
+function buildUnitLine(item: InventoryRow, units: number): RecipeLineInput {
   return {
-    coffeeGrams: spec.coffeeGrams ?? 0,
-    waterMl: spec.waterMl ?? 0,
-    milkMl: spec.milkMl ?? 0,
+    inventoryItemId: item.id,
+    itemName: item.name,
+    quantity: units,
+    unit: item.baseUnit === "unit" ? "unit" : item.baseUnit,
   };
+}
+
+function mapBeverageLineToInventory(
+  line: BeverageRecipeLineSpec,
+  items: InventoryRow[],
+  specName: string,
+  warnings: string[],
+): RecipeLineInput | null {
+  const label = (kind: BeverageIngredientKind) => {
+    const labels: Record<BeverageIngredientKind, string> = {
+      coffee: "café",
+      milk: "leche",
+      water: "agua",
+      ice: "hielo",
+      iceCream: "helado",
+      lemonJuice: "jugo de limón",
+      soda: "soda",
+      tonic: "tónica",
+      chocolate: "chocolate",
+      sugar: "azúcar",
+    };
+    return labels[kind];
+  };
+
+  switch (line.kind) {
+    case "coffee": {
+      const coffee = findBlackCoffeeItem(items);
+      if (!coffee) {
+        warnings.push(`Sin café Black Coffee para ${specName}.`);
+        return null;
+      }
+      return buildGramLine(coffee, line.quantity);
+    }
+    case "milk": {
+      const milk = findMilkItem(items);
+      if (!milk) {
+        warnings.push(`Sin leche en inventario para ${specName} (${line.quantity} ml).`);
+        return null;
+      }
+      return buildMilliliterLine(milk, line.quantity, MILK_BOTTLE_ML);
+    }
+    case "water": {
+      const water = findWaterItem(items);
+      if (!water) {
+        warnings.push(`Sin agua en inventario para ${specName} (${line.quantity} ml).`);
+        return null;
+      }
+      return buildMilliliterLine(water, line.quantity, WATER_BOTTLE_ML);
+    }
+    case "ice": {
+      const ice = findIceItem(items);
+      if (!ice) {
+        warnings.push(`Sin hielo en inventario para ${specName} (${line.quantity} g).`);
+        return null;
+      }
+      return buildGramLine(ice, line.quantity);
+    }
+    case "iceCream": {
+      const iceCream = findIceCreamItem(items);
+      if (!iceCream) {
+        warnings.push(`Sin helado en inventario para ${specName}.`);
+        return null;
+      }
+      return buildUnitLine(iceCream, line.quantity);
+    }
+    case "lemonJuice": {
+      const lemon = findLemonJuiceItem(items);
+      if (!lemon) {
+        warnings.push(`Sin jugo de limón para ${specName} (${line.quantity} ml).`);
+        return null;
+      }
+      return buildMilliliterLine(lemon, line.quantity, LEMON_JUICE_BOTTLE_ML);
+    }
+    case "soda":
+    case "tonic": {
+      const soda = findSodaItem(items);
+      if (!soda) {
+        warnings.push(`Sin soda/tónica para ${specName} (${line.quantity} ml).`);
+        return null;
+      }
+      return buildMilliliterLine(soda, line.quantity, SODA_UNIT_ML);
+    }
+    case "chocolate": {
+      const chocolate = findChocolateItem(items);
+      if (!chocolate) {
+        warnings.push(
+          `${specName}: falta chocolate en bodega (${line.quantity} g) — confirma insumo.`,
+        );
+        return null;
+      }
+      return buildGramLine(chocolate, line.quantity);
+    }
+    case "sugar": {
+      const sugar = findSugarItem(items);
+      if (!sugar) {
+        warnings.push(`Sin azúcar para ${specName} (${line.quantity} g).`);
+        return null;
+      }
+      return buildGramLine(sugar, line.quantity);
+    }
+    default:
+      warnings.push(`${specName}: insumo ${label(line.kind)} no mapeado.`);
+      return null;
+  }
 }
 
 function buildCatalogRecipeLines(
@@ -303,43 +474,21 @@ function buildCatalogRecipeLines(
   items: InventoryRow[],
   warnings: string[],
 ): RecipeLineInput[] | null {
+  const lineSpecs = buildBeverageRecipeLineSpecs(spec, GHOST_ESPRESSO_BASE);
   const lines: RecipeLineInput[] = [];
-  const { coffeeGrams, waterMl, milkMl } = resolveSpecAmounts(spec);
 
-  if (coffeeGrams > 0) {
-    const coffee = findBlackCoffeeItem(items);
-    if (!coffee) {
-      warnings.push(`Sin café Black Coffee para ${spec.name}.`);
-      return null;
-    }
-    lines.push(buildGramLine(coffee, coffeeGrams));
-  }
-
-  if (waterMl > 0 && !usesTapWaterForCoffeePrep(spec)) {
-    const water = findWaterItem(items);
-    if (!water) {
-      warnings.push(`Sin agua en inventario para ${spec.name} (${waterMl} ml).`);
-    } else {
-      lines.push(buildMilliliterLine(water, waterMl, WATER_BOTTLE_ML));
-    }
-  }
-
-  if (milkMl > 0) {
-    const milk = findMilkItem(items);
-    if (!milk) {
-      warnings.push(`Sin leche en inventario para ${spec.name} (${milkMl} ml).`);
-    } else {
-      lines.push(buildMilliliterLine(milk, milkMl, MILK_BOTTLE_ML));
+  for (const lineSpec of lineSpecs) {
+    const mapped = mapBeverageLineToInventory(lineSpec, items, spec.name, warnings);
+    if (mapped) {
+      lines.push(mapped);
     }
   }
 
   if (lines.length === 0) {
-    warnings.push(`${spec.name}: solo notas — faltan insumos en compras (${spec.description ?? "ver catálogo"}).`);
+    warnings.push(
+      `${spec.name}: sin insumos mapeados (${spec.description ?? "ver catálogo"}).`,
+    );
     return null;
-  }
-
-  if (spec.description?.includes("cruzar")) {
-    warnings.push(`${spec.name}: receta parcial — ${spec.description}`);
   }
 
   return lines;
