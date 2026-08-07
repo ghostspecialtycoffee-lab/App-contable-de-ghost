@@ -1,5 +1,6 @@
 import {
   buildPurchaseInvoiceLines,
+  buildPurchaseConfirmedEvent,
   purchaseInvoiceAffectsInventory,
   resolvePurchaseInventoryEntry,
   summarizePurchaseInvoice,
@@ -17,6 +18,7 @@ import {
 } from "firebase/firestore";
 
 import { registerInventoryMovementClient } from "@/lib/inventory/inventory-client";
+import { publishDomainEventSafe } from "@/lib/events/domain-events";
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 
 function requireUserId(): string {
@@ -217,6 +219,22 @@ export async function confirmPurchaseInvoiceClient(input: {
   });
 
   if (!inventoryApplied) {
+    await publishDomainEventSafe(
+      buildPurchaseConfirmedEvent({
+        organizationId,
+        branchId,
+        actorUserId: userId,
+        invoiceId: input.invoiceId,
+        invoiceNumber: invoice.invoiceNumber as string,
+        supplierName: invoice.supplierName as string,
+        total: Number(invoice.total ?? 0),
+        subtotal: Number(invoice.subtotal ?? 0),
+        lineCount: lines.length,
+        inventoryApplied: false,
+        movements: 0,
+        invoiceDate,
+      }),
+    );
     return { movements: 0, inventoryApplied: false };
   }
 
@@ -260,6 +278,23 @@ export async function confirmPurchaseInvoiceClient(input: {
     });
     movements += 1;
   }
+
+  await publishDomainEventSafe(
+    buildPurchaseConfirmedEvent({
+      organizationId,
+      branchId,
+      actorUserId: userId,
+      invoiceId: input.invoiceId,
+      invoiceNumber: invoice.invoiceNumber as string,
+      supplierName: invoice.supplierName as string,
+      total: Number(invoice.total ?? 0),
+      subtotal: Number(invoice.subtotal ?? 0),
+      lineCount: lines.length,
+      inventoryApplied,
+      movements,
+      invoiceDate,
+    }),
+  );
 
   return { movements, inventoryApplied: true };
 }
