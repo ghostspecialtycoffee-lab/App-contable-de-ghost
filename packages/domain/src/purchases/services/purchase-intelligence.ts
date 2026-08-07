@@ -76,7 +76,7 @@ export function calculateAverageDailyConsumption(
   return totalExit / lookbackDays;
 }
 
-export function forecastDaysUntilStockout(
+export function forecastPurchaseStockoutDays(
   currentQuantity: number,
   dailyConsumption: number,
   threshold = 0,
@@ -129,7 +129,7 @@ export function buildPurchaseSuggestions(input: {
       lookbackDays,
     });
     const belowMinimum = item.minStock > 0 && item.quantity < item.minStock;
-    const daysUntilStockout = forecastDaysUntilStockout(item.quantity, dailyConsumption);
+    const daysUntilStockout = forecastPurchaseStockoutDays(item.quantity, dailyConsumption);
     const forecastRisk =
       dailyConsumption > 0 &&
       daysUntilStockout !== null &&

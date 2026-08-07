@@ -51,6 +51,16 @@ export interface Sale extends AuditMetadata {
   notes?: string;
   soldAt?: string;
   soldOn?: string;
+  /** Lotes de inventario consumidos al registrar la venta (trazabilidad compra → venta). */
+  lotConsumptions?: Array<{
+    inventoryItemId: EntityId;
+    itemName: string;
+    lotCode: string;
+    lotId?: EntityId;
+    quantity: number;
+    unitCost: number;
+    sourceReference?: string;
+  }>;
   /** Recetas congeladas al momento de la venta (trazabilidad de costo). */
   recipeSnapshots?: Array<{
     productId: EntityId;

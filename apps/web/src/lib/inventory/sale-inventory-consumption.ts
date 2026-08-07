@@ -1,12 +1,15 @@
-import type { Recipe, SaleRecipeSnapshot } from "@ghost/domain";
+import type { Recipe, SaleLotConsumption, SaleRecipeSnapshot } from "@ghost/domain";
 import {
+  allocateLotsFifo,
   calculateRecipeConsumption,
+  mergeLotConsumptions,
   type InventoryCostProfile,
 } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import { collection, doc, getDoc, getDocs, limit, query, where } from "firebase/firestore";
 
 import { getFirestoreDb } from "@/lib/firebase/client";
+import { listOpenLotsForItem } from "@/lib/inventory/inventory-lots-client";
 import { registerInventoryMovementClient } from "@/lib/inventory/inventory-client";
 
 async function getDefaultWarehouseId(organizationId: string): Promise<string> {
@@ -68,13 +71,26 @@ function recipeFromSnapshot(snapshot: SaleRecipeSnapshot): Recipe {
   };
 }
 
-export async function consumeInventoryForSale(input: {
+export interface PlannedSaleInventoryExit {
+  itemId: string;
+  itemName: string;
+  lotCode: string;
+  lotId?: string;
+  quantity: number;
+  unitCost: number;
+  sourceReference?: string;
+}
+
+export async function planSaleInventoryConsumption(input: {
   organizationId: string;
   branchId: string;
   saleNumber: string;
   lines: Array<{ productId: string; quantity: number }>;
   recipeSnapshots?: SaleRecipeSnapshot[];
-}): Promise<number> {
+}): Promise<{
+  lotConsumptions: SaleLotConsumption[];
+  plannedExits: PlannedSaleInventoryExit[];
+}> {
   const snapshotsByProduct = new Map(
     (input.recipeSnapshots ?? []).map((snapshot) => [snapshot.productId, snapshot]),
   );
@@ -137,24 +153,97 @@ export async function consumeInventoryForSale(input: {
   }
 
   if (consumptionByItem.size === 0) {
+    return { lotConsumptions: [], plannedExits: [] };
+  }
+
+  const warehouseId = await getDefaultWarehouseId(input.organizationId);
+  const rawConsumptions: SaleLotConsumption[] = [];
+  const plannedExits: PlannedSaleInventoryExit[] = [];
+
+  for (const [itemId, entry] of consumptionByItem.entries()) {
+    const openLots = await listOpenLotsForItem({
+      organizationId: input.organizationId,
+      warehouseId,
+      itemId,
+    });
+    const { allocations } = allocateLotsFifo(openLots, entry.quantityInBase);
+
+    for (const allocation of allocations) {
+      rawConsumptions.push({
+        inventoryItemId: itemId,
+        itemName: entry.itemName,
+        lotCode: allocation.lotCode,
+        lotId: allocation.lotId,
+        quantity: allocation.quantity,
+        unitCost: allocation.unitCost,
+        sourceReference: allocation.sourceReference,
+      });
+      plannedExits.push({
+        itemId,
+        itemName: entry.itemName,
+        lotCode: allocation.lotCode,
+        lotId: allocation.lotId,
+        quantity: allocation.quantity,
+        unitCost: allocation.unitCost,
+        sourceReference: allocation.sourceReference,
+      });
+    }
+  }
+
+  return {
+    lotConsumptions: mergeLotConsumptions(rawConsumptions),
+    plannedExits,
+  };
+}
+
+export async function applySaleInventoryConsumption(input: {
+  organizationId: string;
+  branchId: string;
+  saleNumber: string;
+  plannedExits: PlannedSaleInventoryExit[];
+}): Promise<number> {
+  if (input.plannedExits.length === 0) {
     return 0;
   }
 
   const warehouseId = await getDefaultWarehouseId(input.organizationId);
   let movements = 0;
 
-  for (const [itemId, entry] of consumptionByItem.entries()) {
+  for (const exit of input.plannedExits) {
     await registerInventoryMovementClient({
       branchId: input.branchId,
       warehouseId,
-      itemId,
+      itemId: exit.itemId,
       type: "exit",
-      quantity: entry.quantityInBase,
+      quantity: exit.quantity,
+      unitCost: exit.unitCost,
+      lotCode: exit.lotCode,
       reference: input.saleNumber,
-      notes: `Venta ${input.saleNumber} · ${entry.itemName}`,
+      notes: `Venta ${input.saleNumber} · ${exit.itemName} · lote ${exit.lotCode}`,
     });
     movements += 1;
   }
 
   return movements;
+}
+
+export async function consumeInventoryForSale(input: {
+  organizationId: string;
+  branchId: string;
+  saleNumber: string;
+  lines: Array<{ productId: string; quantity: number }>;
+  recipeSnapshots?: SaleRecipeSnapshot[];
+}): Promise<{ movements: number; lotConsumptions: SaleLotConsumption[] }> {
+  const plan = await planSaleInventoryConsumption(input);
+  const movements = await applySaleInventoryConsumption({
+    organizationId: input.organizationId,
+    branchId: input.branchId,
+    saleNumber: input.saleNumber,
+    plannedExits: plan.plannedExits,
+  });
+
+  return {
+    movements,
+    lotConsumptions: plan.lotConsumptions,
+  };
 }

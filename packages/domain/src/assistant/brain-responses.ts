@@ -28,6 +28,10 @@ import {
   compareSupplierPricesForItem,
 } from "../purchases/services/purchase-intelligence.js";
 import type { GhostConversationContext } from "./ghost-conversation.js";
+import {
+  briefingInputFromGhostContext,
+  buildDailyOperationsBriefing,
+} from "./daily-briefing.js";
 
 function formatMoney(value: number): string {
   return `$${Math.round(value).toLocaleString("es-CO")}`;
@@ -752,4 +756,13 @@ export function buildTablesStatusReply(context: GhostConversationContext): strin
     `**Mesas** (${context.tables.length} configuradas · ${context.openTableSessions.length} abiertas)\n${lines}\n\n` +
     "Para abrir: «abre la mesa 3». Para cobrar: «cuenta de la mesa 3». Para cancelar: «cancela mesa 3»."
   );
+}
+
+export function buildDailyBriefingReply(context: GhostConversationContext): string {
+  const briefing = buildDailyOperationsBriefing(
+    briefingInputFromGhostContext(context, {
+      inventoryMovementsSnapshot: context.inventoryMovementsSnapshot,
+    }),
+  );
+  return briefing.message;
 }

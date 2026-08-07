@@ -1,6 +1,7 @@
 import {
   buildPurchaseInvoiceLines,
   buildPurchaseConfirmedEvent,
+  generatePurchaseLotCode,
   purchaseInvoiceAffectsInventory,
   resolvePurchaseInventoryEntry,
   summarizePurchaseInvoice,
@@ -18,6 +19,7 @@ import {
 } from "firebase/firestore";
 
 import { registerInventoryMovementClient } from "@/lib/inventory/inventory-client";
+import { recordPurchaseAnalyticsSafe } from "@/lib/analytics/analytics-client";
 import { recordPurchasePriceHistoryClient } from "@/lib/purchases/price-history-client";
 import { publishDomainEventSafe } from "@/lib/events/domain-events";
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
@@ -240,6 +242,11 @@ export async function confirmPurchaseInvoiceClient(input: {
   await recordPurchasePriceHistoryClient(organizationId, priceHistoryEntries);
 
   if (!inventoryApplied) {
+    await recordPurchaseAnalyticsSafe({
+      organizationId,
+      invoiceDate,
+      total: Number(invoice.total ?? 0),
+    });
     await publishDomainEventSafe(
       buildPurchaseConfirmedEvent({
         organizationId,
@@ -260,7 +267,7 @@ export async function confirmPurchaseInvoiceClient(input: {
   }
 
   let movements = 0;
-
+  let lineIndex = 0;
   for (const line of lines) {
     if (!line.inventoryItemId || line.quantity <= 0) {
       continue;
@@ -288,6 +295,12 @@ export async function confirmPurchaseInvoiceClient(input: {
       continue;
     }
 
+    const lotCode = generatePurchaseLotCode({
+      invoiceNumber: String(invoice.invoiceNumber ?? "COMPRA"),
+      itemId: line.inventoryItemId,
+      lineIndex,
+    });
+
     await registerInventoryMovementClient({
       branchId,
       warehouseId,
@@ -297,10 +310,17 @@ export async function confirmPurchaseInvoiceClient(input: {
       unitCost: entry.unitCostNetPerBase,
       reference: invoice.invoiceNumber as string,
       notes: line.description,
+      lotCode,
     });
     movements += 1;
+    lineIndex += 1;
   }
 
+  await recordPurchaseAnalyticsSafe({
+    organizationId,
+    invoiceDate,
+    total: Number(invoice.total ?? 0),
+  });
   await publishDomainEventSafe(
     buildPurchaseConfirmedEvent({
       organizationId,

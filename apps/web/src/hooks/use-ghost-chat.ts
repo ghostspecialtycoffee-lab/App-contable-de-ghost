@@ -21,8 +21,8 @@ import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useFixedExpenses } from "@/hooks/use-fixed-expenses";
 import { useInventoryBalances } from "@/hooks/use-inventory-balances";
-import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useInventoryMovements } from "@/hooks/use-inventory-movements";
+import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useKitchenOrders } from "@/hooks/use-kitchen-orders";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { usePurchaseInvoices } from "@/hooks/use-purchase-invoices";
@@ -310,6 +310,7 @@ export function useGhostChat() {
     invoices,
     recipes,
     costMatrixSettings,
+    inventoryMovements,
   ]);
 
   useEffect(() => {

@@ -1,4 +1,5 @@
 export * from "./ai/index.js";
+export * from "./analytics/index.js";
 export * from "./assistant/index.js";
 export * from "./audit.js";
 export * from "./branch.js";
@@ -21,4 +22,5 @@ export * from "./organization.js";
 export * from "./pos/index.js";
 export * from "./roles.js";
 export * from "./services/organization.js";
+export * from "./rules/index.js";
 export * from "./user.js";

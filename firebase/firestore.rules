@@ -171,6 +171,21 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /inventoryLots/{lotId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
+      match /analyticsDaily/{dateId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.date is string;
+        allow delete: if false;
+      }
+
       match /menuProducts/{productId} {
         allow read: if canAccessOrg(organizationId)
           || resource.data.status == 'active';

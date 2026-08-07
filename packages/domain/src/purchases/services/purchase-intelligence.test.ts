@@ -4,7 +4,7 @@ import {
   buildPurchaseSuggestions,
   calculateAverageDailyConsumption,
   compareSupplierPricesForItem,
-  forecastDaysUntilStockout,
+  forecastPurchaseStockoutDays,
 } from "./purchase-intelligence.js";
 
 describe("purchase-intelligence", () => {
@@ -34,8 +34,8 @@ describe("purchase-intelligence", () => {
   });
 
   it("predice días hasta quiebre de stock", () => {
-    expect(forecastDaysUntilStockout(18, 12)).toBe(2);
-    expect(forecastDaysUntilStockout(18, 0)).toBeNull();
+    expect(forecastPurchaseStockoutDays(18, 12)).toBe(2);
+    expect(forecastPurchaseStockoutDays(18, 0)).toBeNull();
   });
 
   it("sugiere compra por pronóstico de quiebre", () => {

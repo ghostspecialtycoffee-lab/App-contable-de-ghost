@@ -25,7 +25,12 @@ import {
   buildInventoryCatalogReply,
   buildMenuCatalogReply,
   buildTablesStatusReply,
+  buildDailyBriefingReply,
 } from "./brain-responses.js";
+import {
+  buildDailyOperationsBriefing,
+  briefingInputFromGhostContext,
+} from "./daily-briefing.js";
 import {
   extractRecipePriceFromMessage,
   extractYieldQuantityFromMessage,
@@ -76,6 +81,7 @@ export type GhostConversationIntent =
   | "query-menu-catalog"
   | "query-inventory-catalog"
   | "query-tables-status"
+  | "query-daily-briefing"
   | "agent-query";
 
 export interface GhostConversationInventoryItem {
@@ -305,6 +311,7 @@ type ExecutableGhostConversationIntent = Exclude<
   | "query-menu-catalog"
   | "query-inventory-catalog"
   | "query-tables-status"
+  | "query-daily-briefing"
   | "agent-query"
 >;
 
@@ -747,6 +754,9 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
   }
   if (brainQuery === "query-financial-overview") {
     return "query-financial-overview";
+  }
+  if (brainQuery === "query-daily-briefing") {
+    return "query-daily-briefing";
   }
   if (brainQuery === "org-status") {
     return "org-status";
@@ -1541,10 +1551,19 @@ function buildPendingReply(
 export function createInitialConversationTurn(
   context: GhostConversationContext,
 ): GhostConversationResult {
+  const briefing = buildDailyOperationsBriefing(
+    briefingInputFromGhostContext(context, {
+      inventoryMovementsSnapshot: context.inventoryMovementsSnapshot,
+    }),
+  );
+  const greeting = ghostChatGreeting(context.organizationName);
+  const messages =
+    briefing.headlineCount > 0 ? [greeting, briefing.message] : [greeting];
+
   return {
     kind: "reply",
     session: createEmptyGhostChatSession(),
-    messages: [ghostChatGreeting(context.organizationName)],
+    messages,
   };
 }
 
@@ -1632,6 +1651,14 @@ export function processConversationTurn(input: {
       kind: "reply",
       session: clearPending(session),
       messages: [buildBrainHelpMessage(context)],
+    };
+  }
+
+  if (intent === "query-daily-briefing") {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildDailyBriefingReply(context)],
     };
   }
 

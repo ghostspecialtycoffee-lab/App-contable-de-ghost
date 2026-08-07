@@ -31,6 +31,14 @@ export const firestorePaths = {
     itemId: string,
   ) =>
     `organizations/${organizationId}/inventoryBalances/${warehouseId}_${itemId}`,
+  organizationInventoryLots: (organizationId: string) =>
+    `organizations/${organizationId}/inventoryLots`,
+  organizationInventoryLot: (organizationId: string, lotId: string) =>
+    `organizations/${organizationId}/inventoryLots/${lotId}`,
+  organizationAnalyticsDaily: (organizationId: string) =>
+    `organizations/${organizationId}/analyticsDaily`,
+  organizationAnalyticsDailyEntry: (organizationId: string, date: string) =>
+    `organizations/${organizationId}/analyticsDaily/${date}`,
   organizationMenuProducts: (organizationId: string) =>
     `organizations/${organizationId}/menuProducts`,
   organizationMenuProduct: (organizationId: string, productId: string) =>
@@ -97,10 +105,6 @@ export const firestorePaths = {
     `organizations/${organizationId}/domainEventOutbox`,
   organizationDomainEventOutboxEntry: (organizationId: string, entryId: string) =>
     `organizations/${organizationId}/domainEventOutbox/${entryId}`,
-  organizationAnalyticsDaily: (organizationId: string) =>
-    `organizations/${organizationId}/analyticsDaily`,
-  organizationAnalyticsDailyEntry: (organizationId: string, date: string) =>
-    `organizations/${organizationId}/analyticsDaily/${date}`,
   organizationNotificationPreferences: (organizationId: string) =>
     `organizations/${organizationId}/notificationPreferences`,
   organizationNotificationPreference: (organizationId: string, userId: string) =>
