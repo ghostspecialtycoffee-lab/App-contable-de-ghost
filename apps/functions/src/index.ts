@@ -17,6 +17,7 @@ export {
   onInventoryBalanceWritten,
   onWorkShiftWritten,
 } from "./notifications/triggers.js";
+export { onDomainEventOutboxCreate } from "./events/triggers.js";
 export { scheduledOperationsNotifications } from "./notifications/scheduled.js";
 
 export const onAuditLogCreate = onDocumentCreated(

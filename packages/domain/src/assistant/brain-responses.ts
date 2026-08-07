@@ -1,3 +1,4 @@
+import type { CoTaxCategory } from "../fiscal/colombia-tax.js";
 import type { InventoryMovementType } from "../inventory/movement.js";
 import type { BaseUnit } from "../inventory/units.js";
 import type { InventoryCostProfile } from "../inventory/unit-conversion.js";

@@ -1,5 +1,6 @@
 import {
   buildSaleNumber,
+  buildSaleRecordedEvent,
   calculateSaleTotals,
   groupKitchenLines,
   inferMenuProductTaxCategory,
@@ -26,8 +27,10 @@ import {
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 import { normalizeCatalogName } from "@/lib/costing/ghost-menu-catalog";
-import { consumeInventoryForSale } from "@/lib/inventory/sale-inventory-consumption";
 import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
+import { loadSaleRecipeSnapshots } from "@/lib/recipes/sale-recipe-snapshots";
+import { publishDomainEventSafe } from "@/lib/events/domain-events";
+import { consumeInventoryForSale } from "@/lib/inventory/sale-inventory-consumption";
 import { COLOMBIA_SODAS_CATALOG } from "./colombia-sodas-catalog";
 
 function requireUserId(): string {
@@ -286,6 +289,10 @@ export async function createSaleClient(input: {
   const now = serverTimestamp();
   const kitchenGroups = groupKitchenLines(totals.lines);
   const kitchenOrderIds: string[] = [];
+  const recipeSnapshots = await loadSaleRecipeSnapshots(
+    organizationId,
+    totals.lines.map((line) => line.productId),
+  );
 
   await runTransaction(db, async (transaction) => {
     transaction.set(saleRef, {
@@ -295,6 +302,7 @@ export async function createSaleClient(input: {
       saleNumber,
       status: "paid",
       lines: totals.lines,
+      recipeSnapshots,
       subtotal: totals.subtotal,
       taxRate: totals.taxRate,
       taxAmount: totals.taxAmount,
@@ -351,9 +359,27 @@ export async function createSaleClient(input: {
       productId: line.productId,
       quantity: line.quantity,
     })),
+    recipeSnapshots,
   }).catch(() => {
     // Venta registrada; consumo de bodega opcional si falta stock o receta.
   });
+
+  await publishDomainEventSafe(
+    buildSaleRecordedEvent({
+      organizationId,
+      branchId,
+      actorUserId: userId,
+      saleId: saleRef.id,
+      saleNumber,
+      total: totals.total,
+      subtotal: totals.subtotal,
+      taxAmount: totals.taxAmount,
+      paymentMethod: input.paymentMethod,
+      lineCount: totals.lines.length,
+      soldOn,
+      occurredAt: soldAt,
+    }),
+  );
 
   return {
     saleId: saleRef.id,

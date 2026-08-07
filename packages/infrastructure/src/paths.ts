@@ -51,6 +51,10 @@ export const firestorePaths = {
     `organizations/${organizationId}/recipes`,
   organizationRecipe: (organizationId: string, recipeId: string) =>
     `organizations/${organizationId}/recipes/${recipeId}`,
+  organizationRecipeVersions: (organizationId: string, recipeId: string) =>
+    `organizations/${organizationId}/recipes/${recipeId}/versions`,
+  organizationRecipeVersion: (organizationId: string, recipeId: string, version: number | string) =>
+    `organizations/${organizationId}/recipes/${recipeId}/versions/${version}`,
   organizationPurchaseInvoices: (organizationId: string) =>
     `organizations/${organizationId}/purchaseInvoices`,
   organizationPurchaseInvoice: (organizationId: string, invoiceId: string) =>
@@ -89,6 +93,14 @@ export const firestorePaths = {
     `organizations/${organizationId}/notificationOutbox`,
   organizationNotificationOutboxEntry: (organizationId: string, entryId: string) =>
     `organizations/${organizationId}/notificationOutbox/${entryId}`,
+  organizationDomainEventOutbox: (organizationId: string) =>
+    `organizations/${organizationId}/domainEventOutbox`,
+  organizationDomainEventOutboxEntry: (organizationId: string, entryId: string) =>
+    `organizations/${organizationId}/domainEventOutbox/${entryId}`,
+  organizationAnalyticsDaily: (organizationId: string) =>
+    `organizations/${organizationId}/analyticsDaily`,
+  organizationAnalyticsDailyEntry: (organizationId: string, date: string) =>
+    `organizations/${organizationId}/analyticsDaily/${date}`,
   organizationNotificationPreferences: (organizationId: string) =>
     `organizations/${organizationId}/notificationPreferences`,
   organizationNotificationPreference: (organizationId: string, userId: string) =>
