@@ -65,4 +65,23 @@ describe("calculateRecipeCost", () => {
     expect(breakdown.unitCostPerBase).toBe(58);
     expect(breakdown.lineCost).toBe(1044);
   });
+
+  it("infiere bolsa de café sin presentación configurada", () => {
+    const breakdown = calculateRecipeLineCost(
+      {
+        inventoryItemId: "coffee",
+        itemName: "Café Caturra",
+        quantity: 18,
+        unit: "g",
+      },
+      {
+        baseUnit: "g",
+        averageCost: 145_000,
+        purchaseUnit: "bag",
+      },
+    );
+
+    expect(breakdown.unitCostPerBase).toBe(58);
+    expect(breakdown.lineCost).toBe(1044);
+  });
 });
