@@ -26,6 +26,7 @@ import {
   buildMenuCatalogReply,
   buildTablesStatusReply,
   buildDailyBriefingReply,
+  buildPlatformGuideReply,
 } from "./brain-responses.js";
 import {
   buildDailyOperationsBriefing,
@@ -82,6 +83,7 @@ export type GhostConversationIntent =
   | "query-inventory-catalog"
   | "query-tables-status"
   | "query-daily-briefing"
+  | "query-platform-guide"
   | "agent-query";
 
 export interface GhostConversationInventoryItem {
@@ -312,6 +314,7 @@ type ExecutableGhostConversationIntent = Exclude<
   | "query-inventory-catalog"
   | "query-tables-status"
   | "query-daily-briefing"
+  | "query-platform-guide"
   | "agent-query"
 >;
 
@@ -757,6 +760,9 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
   }
   if (brainQuery === "query-daily-briefing") {
     return "query-daily-briefing";
+  }
+  if (brainQuery === "query-platform-guide") {
+    return "query-platform-guide";
   }
   if (brainQuery === "org-status") {
     return "org-status";
@@ -1659,6 +1665,14 @@ export function processConversationTurn(input: {
       kind: "reply",
       session: clearPending(session),
       messages: [buildDailyBriefingReply(context)],
+    };
+  }
+
+  if (intent === "query-platform-guide") {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildPlatformGuideReply(trimmed)],
     };
   }
 

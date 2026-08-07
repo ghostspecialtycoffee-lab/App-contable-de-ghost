@@ -11,11 +11,13 @@ Cargar **solo la skill del flujo actual**. No cargar `ghost-erp-master` para tar
 | [ghost-erp-firebase](ghost-erp-firebase/SKILL.md) | Rules, functions, emuladores, callables |
 | [ghost-erp-docs](ghost-erp-docs/SKILL.md) | Actualizar documentación raíz |
 | [ghost-erp-security](ghost-erp-security/SKILL.md) | Checklist pre-PR seguridad |
+| [ghost-platform-expert](ghost-platform-expert/SKILL.md) | Memoria plataforma, chat Ghost, búsqueda web |
 
 ## Docs canónicos (no duplicar en skills)
 
 - README.md, ARCHITECTURE.md, ROADMAP.md, TASKS.md
 - DATABASE.md, CODING_STANDARDS.md, SECURITY.md
+- docs/GHOST_PLATFORM_EXPERT.md — memoria activa del agente
 - CONTRIBUTING.md, CHANGELOG.md
 
 ## Orden roadmap (no alterar)

@@ -54,6 +54,21 @@ export const GHOST_BRAIN_SKILLS: GhostBrainSkill[] = [
     examples: ["resumen del día", "¿qué novedades hay?", "briefing"],
   },
   {
+    id: "query-platform-guide",
+    domain: "administracion",
+    kind: "guide",
+    title: "Guía de la plataforma",
+    description:
+      "Cómo usar costeo, workflows, eventos, trazabilidad, analytics y rutas de la app.",
+    keywords:
+      /(metodo de costeo|fifo|workflow|whatsapp|event bus|trazabilidad|analytics daily|como registro venta|cost snapshot|automatizacion|settings\/|plan spark|plan blaze|busqueda web|tavily)/,
+    examples: [
+      "¿cómo funciona el costeo FIFO?",
+      "automatizaciones WhatsApp",
+      "qué es el event bus",
+    ],
+  },
+  {
     id: "query-sales-report",
     domain: "ventas",
     kind: "query",
@@ -428,6 +443,7 @@ export function classifyBrainQueryIntent(message: string): string | null {
     "query-inventory-catalog",
     "query-tables-status",
     "query-daily-briefing",
+    "query-platform-guide",
     "org-status",
   ]);
 

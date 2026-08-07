@@ -1,0 +1,20 @@
+{
+  "description": "Seed opcional para organizations/{orgId}/agentKnowledge — copia de PLATFORM_KNOWLEDGE_ENTRIES",
+  "entries": [
+    {
+      "question": "¿Cómo registro una venta en mostrador?",
+      "answer": "Abre caja en /cash, luego /pos o /caja/mostrador. Al cobrar se guardan recipeSnapshots, lotConsumptions y costSnapshot. Código: createSaleClient en pos-client.ts.",
+      "tags": ["ventas"]
+    },
+    {
+      "question": "¿Cómo funcionan las automatizaciones WhatsApp?",
+      "answer": "Configura en /settings/automations. Tras cada venta se encola workflowOutbox con enlace wa.me. Panel en dashboard. Docs: docs/WORKFLOWS.md.",
+      "tags": ["workflows", "whatsapp"]
+    },
+    {
+      "question": "¿Qué métodos de costeo hay?",
+      "answer": "Promedio ponderado (default), FIFO por lote, y costo estándar. Configura en /settings/costing. Docs: docs/COST_METHODS.md.",
+      "tags": ["costeo"]
+    }
+  ]
+}
