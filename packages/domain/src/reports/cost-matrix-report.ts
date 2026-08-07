@@ -10,7 +10,8 @@ import type { MenuCategory } from "../pos/menu-product.js";
 import type { RecipeLineInput } from "../production/recipe.js";
 import {
   calculateRecipeBatchCost,
-  suggestRecipeYield,
+  resolveRecipeYieldQuantity,
+  suggestRecipeYieldForProduct,
 } from "../production/services/recipe-yield.js";
 import { buildPastryLotBreakdown, buildProductCostPanorama } from "./product-cost-panorama.js";
 
@@ -76,9 +77,7 @@ export function buildCostMatrixReport(input: {
     const yieldQuantity =
       recipe?.yieldQuantity && recipe.yieldQuantity > 0
         ? recipe.yieldQuantity
-        : isPastryCategory(product.category)
-          ? suggestRecipeYield(product.name)
-          : 1;
+        : suggestRecipeYieldForProduct(product.name, product.category);
     const baseBatchCost =
       hasRecipe && recipe
         ? calculateRecipeBatchCost(recipe.lines, input.itemProfiles)

@@ -17,6 +17,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { seedGhostMenu } from "./lib/ghost-menu-seed.mjs";
+import {
+  calculatePastryPortionCost,
+  resolveRecipeYieldQuantity,
+} from "./lib/recipe-yield.mjs";
 
 const require = createRequire(import.meta.url);
 const admin = require("firebase-admin/app");
@@ -183,18 +187,6 @@ function inferSaleTaxCategory(name, menuCategory) {
 function roundSalePrice(unitCostNet) {
   const grossEstimate = unitCostNet * 2.5 * 1.19;
   return Math.max(1000, Math.round(grossEstimate / 500) * 500);
-}
-
-function suggestRecipeYield(name) {
-  const normalized = name
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-  if (/torta|tarta|cheesecake|pastel/.test(normalized)) return 12;
-  if (/brownie|galleta/.test(normalized)) return 8;
-  if (/pan\b|enrollado/.test(normalized)) return 10;
-  return 1;
 }
 
 function buildCatalog(manifest) {
@@ -481,11 +473,16 @@ async function createMenuProductsFromFinished(
     const menuCategory = inferMenuCategory(entry.name);
     const station = inferMenuStation(menuCategory);
     const saleTaxCategory = inferSaleTaxCategory(entry.name, menuCategory);
-    const yieldQuantity = suggestRecipeYield(entry.name);
+    const yieldQuantity = resolveRecipeYieldQuantity({
+      productName: entry.name,
+      category: menuCategory,
+    });
     const isPastry = menuCategory === "pastry";
-    const portionCost = Math.round(
-      (entry.unitCostNet + (isPastry ? 10000 : 0)) / yieldQuantity,
-    );
+    const portionCost = calculatePastryPortionCost({
+      batchCostNet: entry.unitCostNet,
+      yieldQuantity,
+      category: menuCategory,
+    });
     const price = isPastry ? 0 : roundSalePrice(portionCost);
     const ref = db.collection(`organizations/${organizationId}/menuProducts`).doc();
     const now = FieldValue.serverTimestamp();

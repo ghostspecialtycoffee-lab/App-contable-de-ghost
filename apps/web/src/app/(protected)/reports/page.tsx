@@ -463,7 +463,7 @@ export default function ReportsPage() {
                         </td>
                         <td className="px-2 py-2">
                           {row.price > 0 ? formatMoney(row.price) : "—"}
-                          {row.batchCostNet > 0 && row.yieldQuantity > 1 ? (
+                          {row.batchCostNet > 0 ? (
                             <p className="text-xs text-[var(--ghost-text-muted)]">
                               {formatMoney(row.batchCostNet)} + {formatMoney(row.domicilioAllocation)}{" "}
                               dom. ÷ {row.yieldQuantity}

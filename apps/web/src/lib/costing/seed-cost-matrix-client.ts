@@ -1,7 +1,8 @@
 import type { BaseUnit, InventoryItemType, MenuCategory, RecipeLineInput } from "@ghost/domain";
 import {
   buildBeverageRecipeLineSpecs,
-  suggestRecipeYield,
+  resolveRecipeYieldQuantity,
+  suggestRecipeYieldForProduct,
   type BeverageIngredientKind,
   type BeverageRecipeLineSpec,
 } from "@ghost/domain";
@@ -44,6 +45,7 @@ type MenuProductRow = {
 type RecipeRow = {
   menuProductId: string;
   lines: RecipeLineInput[];
+  yieldQuantity?: number;
 };
 
 export interface SeedCostMatrixResult {
@@ -554,6 +556,7 @@ async function loadRecipes(organizationId: string): Promise<RecipeRow[]> {
     return {
       menuProductId: String(data.menuProductId ?? ""),
       lines: (data.lines ?? []) as RecipeLineInput[],
+      yieldQuantity: Number(data.yieldQuantity ?? 1),
     };
   });
 }
@@ -653,8 +656,11 @@ export async function seedCostMatrixClient(): Promise<SeedCostMatrixResult> {
       continue;
     }
 
-    const yieldQuantity =
-      product.category === "pastry" ? suggestRecipeYield(product.name) : 1;
+    const yieldQuantity = resolveRecipeYieldQuantity({
+      productName: product.name,
+      category: product.category,
+      savedYield: existing?.yieldQuantity,
+    });
 
     await saveRecipeClient({
       menuProductId: product.id,
@@ -721,7 +727,9 @@ export async function seedRecipeForProductClient(productName: string): Promise<{
   }
 
   const yieldQuantity =
-    product.category === "pastry" ? suggestRecipeYield(product.name) : 1;
+    product.category === "pastry"
+      ? suggestRecipeYieldForProduct(product.name, product.category)
+      : 1;
 
   const result = await saveRecipeClient({
     menuProductId: product.id,
