@@ -1,5 +1,6 @@
 import type { AuditMetadata, EntityId } from "@ghost/shared";
 
+import type { InventoryCostMethod } from "./cost-method.js";
 import type { BaseUnit, InventoryItemType } from "./units.js";
 
 export type InventoryItemStatus = "active" | "inactive";
@@ -17,6 +18,10 @@ export interface InventoryItem extends AuditMetadata {
   maxStock?: number;
   averageCost: number;
   lastCost: number;
+  /** Costo estándar presupuestado (método standard). */
+  standardCost?: number;
+  /** Override del método de costeo de la organización. */
+  costMethod?: InventoryCostMethod;
   trackLot: boolean;
   /** Unidad en la que se compra normalmente (ej. kg, caja). */
   purchaseUnit?: BaseUnit;
@@ -39,6 +44,8 @@ export interface CreateInventoryItemInput {
   purchaseUnit?: BaseUnit;
   presentationQuantity?: number;
   presentationLabel?: string;
+  standardCost?: number;
+  costMethod?: InventoryCostMethod;
   actorUserId: EntityId;
 }
 
@@ -53,5 +60,7 @@ export interface UpdateInventoryItemInput {
   purchaseUnit?: BaseUnit;
   presentationQuantity?: number;
   presentationLabel?: string;
+  standardCost?: number;
+  costMethod?: InventoryCostMethod;
   actorUserId: EntityId;
 }

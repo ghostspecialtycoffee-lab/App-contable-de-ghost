@@ -5,11 +5,17 @@ import { useEffect, useState } from "react";
 
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { updateOrganizationCostMatrixSettings } from "@/lib/organizations/organization-cost-matrix";
+import { updateOrganizationCostingSettings } from "@/lib/organizations/organization-costing-settings";
 import { useAuth } from "@/providers/auth-provider";
 import {
   CO_COST_MATRIX_DEFAULTS,
+  INVENTORY_COST_METHODS,
+  INVENTORY_COST_METHOD_LABELS,
   resolveCostMatrixSettings,
+  resolveCostingSettings,
+  type InventoryCostMethod,
   type OrganizationCostMatrixSettings,
+  type OrganizationCostingSettings,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
@@ -32,13 +38,17 @@ function emptySettings(): OrganizationCostMatrixSettings {
 export default function CostMatrixSettingsPage() {
   const { organization, refreshOrganization } = useAuth();
   const [settings, setSettings] = useState<OrganizationCostMatrixSettings>(emptySettings);
+  const [costingSettings, setCostingSettings] = useState<OrganizationCostingSettings>(
+    resolveCostingSettings(),
+  );
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setSettings(resolveCostMatrixSettings(organization?.costMatrixSettings));
-  }, [organization?.costMatrixSettings]);
+    setCostingSettings(resolveCostingSettings(organization?.costingSettings));
+  }, [organization?.costMatrixSettings, organization?.costingSettings]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,8 +65,12 @@ export default function CostMatrixSettingsPage() {
         organizationId: organization.id,
         costMatrixSettings: settings,
       });
+      await updateOrganizationCostingSettings({
+        organizationId: organization.id,
+        costingSettings,
+      });
       await refreshOrganization();
-      setSaveMessage("Parámetros guardados. Las fichas de costeo usarán estas metas.");
+      setSaveMessage("Parámetros guardados. Las ventas usarán el método de costeo seleccionado.");
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -86,6 +100,47 @@ export default function CostMatrixSettingsPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
+        <Card title="Método de costeo de inventario">
+          <div className="space-y-3">
+            <p className="text-sm text-[var(--ghost-text-muted)]">
+              Define cómo se valora el consumo de insumos al registrar una venta. Cada comprobante
+              guarda el método y el food cost del momento.
+            </p>
+            <label className="block space-y-1">
+              <span className="text-sm font-medium">Método por defecto</span>
+              <select
+                value={costingSettings.defaultMethod}
+                onChange={(event) =>
+                  setCostingSettings({
+                    defaultMethod: event.target.value as InventoryCostMethod,
+                  })
+                }
+                className="ghost-input"
+              >
+                {INVENTORY_COST_METHODS.map((method) => (
+                  <option key={method} value={method}>
+                    {INVENTORY_COST_METHOD_LABELS[method]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <ul className="space-y-1 text-xs text-[var(--ghost-text-muted)]">
+              <li>
+                <strong className="text-[var(--ghost-text)]">Promedio ponderado</strong> — usa el
+                costo promedio del ítem (default operativo).
+              </li>
+              <li>
+                <strong className="text-[var(--ghost-text)]">FIFO</strong> — costo del lote más
+                antiguo consumido (ideal para perecederos).
+              </li>
+              <li>
+                <strong className="text-[var(--ghost-text)]">Estándar</strong> — usa el costo
+                estándar del ítem si está definido en inventario.
+              </li>
+            </ul>
+          </div>
+        </Card>
+
         <Card title="Metas y retenciones">
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="grid gap-3 sm:grid-cols-2">

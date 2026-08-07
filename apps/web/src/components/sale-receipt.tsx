@@ -4,6 +4,7 @@ import { DocumentFooter, DocumentHeader } from "@/components/document-header";
 import {
   buildSaleDocumentWhatsAppUrl,
   CO_TAX_CATEGORY_LABELS,
+  INVENTORY_COST_METHOD_LABELS,
   PAYMENT_METHOD_LABELS,
   type Sale,
   type SaleDocumentType,
@@ -154,6 +155,23 @@ export function SaleReceipt({
       <div className="print:hidden">
         <SaleLotTracePanel sale={sale} />
       </div>
+
+      {sale.costSnapshot ? (
+        <div className="rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] p-4 text-sm print:hidden">
+          <p className="font-medium">Costo de venta</p>
+          <p className="mt-1 text-xs text-[var(--ghost-text-muted)]">
+            Método: {INVENTORY_COST_METHOD_LABELS[sale.costSnapshot.method as keyof typeof INVENTORY_COST_METHOD_LABELS] ?? sale.costSnapshot.method}
+          </p>
+          <div className="mt-2 flex justify-between text-xs">
+            <span>Costo insumos</span>
+            <span>{formatMoney(sale.costSnapshot.totalIngredientCost)}</span>
+          </div>
+          <div className="mt-1 flex justify-between text-xs">
+            <span>Food cost</span>
+            <span>{(sale.costSnapshot.foodCostPct * 100).toFixed(1)}%</span>
+          </div>
+        </div>
+      ) : null}
 
       {showPrint ? (
         <div className="grid gap-2 print:hidden">

@@ -1,9 +1,11 @@
 import {
+  buildSaleCostSnapshot,
   buildSaleRecordedEvent,
   buildTableSessionLine,
   calculateSaleTotals,
   groupKitchenLines,
   pendingSessionLines,
+  resolveCostingSettings,
   sessionLinesToSaleInputs,
   type CoTaxCategory,
   type PaymentMethod,
@@ -369,16 +371,36 @@ export async function checkoutTableSessionClient(input: {
     organizationId,
     totals.lines.map((line) => line.productId),
   );
+  const orgSnap = await getDoc(
+    doc(getFirestoreDb(), firestorePaths.organization(organizationId)),
+  );
+  const costMethod = resolveCostingSettings(orgSnap.data()?.costingSettings).defaultMethod;
   const inventoryPlan = await planSaleInventoryConsumption({
     organizationId,
     branchId,
     saleNumber,
+    organizationCostMethod: costMethod,
     lines: totals.lines.map((line) => ({
       productId: line.productId,
       quantity: line.quantity,
     })),
     recipeSnapshots,
-  }).catch(() => ({ lotConsumptions: [], plannedExits: [] }));
+  }).catch(() => ({
+    lotConsumptions: [],
+    plannedExits: [],
+    ingredientCostByProduct: {} as Record<string, number>,
+  }));
+  const costSnapshot = buildSaleCostSnapshot({
+    method: costMethod,
+    saleLines: totals.lines.map((line) => ({
+      productId: line.productId,
+      name: line.name,
+      quantity: line.quantity,
+      lineTotal: line.lineTotal,
+    })),
+    recipeSnapshots,
+    ingredientCostByProduct: inventoryPlan.ingredientCostByProduct,
+  });
   const saleRef = doc(collection(db, firestorePaths.organizationSales(organizationId)));
   const now = serverTimestamp();
 
@@ -407,6 +429,7 @@ export async function checkoutTableSessionClient(input: {
       soldAt,
       soldOn,
       lotConsumptions: inventoryPlan.lotConsumptions,
+      costSnapshot,
       createdAt: now,
       updatedAt: now,
       createdBy: userId,
