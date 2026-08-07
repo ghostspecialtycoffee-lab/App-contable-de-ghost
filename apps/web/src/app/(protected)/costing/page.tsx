@@ -29,6 +29,7 @@ import {
   calculateRecipeCostBreakdown,
   calculateRecipeCostPerPortion,
   calculateRecipeLineCost,
+  getCostBasisNote,
   getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
@@ -617,18 +618,32 @@ export default function CostingPage() {
                           </select>
                         </div>
                         {line.inventoryItemId && line.quantity > 0 ? (
-                          <p className="text-xs text-[var(--ghost-text-muted)]">
+                          <div className="space-y-0.5">
+                            <p className="text-xs text-[var(--ghost-text-muted)]">
+                              {(() => {
+                                const profile =
+                                  itemProfiles[line.inventoryItemId] ?? {
+                                    baseUnit: line.unit,
+                                    averageCost: 0,
+                                  };
+                                const breakdown = calculateRecipeLineCost(line, profile);
+                                return `${breakdown.quantityInBase.toLocaleString("es-CO")} ${breakdown.baseUnit} × ${formatMoney(breakdown.unitCostPerBase)} = ${formatMoney(breakdown.lineCost)}`;
+                              })()}
+                            </p>
                             {(() => {
-                              const breakdown = calculateRecipeLineCost(
-                                line,
+                              const profile =
                                 itemProfiles[line.inventoryItemId] ?? {
                                   baseUnit: line.unit,
                                   averageCost: 0,
-                                },
-                              );
-                              return `${breakdown.quantityInBase.toLocaleString("es-CO")} ${breakdown.baseUnit} × ${formatMoney(breakdown.unitCostPerBase)} = ${formatMoney(breakdown.lineCost)}`;
+                                };
+                              const note = getCostBasisNote(profile);
+                              return note ? (
+                                <p className="text-xs text-amber-700 dark:text-amber-400">
+                                  {note}
+                                </p>
+                              ) : null;
                             })()}
-                          </p>
+                          </div>
                         ) : null}
                       </div>
                     ))

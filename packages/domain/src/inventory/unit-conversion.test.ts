@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   convertToBaseUnit,
   formatPresentationLabel,
+  getCostBasisNote,
   resolvePresentationQuantity,
   resolveUnitCostPerBase,
 } from "./unit-conversion.js";
@@ -71,6 +72,10 @@ describe("resolvePresentationQuantity", () => {
   it("respeta bolsa de café en gramos", () => {
     expect(resolvePresentationQuantity("bag", "g", 2268)).toBe(2268);
   });
+
+  it("interpreta 2.5 en bolsa como 2.5 kg en gramos", () => {
+    expect(resolvePresentationQuantity("bag", "g", 2.5)).toBe(2500);
+  });
 });
 
 describe("resolveUnitCostPerBase", () => {
@@ -127,6 +132,48 @@ describe("resolveUnitCostPerBase", () => {
         presentationQuantity: 100,
       }),
     ).toBe(500);
+  });
+
+  it("infiere bolsa 2.5 kg cuando la presentación es 2.5", () => {
+    expect(
+      resolveUnitCostPerBase({
+        baseUnit: "g",
+        averageCost: 145_000,
+        purchaseUnit: "bag",
+        presentationQuantity: 2.5,
+      }),
+    ).toBe(58);
+  });
+
+  it("infiere bolsa de café cuando falta presentación", () => {
+    expect(
+      resolveUnitCostPerBase({
+        baseUnit: "g",
+        averageCost: 145_000,
+        purchaseUnit: "bag",
+      }),
+    ).toBe(58);
+  });
+
+  it("infiere bolsa de café aunque no haya unidad de compra", () => {
+    expect(
+      resolveUnitCostPerBase({
+        baseUnit: "g",
+        averageCost: 145_000,
+      }),
+    ).toBe(58);
+  });
+});
+
+describe("getCostBasisNote", () => {
+  it("explica costo estimado sin presentación", () => {
+    const note = getCostBasisNote({
+      baseUnit: "g",
+      averageCost: 145_000,
+      purchaseUnit: "bag",
+    });
+    expect(note).toContain("2.500");
+    expect(note).toContain("Estimado");
   });
 });
 
