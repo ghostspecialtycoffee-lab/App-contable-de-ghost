@@ -8,6 +8,7 @@ import { PageSection } from "@/components/page-section";
 import { DailyOperationsPanel } from "@/components/daily-operations-panel";
 import { ProactiveBriefingPanel } from "@/components/proactive-briefing-panel";
 import { AnalyticsInsightsPanel } from "@/components/analytics-insights-panel";
+import { WorkflowOutboxPanel } from "@/components/workflow-outbox-panel";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useSales } from "@/hooks/use-sales";
 import { formatMoney } from "@/lib/format";
@@ -50,6 +51,8 @@ export default function DashboardPage() {
       <AnalyticsInsightsPanel />
 
       <DailyOperationsPanel />
+
+      <WorkflowOutboxPanel />
 
       <PageSection title="Operación">
         <div className="ghost-action-grid">

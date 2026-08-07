@@ -404,8 +404,8 @@ export async function createSaleClient(input: {
     total: totals.total,
   });
 
-  await publishDomainEventSafe(
-    buildSaleRecordedEvent({
+  await publishDomainEventSafe({
+    ...buildSaleRecordedEvent({
       organizationId,
       branchId,
       actorUserId: userId,
@@ -419,7 +419,11 @@ export async function createSaleClient(input: {
       soldOn,
       occurredAt: soldAt,
     }),
-  );
+    workflowContext: {
+      organizationName: String(orgSnap.data()?.name ?? "Organización"),
+      workflowSettings: orgSnap.data()?.workflowSettings,
+    },
+  });
 
   return {
     saleId: saleRef.id,
