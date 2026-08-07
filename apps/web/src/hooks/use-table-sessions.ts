@@ -1,14 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, doc, limit, onSnapshot, query, where } from "firebase/firestore";
+import { collection, doc, limit, query, where } from "firebase/firestore";
 
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
-import { getFirestoreDb } from "@/lib/firebase/client";
 import { parseFirestoreDate } from "@/lib/format";
+import { getFirestoreDb } from "@/lib/firebase/client";
+import { subscribeDocumentWithPoll } from "@/lib/realtime/subscribe-document";
+import { subscribeQueryWithPoll } from "@/lib/realtime/subscribe-query";
 import { useActiveMembership } from "@/providers/auth-provider";
 import type { TableSession } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
+
+function mapTableSession(documentId: string, data: Record<string, unknown>): TableSession {
+  return {
+    id: documentId,
+    organizationId: String(data.organizationId ?? ""),
+    branchId: String(data.branchId ?? ""),
+    tableId: String(data.tableId ?? ""),
+    tableNumber: Number(data.tableNumber ?? 0),
+    tableLabel: String(data.tableLabel ?? ""),
+    guestToken: String(data.guestToken ?? ""),
+    status: data.status as TableSession["status"],
+    lines: (data.lines as TableSession["lines"]) ?? [],
+    saleId: typeof data.saleId === "string" ? data.saleId : undefined,
+    openedAt: String(data.openedAt ?? parseFirestoreDate(data.createdAt)),
+    closedAt: typeof data.closedAt === "string" ? data.closedAt : undefined,
+    cancelReason: String(data.cancelReason ?? ""),
+    waiterRequestedAt:
+      typeof data.waiterRequestedAt === "string" ? data.waiterRequestedAt : undefined,
+  };
+}
 
 export function useTableSessions(options?: { openOnly?: boolean }) {
   const membership = useActiveMembership();
@@ -40,40 +62,22 @@ export function useTableSessions(options?: { openOnly?: boolean }) {
           limit(100),
         );
 
-    const unsubscribe = onSnapshot(
-      baseQuery,
-      (snapshot) => {
-        setSessions(
-          snapshot.docs
-            .map((document) => {
-              const data = document.data();
-              return {
-                id: document.id,
-                organizationId: data.organizationId,
-                branchId: data.branchId,
-                tableId: data.tableId,
-                tableNumber: data.tableNumber,
-                tableLabel: data.tableLabel ?? "",
-                guestToken: data.guestToken,
-                status: data.status,
-                lines: data.lines ?? [],
-                saleId: data.saleId,
-                openedAt: data.openedAt ?? parseFirestoreDate(data.createdAt),
-                closedAt: data.closedAt,
-              } satisfies TableSession;
-            })
-            .sort((left, right) => left.tableNumber - right.tableNumber),
-        );
+    return subscribeQueryWithPoll({
+      query: baseQuery,
+      mapSnapshot: (snapshot) =>
+        snapshot.docs
+          .map((document) => mapTableSession(document.id, document.data()))
+          .sort((left, right) => left.tableNumber - right.tableNumber),
+      onData: (nextSessions) => {
+        setSessions(nextSessions);
         setLoading(false);
         setError(null);
       },
-      (cause) => {
-        setError(getFirestoreErrorMessage(cause));
+      onError: (message) => {
+        setError(message);
         setLoading(false);
       },
-    );
-
-    return unsubscribe;
+    });
   }, [membership?.organizationId, options?.openOnly]);
 
   return { sessions, loading, error };
@@ -97,40 +101,20 @@ export function useTableSession(sessionId: string | null) {
       firestorePaths.organizationTableSession(membership.organizationId, sessionId),
     );
 
-    const unsubscribe = onSnapshot(
-      sessionDocRef,
-      (document) => {
-        if (!document.exists()) {
-          setSession(null);
-          setLoading(false);
-          return;
-        }
-
-        const data = document.data();
-        setSession({
-          id: document.id,
-          organizationId: data.organizationId,
-          branchId: data.branchId,
-          tableId: data.tableId,
-          tableNumber: data.tableNumber,
-          tableLabel: data.tableLabel ?? "",
-          guestToken: data.guestToken,
-          status: data.status,
-          lines: data.lines ?? [],
-          saleId: data.saleId,
-          openedAt: data.openedAt ?? "",
-          closedAt: data.closedAt,
-        });
+    return subscribeDocumentWithPoll({
+      reference: sessionDocRef,
+      mapSnapshot: (document) =>
+        document.exists() ? mapTableSession(document.id, document.data()) : null,
+      onData: (nextSession) => {
+        setSession(nextSession);
         setLoading(false);
         setError(null);
       },
-      (cause) => {
-        setError(getFirestoreErrorMessage(cause));
+      onError: (message) => {
+        setError(message);
         setLoading(false);
       },
-    );
-
-    return unsubscribe;
+    });
   }, [membership?.organizationId, sessionId]);
 
   return { session, loading, error };

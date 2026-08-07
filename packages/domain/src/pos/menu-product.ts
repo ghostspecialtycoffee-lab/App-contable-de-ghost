@@ -18,6 +18,30 @@ export const MENU_CATEGORY_LABELS: Record<MenuCategory, string> = {
   other: "Otros",
 };
 
+export interface MenuCategoryMeta {
+  emoji: string;
+  tagline: string;
+}
+
+export const MENU_CATEGORY_META: Record<MenuCategory, MenuCategoryMeta> = {
+  beverage: {
+    emoji: "☕",
+    tagline: "Cafés de especialidad, tés y bebidas frías",
+  },
+  food: {
+    emoji: "🥗",
+    tagline: "Platos salados y acompañamientos",
+  },
+  pastry: {
+    emoji: "🍰",
+    tagline: "Repostería artesanal y postres",
+  },
+  other: {
+    emoji: "✨",
+    tagline: "Otros favoritos de la casa",
+  },
+};
+
 export const KITCHEN_STATIONS = ["counter", "bar", "kitchen"] as const;
 
 export type KitchenStation = (typeof KITCHEN_STATIONS)[number];
@@ -29,6 +53,11 @@ export const KITCHEN_STATION_LABELS: Record<KitchenStation, string> = {
 };
 
 export type MenuProductStatus = "active" | "inactive";
+
+export const MENU_PRODUCT_STATUS_LABELS: Record<MenuProductStatus, string> = {
+  active: "Activo",
+  inactive: "Inactivo",
+};
 
 export interface MenuProduct extends AuditMetadata {
   id: EntityId;

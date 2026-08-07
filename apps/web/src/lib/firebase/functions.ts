@@ -111,3 +111,55 @@ export async function callCreateWarehouse(
   const result = await callable(input);
   return result.data;
 }
+
+export async function callGhostAgent(input: {
+  message: string;
+  sessionId?: string;
+  allowWebSearch?: boolean;
+  contextSummary?: string;
+  history?: Array<{ role: "user" | "ghost"; text: string }>;
+}): Promise<{
+  answer: string;
+  usedWebSearch: boolean;
+  sources: Array<{ title: string; url: string; snippet?: string }>;
+  knowledgeEntryId?: string;
+  suggestedFollowUp?: string;
+}> {
+  const callable = httpsCallable<
+    {
+      message: string;
+      sessionId?: string;
+      allowWebSearch?: boolean;
+      contextSummary?: string;
+      history?: Array<{ role: "user" | "ghost"; text: string }>;
+    },
+    {
+      answer: string;
+      usedWebSearch: boolean;
+      sources: Array<{ title: string; url: string; snippet?: string }>;
+      knowledgeEntryId?: string;
+      suggestedFollowUp?: string;
+    }
+  >(getFirebaseFunctions(), "ghostAgent");
+
+  const result = await callable(input);
+  return result.data;
+}
+
+export async function callSendSaleDocument(input: {
+  saleId: string;
+  email: string;
+  documentType: "factura" | "cuenta_cobro";
+}): Promise<{ sent: boolean; message?: string }> {
+  const callable = httpsCallable<
+    {
+      saleId: string;
+      email: string;
+      documentType: "factura" | "cuenta_cobro";
+    },
+    { sent: boolean; message?: string }
+  >(getFirebaseFunctions(), "sendSaleDocument");
+
+  const result = await callable(input);
+  return result.data;
+}

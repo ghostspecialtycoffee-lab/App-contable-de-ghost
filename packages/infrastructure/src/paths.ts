@@ -31,6 +31,14 @@ export const firestorePaths = {
     itemId: string,
   ) =>
     `organizations/${organizationId}/inventoryBalances/${warehouseId}_${itemId}`,
+  organizationInventoryLots: (organizationId: string) =>
+    `organizations/${organizationId}/inventoryLots`,
+  organizationInventoryLot: (organizationId: string, lotId: string) =>
+    `organizations/${organizationId}/inventoryLots/${lotId}`,
+  organizationAnalyticsDaily: (organizationId: string) =>
+    `organizations/${organizationId}/analyticsDaily`,
+  organizationAnalyticsDailyEntry: (organizationId: string, date: string) =>
+    `organizations/${organizationId}/analyticsDaily/${date}`,
   organizationMenuProducts: (organizationId: string) =>
     `organizations/${organizationId}/menuProducts`,
   organizationMenuProduct: (organizationId: string, productId: string) =>
@@ -51,10 +59,22 @@ export const firestorePaths = {
     `organizations/${organizationId}/recipes`,
   organizationRecipe: (organizationId: string, recipeId: string) =>
     `organizations/${organizationId}/recipes/${recipeId}`,
+  organizationRecipeVersions: (organizationId: string, recipeId: string) =>
+    `organizations/${organizationId}/recipes/${recipeId}/versions`,
+  organizationRecipeVersion: (organizationId: string, recipeId: string, version: number | string) =>
+    `organizations/${organizationId}/recipes/${recipeId}/versions/${version}`,
   organizationPurchaseInvoices: (organizationId: string) =>
     `organizations/${organizationId}/purchaseInvoices`,
   organizationPurchaseInvoice: (organizationId: string, invoiceId: string) =>
     `organizations/${organizationId}/purchaseInvoices/${invoiceId}`,
+  organizationSuppliers: (organizationId: string) =>
+    `organizations/${organizationId}/suppliers`,
+  organizationSupplier: (organizationId: string, supplierId: string) =>
+    `organizations/${organizationId}/suppliers/${supplierId}`,
+  organizationPurchasePriceHistory: (organizationId: string) =>
+    `organizations/${organizationId}/purchasePriceHistory`,
+  organizationPurchasePriceHistoryEntry: (organizationId: string, entryId: string) =>
+    `organizations/${organizationId}/purchasePriceHistory/${entryId}`,
   organizationFixedExpenses: (organizationId: string) =>
     `organizations/${organizationId}/fixedExpenses`,
   organizationFixedExpense: (organizationId: string, expenseId: string) =>
@@ -63,8 +83,42 @@ export const firestorePaths = {
     `organizations/${organizationId}/diningTables`,
   organizationDiningTable: (organizationId: string, tableId: string) =>
     `organizations/${organizationId}/diningTables/${tableId}`,
+  organizationTableQrLookup: (organizationId: string, qrToken: string) =>
+    `organizations/${organizationId}/tableQrLookup/${qrToken}`,
   organizationTableSessions: (organizationId: string) =>
     `organizations/${organizationId}/tableSessions`,
   organizationTableSession: (organizationId: string, sessionId: string) =>
     `organizations/${organizationId}/tableSessions/${sessionId}`,
+  organizationCashSessions: (organizationId: string) =>
+    `organizations/${organizationId}/cashSessions`,
+  organizationCashSession: (organizationId: string, sessionId: string) =>
+    `organizations/${organizationId}/cashSessions/${sessionId}`,
+  organizationCashMovements: (organizationId: string) =>
+    `organizations/${organizationId}/cashMovements`,
+  organizationCashMovement: (organizationId: string, movementId: string) =>
+    `organizations/${organizationId}/cashMovements/${movementId}`,
+  organizationNotificationOutbox: (organizationId: string) =>
+    `organizations/${organizationId}/notificationOutbox`,
+  organizationNotificationOutboxEntry: (organizationId: string, entryId: string) =>
+    `organizations/${organizationId}/notificationOutbox/${entryId}`,
+  organizationDomainEventOutbox: (organizationId: string) =>
+    `organizations/${organizationId}/domainEventOutbox`,
+  organizationDomainEventOutboxEntry: (organizationId: string, entryId: string) =>
+    `organizations/${organizationId}/domainEventOutbox/${entryId}`,
+  organizationNotificationPreferences: (organizationId: string) =>
+    `organizations/${organizationId}/notificationPreferences`,
+  organizationNotificationPreference: (organizationId: string, userId: string) =>
+    `organizations/${organizationId}/notificationPreferences/${userId}`,
+  organizationWorkShifts: (organizationId: string) =>
+    `organizations/${organizationId}/workShifts`,
+  organizationWorkShift: (organizationId: string, shiftId: string) =>
+    `organizations/${organizationId}/workShifts/${shiftId}`,
+  organizationAgentKnowledge: (organizationId: string) =>
+    `organizations/${organizationId}/agentKnowledge`,
+  organizationAgentKnowledgeEntry: (organizationId: string, entryId: string) =>
+    `organizations/${organizationId}/agentKnowledge/${entryId}`,
+  organizationAgentSessions: (organizationId: string) =>
+    `organizations/${organizationId}/agentSessions`,
+  organizationAgentSession: (organizationId: string, sessionId: string) =>
+    `organizations/${organizationId}/agentSessions/${sessionId}`,
 } as const;

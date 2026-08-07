@@ -1,5 +1,6 @@
 import {
   buildSaleNumber,
+  buildSaleRecordedEvent,
   calculateSaleTotals,
   groupKitchenLines,
   inferMenuProductTaxCategory,
@@ -15,12 +16,26 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
+  query,
   runTransaction,
   serverTimestamp,
   setDoc,
+  where,
+  writeBatch,
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
+import { normalizeCatalogName } from "@/lib/costing/ghost-menu-catalog";
+import { recordSaleAnalyticsSafe } from "@/lib/analytics/analytics-client";
+import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
+import { publishDomainEventSafe } from "@/lib/events/domain-events";
+import {
+  applySaleInventoryConsumption,
+  planSaleInventoryConsumption,
+} from "@/lib/inventory/sale-inventory-consumption";
+import { loadSaleRecipeSnapshots } from "@/lib/recipes/sale-recipe-snapshots";
+import { COLOMBIA_SODAS_CATALOG } from "./colombia-sodas-catalog";
 
 function requireUserId(): string {
   const uid = getFirebaseAuth().currentUser?.uid;
@@ -69,6 +84,7 @@ export async function createMenuProductClient(input: {
   description?: string;
   sortOrder?: number;
   saleTaxCategory?: CoTaxCategory;
+  status?: "active" | "inactive";
 }): Promise<{ productId: string }> {
   const userId = requireUserId();
   const { organizationId } = await getActiveContext();
@@ -95,7 +111,7 @@ export async function createMenuProductClient(input: {
     category: input.category,
     station: input.station,
     description: input.description?.trim() ?? "",
-    status: "active",
+    status: input.status ?? "active",
     sortOrder: input.sortOrder ?? 0,
     saleTaxCategory:
       input.saleTaxCategory ??
@@ -112,8 +128,13 @@ export async function createMenuProductClient(input: {
 
 export async function updateMenuProductClient(input: {
   productId: string;
+  name?: string;
+  description?: string;
   price?: number;
   saleTaxCategory?: CoTaxCategory;
+  category?: MenuCategory;
+  station?: KitchenStation;
+  status?: "active" | "inactive";
 }): Promise<void> {
   const userId = requireUserId();
   const { organizationId } = await getActiveContext();
@@ -122,10 +143,22 @@ export async function updateMenuProductClient(input: {
     throw new Error("El precio no puede ser negativo.");
   }
 
+  if (input.name !== undefined && input.name.trim().length < 2) {
+    throw new Error("El nombre es obligatorio.");
+  }
+
   const patch: Record<string, unknown> = {
     updatedAt: serverTimestamp(),
     updatedBy: userId,
   };
+
+  if (input.name !== undefined) {
+    patch.name = input.name.trim();
+  }
+
+  if (input.description !== undefined) {
+    patch.description = input.description.trim();
+  }
 
   if (input.price !== undefined) {
     patch.price = Math.round(input.price);
@@ -135,12 +168,62 @@ export async function updateMenuProductClient(input: {
     patch.saleTaxCategory = input.saleTaxCategory;
   }
 
+  if (input.category !== undefined) {
+    patch.category = input.category;
+  }
+
+  if (input.station !== undefined) {
+    patch.station = input.station;
+  }
+
+  if (input.status !== undefined) {
+    patch.status = input.status;
+  }
+
   const productRef = doc(
     getFirestoreDb(),
     firestorePaths.organizationMenuProduct(organizationId, input.productId),
   );
 
   await setDoc(productRef, patch, { merge: true });
+}
+
+export async function toggleMenuProductStatusClient(input: {
+  productId: string;
+  status: "active" | "inactive";
+}): Promise<void> {
+  return updateMenuProductClient(input);
+}
+
+export async function deleteMenuProductClient(input: {
+  productId: string;
+}): Promise<void> {
+  requireUserId();
+  const { organizationId } = await getActiveContext();
+  const db = getFirestoreDb();
+  const productRef = doc(
+    db,
+    firestorePaths.organizationMenuProduct(organizationId, input.productId),
+  );
+  const productSnap = await getDoc(productRef);
+
+  if (!productSnap.exists()) {
+    throw new Error("Producto no encontrado.");
+  }
+
+  const recipesSnap = await getDocs(
+    query(
+      collection(db, firestorePaths.organizationRecipes(organizationId)),
+      where("menuProductId", "==", input.productId),
+    ),
+  );
+
+  const batch = writeBatch(db);
+  for (const recipeDoc of recipesSnap.docs) {
+    batch.delete(recipeDoc.ref);
+  }
+  batch.delete(productRef);
+  await batch.commit();
 }
 
 export async function updateMenuProductImageClient(input: {
@@ -192,6 +275,7 @@ export async function createSaleClient(input: {
 }> {
   const userId = requireUserId();
   const { organizationId, branchId } = await getActiveContext();
+  const { sessionId: cashSessionId } = await requireOpenCashSessionClient();
 
   const linesResult = validateSaleLines(input.lines);
   if (!linesResult.ok) {
@@ -202,6 +286,20 @@ export async function createSaleClient(input: {
   const saleNumber = buildSaleNumber();
   const soldAt = new Date().toISOString();
   const soldOn = soldAt.slice(0, 10);
+  const recipeSnapshots = await loadSaleRecipeSnapshots(
+    organizationId,
+    totals.lines.map((line) => line.productId),
+  );
+  const inventoryPlan = await planSaleInventoryConsumption({
+    organizationId,
+    branchId,
+    saleNumber,
+    lines: totals.lines.map((line) => ({
+      productId: line.productId,
+      quantity: line.quantity,
+    })),
+    recipeSnapshots,
+  }).catch(() => ({ lotConsumptions: [], plannedExits: [] }));
   const db = getFirestoreDb();
   const saleRef = doc(
     collection(db, firestorePaths.organizationSales(organizationId)),
@@ -214,9 +312,11 @@ export async function createSaleClient(input: {
     transaction.set(saleRef, {
       organizationId,
       branchId,
+      cashSessionId,
       saleNumber,
       status: "paid",
       lines: totals.lines,
+      recipeSnapshots,
       subtotal: totals.subtotal,
       taxRate: totals.taxRate,
       taxAmount: totals.taxAmount,
@@ -228,6 +328,7 @@ export async function createSaleClient(input: {
       notes: input.notes?.trim() ?? "",
       soldAt,
       soldOn,
+      lotConsumptions: inventoryPlan.lotConsumptions,
       createdAt: now,
       updatedAt: now,
       createdBy: userId,
@@ -264,6 +365,38 @@ export async function createSaleClient(input: {
       ticketCounter += 1;
     }
   });
+
+  await applySaleInventoryConsumption({
+    organizationId,
+    branchId,
+    saleNumber,
+    plannedExits: inventoryPlan.plannedExits,
+  }).catch(() => {
+    // Venta registrada; consumo de bodega opcional si falta stock o receta.
+  });
+
+  await recordSaleAnalyticsSafe({
+    organizationId,
+    soldOn,
+    total: totals.total,
+  });
+
+  await publishDomainEventSafe(
+    buildSaleRecordedEvent({
+      organizationId,
+      branchId,
+      actorUserId: userId,
+      saleId: saleRef.id,
+      saleNumber,
+      total: totals.total,
+      subtotal: totals.subtotal,
+      taxAmount: totals.taxAmount,
+      paymentMethod: input.paymentMethod,
+      lineCount: totals.lines.length,
+      soldOn,
+      occurredAt: soldAt,
+    }),
+  );
 
   return {
     saleId: saleRef.id,
@@ -339,4 +472,40 @@ export async function seedDefaultMenuClient(): Promise<{ created: number }> {
   }
 
   return { created };
+}
+
+export async function seedColombianSodasClient(): Promise<{ created: number; skipped: number }> {
+  const { organizationId } = await getActiveContext();
+  const snapshot = await getDocs(
+    collection(getFirestoreDb(), firestorePaths.organizationMenuProducts(organizationId)),
+  );
+  const existing = new Set(
+    snapshot.docs.map((document) => normalizeCatalogName(document.data().name as string)),
+  );
+
+  let created = 0;
+  let skipped = 0;
+  let sortOrder = snapshot.size;
+
+  for (const soda of COLOMBIA_SODAS_CATALOG) {
+    if (existing.has(normalizeCatalogName(soda.name))) {
+      skipped += 1;
+      continue;
+    }
+
+    await createMenuProductClient({
+      name: soda.name,
+      price: soda.price,
+      category: "beverage",
+      station: "counter",
+      description: `${soda.description} · ${soda.brand}`,
+      saleTaxCategory: "IVA_19",
+      status: "inactive",
+      sortOrder,
+    });
+    sortOrder += 1;
+    created += 1;
+  }
+
+  return { created, skipped };
 }

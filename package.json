@@ -13,9 +13,13 @@
     "deploy:setup": "pnpm install && pnpm test && pnpm build",
     "firebase:deploy": "firebase deploy",
     "firebase:deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes,storage,functions",
-    "firebase:deploy:hosting": "pnpm --filter @ghost/web build && firebase deploy --only hosting"
+    "firebase:deploy:hosting": "pnpm --filter @ghost/web build && firebase deploy --only hosting",
+    "reset:org": "node scripts/reset-organization-data.mjs",
+    "import:purchases": "node scripts/import-initial-purchases.mjs",
+    "seed:ghost-menu": "node scripts/seed-ghost-menu.mjs"
   },
   "devDependencies": {
+    "firebase-admin": "^13.2.0",
     "firebase-tools": "13",
     "turbo": "^2.5.0",
     "typescript": "^5.8.2"

@@ -18,3 +18,4 @@ ui-debug.log
 coverage
 .DS_Store
 *.tsbuildinfo
+data/drive-invoices/

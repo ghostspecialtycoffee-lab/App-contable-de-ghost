@@ -1,4 +1,5 @@
 import {
+  buildSaleRecordedEvent,
   buildTableSessionLine,
   calculateSaleTotals,
   groupKitchenLines,
@@ -23,12 +24,25 @@ import {
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
+import {
+  applySaleInventoryConsumption,
+  planSaleInventoryConsumption,
+} from "@/lib/inventory/sale-inventory-consumption";
+import { recordSaleAnalyticsSafe } from "@/lib/analytics/analytics-client";
+import { publishDomainEventSafe } from "@/lib/events/domain-events";
+import { loadSaleRecipeSnapshots } from "@/lib/recipes/sale-recipe-snapshots";
+import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
+import { refreshTableQrLookupClient } from "./table-qr-lookup-client";
 
 function createLineId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
   }
   return `line-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function stripUndefinedDeep<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
 async function getStaffContext(): Promise<{
@@ -129,19 +143,21 @@ export async function openTableSessionClient(input: {
     updatedBy: input.actorUserId ?? "guest",
   });
 
-  const tableRef = doc(
-    db,
-    firestorePaths.organizationDiningTable(input.organizationId, input.tableId),
-  );
-  await setDoc(
-    tableRef,
-    {
-      status: "occupied",
-      updatedAt: now,
-      updatedBy: input.actorUserId ?? "guest",
-    },
-    { merge: true },
-  );
+  if (input.actorUserId) {
+    const tableRef = doc(
+      db,
+      firestorePaths.organizationDiningTable(input.organizationId, input.tableId),
+    );
+    await setDoc(
+      tableRef,
+      {
+        status: "occupied",
+        updatedAt: now,
+        updatedBy: input.actorUserId,
+      },
+      { merge: true },
+    );
+  }
 
   return { sessionId: sessionRef.id };
 }
@@ -193,12 +209,18 @@ export async function addTableSessionLinesClient(input: {
   await setDoc(
     sessionRef,
     {
-      lines: [...existingLines, ...newLines],
+      lines: stripUndefinedDeep([...existingLines, ...newLines]),
       updatedAt: serverTimestamp(),
       updatedBy: actorUserId,
     },
     { merge: true },
   );
+
+  if (actorUserId !== "guest") {
+    await sendTableSessionToKitchenClient({
+      sessionId: input.sessionId,
+    }).catch(() => undefined);
+  }
 }
 
 export async function sendTableSessionToKitchenClient(input: {
@@ -305,6 +327,7 @@ export async function checkoutTableSessionClient(input: {
   customerName?: string;
 }): Promise<{ saleId: string; saleNumber: string; total: number }> {
   const { userId, organizationId, branchId } = await getStaffContext();
+  const { sessionId: cashSessionId } = await requireOpenCashSessionClient();
   const db = getFirestoreDb();
   const sessionRef = doc(
     db,
@@ -342,6 +365,20 @@ export async function checkoutTableSessionClient(input: {
   const saleNumber = `M${session.tableNumber}-${new Date().toISOString().slice(11, 19).replace(/:/g, "")}`;
   const soldAt = new Date().toISOString();
   const soldOn = soldAt.slice(0, 10);
+  const recipeSnapshots = await loadSaleRecipeSnapshots(
+    organizationId,
+    totals.lines.map((line) => line.productId),
+  );
+  const inventoryPlan = await planSaleInventoryConsumption({
+    organizationId,
+    branchId,
+    saleNumber,
+    lines: totals.lines.map((line) => ({
+      productId: line.productId,
+      quantity: line.quantity,
+    })),
+    recipeSnapshots,
+  }).catch(() => ({ lotConsumptions: [], plannedExits: [] }));
   const saleRef = doc(collection(db, firestorePaths.organizationSales(organizationId)));
   const now = serverTimestamp();
 
@@ -349,9 +386,11 @@ export async function checkoutTableSessionClient(input: {
     transaction.set(saleRef, {
       organizationId,
       branchId,
+      cashSessionId,
       saleNumber,
       status: "paid",
       lines: totals.lines,
+      recipeSnapshots,
       subtotal: totals.subtotal,
       taxRate: totals.taxRate,
       taxAmount: totals.taxAmount,
@@ -367,6 +406,7 @@ export async function checkoutTableSessionClient(input: {
       tableSessionId: input.sessionId,
       soldAt,
       soldOn,
+      lotConsumptions: inventoryPlan.lotConsumptions,
       createdAt: now,
       updatedAt: now,
       createdBy: userId,
@@ -392,11 +432,158 @@ export async function checkoutTableSessionClient(input: {
     );
   });
 
+  await refreshTableQrLookupClient({
+    organizationId,
+    tableId: session.tableId as string,
+  }).catch(() => undefined);
+
+  await applySaleInventoryConsumption({
+    organizationId,
+    branchId,
+    saleNumber,
+    plannedExits: inventoryPlan.plannedExits,
+  }).catch(() => {
+    // Venta registrada; consumo de bodega opcional si falta stock o receta.
+  });
+
+  await recordSaleAnalyticsSafe({
+    organizationId,
+    soldOn,
+    total: totals.total,
+  });
+
+  await publishDomainEventSafe(
+    buildSaleRecordedEvent({
+      organizationId,
+      branchId,
+      actorUserId: userId,
+      saleId: saleRef.id,
+      saleNumber,
+      total: totals.total,
+      subtotal: totals.subtotal,
+      taxAmount: totals.taxAmount,
+      paymentMethod: input.paymentMethod,
+      lineCount: totals.lines.length,
+      soldOn,
+      occurredAt: soldAt,
+    }),
+  );
+
   return {
     saleId: saleRef.id,
     saleNumber,
     total: totals.total,
   };
+}
+
+export async function cancelTableSessionClient(input: {
+  sessionId: string;
+  reason?: string;
+}): Promise<void> {
+  const { userId, organizationId } = await getStaffContext();
+  const db = getFirestoreDb();
+  const sessionRef = doc(
+    db,
+    firestorePaths.organizationTableSession(organizationId, input.sessionId),
+  );
+  const sessionSnap = await getDoc(sessionRef);
+
+  if (!sessionSnap.exists()) {
+    throw new Error("Sesión no encontrada.");
+  }
+
+  const session = sessionSnap.data();
+  if (session.status !== "open" && session.status !== "requested_bill") {
+    throw new Error("Esta cuenta ya está cerrada.");
+  }
+
+  const closedAt = new Date().toISOString();
+  const now = serverTimestamp();
+  const lines = (session.lines ?? []) as Array<{ status: string }>;
+  const updatedLines = lines.map((line) =>
+    line.status !== "cancelled" ? { ...line, status: "cancelled" } : line,
+  );
+
+  await runTransaction(db, async (transaction) => {
+    transaction.update(sessionRef, {
+      status: "cancelled",
+      closedAt,
+      cancelReason: input.reason?.trim() ?? "",
+      lines: updatedLines,
+      updatedAt: now,
+      updatedBy: userId,
+    });
+
+    transaction.set(
+      doc(db, firestorePaths.organizationDiningTable(organizationId, session.tableId as string)),
+      {
+        status: "available",
+        updatedAt: now,
+        updatedBy: userId,
+      },
+      { merge: true },
+    );
+  });
+
+  await refreshTableQrLookupClient({
+    organizationId,
+    tableId: session.tableId as string,
+  }).catch(() => undefined);
+}
+
+export async function requestWaiterGuestClient(input: {
+  organizationId: string;
+  sessionId: string;
+  guestToken: string;
+}): Promise<void> {
+  const sessionRef = doc(
+    getFirestoreDb(),
+    firestorePaths.organizationTableSession(input.organizationId, input.sessionId),
+  );
+  const sessionSnap = await getDoc(sessionRef);
+
+  if (!sessionSnap.exists()) {
+    throw new Error("Sesión de mesa no encontrada.");
+  }
+
+  const session = sessionSnap.data();
+  if (session.guestToken !== input.guestToken) {
+    throw new Error("Token de mesa no válido.");
+  }
+
+  if (session.status !== "open" && session.status !== "requested_bill") {
+    throw new Error("Esta mesa ya no acepta solicitudes.");
+  }
+
+  await setDoc(
+    sessionRef,
+    {
+      waiterRequestedAt: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
+      updatedBy: "guest",
+    },
+    { merge: true },
+  );
+}
+
+export async function clearWaiterAlertClient(input: {
+  sessionId: string;
+}): Promise<void> {
+  const { userId, organizationId } = await getStaffContext();
+  const sessionRef = doc(
+    getFirestoreDb(),
+    firestorePaths.organizationTableSession(organizationId, input.sessionId),
+  );
+
+  await setDoc(
+    sessionRef,
+    {
+      waiterRequestedAt: null,
+      updatedAt: serverTimestamp(),
+      updatedBy: userId,
+    },
+    { merge: true },
+  );
 }
 
 export async function requestTableBillGuestClient(input: {

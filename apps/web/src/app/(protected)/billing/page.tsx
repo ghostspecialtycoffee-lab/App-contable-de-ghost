@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
+import { PageHeader } from "@/components/page-header";
 import { SaleReceipt } from "@/components/sale-receipt";
 import { SalesAccessButtons } from "@/components/sales-access-buttons";
+import { useSalesPaths } from "@/hooks/use-sales-paths";
 import { useSales } from "@/hooks/use-sales";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { useAuth } from "@/providers/auth-provider";
@@ -20,12 +23,22 @@ import { Button, Card } from "@ghost/ui";
 type BillingTab = "invoices" | "reports";
 type ReportPreset = "today" | "week" | "month";
 
-export default function BillingPage() {
+function BillingPageContent() {
+  const searchParams = useSearchParams();
+  const saleFromQuery = searchParams.get("sale");
   const { organization } = useAuth();
+  const { path, inSalesExtension } = useSalesPaths();
   const { sales, loading, error } = useSales();
   const [tab, setTab] = useState<BillingTab>("reports");
   const [preset, setPreset] = useState<ReportPreset>("today");
-  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(saleFromQuery);
+
+  useEffect(() => {
+    if (saleFromQuery) {
+      setSelectedSaleId(saleFromQuery);
+      setTab("invoices");
+    }
+  }, [saleFromQuery]);
 
   const period = useMemo(() => getReportPeriod(preset), [preset]);
 
@@ -64,27 +77,35 @@ export default function BillingPage() {
     sales.find((sale) => sale.id === selectedSaleId) ?? invoicesInPeriod[0];
 
   return (
-    <div className="space-y-4 pb-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-sm text-[var(--ghost-text-muted)]">Registros</p>
-          <h1 className="text-2xl font-semibold">Comprobantes y reportes</h1>
-          <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-            {organization?.name ?? "Operación interna"} · consulta histórica y resúmenes ·{" "}
-            <Link href="/settings/fiscal" className="underline">
-              Datos de factura
-            </Link>
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/pos">
-            <Button>Mostrador</Button>
+    <div className="ghost-page-stack pb-4">
+      <PageHeader
+        title="Registros"
+        description="Comprobantes de venta · informes completos en Informes"
+      />
+
+      <div className="ghost-sticky-actions">
+        <div className="ghost-secondary-actions">
+          <Link href={path("counter")}>
+            <Button size="lg">Mostrador</Button>
           </Link>
-          <Link href="/pos/tables">
-            <Button variant="secondary">Nueva cuenta de mesa</Button>
+          <Link href={path("tables")}>
+            <Button size="lg" variant="secondary">
+              Mesas
+            </Button>
           </Link>
         </div>
       </div>
+
+      {!inSalesExtension ? (
+        <div className="ghost-secondary-actions">
+          <Link href="/reports">
+            <Button variant="secondary">Informes financieros</Button>
+          </Link>
+          <Link href="/settings/fiscal">
+            <Button variant="secondary">Datos fiscales</Button>
+          </Link>
+        </div>
+      ) : null}
 
       <SalesAccessButtons compact />
 
@@ -243,7 +264,7 @@ export default function BillingPage() {
           <p className="text-sm text-[var(--ghost-text-muted)]">
             No hay comprobantes en {period.label.toLowerCase()}. Crea uno desde mostrador.
           </p>
-          <Link href="/pos" className="mt-4 inline-block">
+          <Link href={path("counter")} className="mt-4 inline-block">
             <Button>Ir al mostrador</Button>
           </Link>
         </Card>
@@ -305,5 +326,13 @@ export default function BillingPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-[var(--ghost-text-muted)]">Cargando...</p>}>
+      <BillingPageContent />
+    </Suspense>
   );
 }

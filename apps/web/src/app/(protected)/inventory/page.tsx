@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 
+import { InitialDataImportPanel } from "@/components/initial-data-import-panel";
+import { InventoryStockPanel } from "@/components/inventory-stock-panel";
 import { Card } from "@ghost/ui";
 
 const modules = [
@@ -15,8 +19,8 @@ const modules = [
   },
   {
     href: "/inventory/movements",
-    title: "Movimientos",
-    description: "Entradas, salidas y kardex.",
+    title: "Existencias",
+    description: "Stock actual, entradas y salidas manuales.",
   },
   {
     href: "/purchases",
@@ -49,6 +53,10 @@ export default function InventoryPage() {
           Control de existencias por sucursal.
         </p>
       </div>
+
+      <InitialDataImportPanel compact showInAppImport />
+
+      <InventoryStockPanel />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {modules.map((module) => (

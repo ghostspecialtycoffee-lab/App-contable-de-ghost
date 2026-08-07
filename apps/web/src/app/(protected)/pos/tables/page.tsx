@@ -2,31 +2,58 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useTableSessions } from "@/hooks/use-table-sessions";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
-import { buildTableQrUrl, createDiningTable } from "@/lib/tables/tables";
+import { buildTableQrUrl, createDiningTable, syncTableQrLookupsClient } from "@/lib/tables/tables";
+import { cancelTableSession, clearWaiterAlert } from "@/lib/tables/table-sessions";
 import { TableServiceProcessLine } from "@/components/table-service-process";
 import { SalesAccessButtons } from "@/components/sales-access-buttons";
+import { useSalesPaths } from "@/hooks/use-sales-paths";
 import {
   activeSessionLines,
   DINING_TABLE_STATUS_LABELS,
   TABLE_SESSION_STATUS_LABELS,
 } from "@ghost/domain";
+import { formatDateTime } from "@/lib/format";
 import { Button, Card } from "@ghost/ui";
 
 function PosTablesContent() {
   const router = useRouter();
+  const { path } = useSalesPaths();
   const searchParams = useSearchParams();
   const paidSaleNumber = searchParams.get("paid");
   const { tables, loading, error } = useDiningTables();
-  const { sessions } = useTableSessions({ openOnly: true });
+  const { sessions: allSessions } = useTableSessions();
+  const sessions = useMemo(
+    () => allSessions.filter((session) => session.status === "open" || session.status === "requested_bill"),
+    [allSessions],
+  );
   const [tableNumber, setTableNumber] = useState("");
   const [tableLabel, setTableLabel] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
+  const [clearingWaiterSessionId, setClearingWaiterSessionId] = useState<string | null>(null);
+  const syncedLookupRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (tables.length === 0 || loading) {
+      return;
+    }
+
+    const signature = tables.map((table) => `${table.id}:${table.status}`).join("|");
+    if (syncedLookupRef.current === signature) {
+      return;
+    }
+
+    syncedLookupRef.current = signature;
+    void syncTableQrLookupsClient(tables).catch(() => {
+      syncedLookupRef.current = null;
+    });
+  }, [loading, tables]);
 
   const sessionByTableId = useMemo(() => {
     const map = new Map<string, (typeof sessions)[number]>();
@@ -35,6 +62,49 @@ function PosTablesContent() {
     }
     return map;
   }, [sessions]);
+
+  const recentHistory = useMemo(() => {
+    return allSessions
+      .filter((session) => session.status === "closed" || session.status === "cancelled")
+      .sort(
+        (left, right) =>
+          new Date(right.closedAt ?? right.openedAt).getTime() -
+          new Date(left.closedAt ?? left.openedAt).getTime(),
+      )
+      .slice(0, 8);
+  }, [allSessions]);
+
+  async function handleCloseSession(sessionId: string) {
+    const message =
+      "¿Cerrar la cuenta y liberar la mesa? Queda registrada en historial sin generar venta.";
+    if (!window.confirm(message)) {
+      return;
+    }
+
+    setClosingSessionId(sessionId);
+    setSubmitError(null);
+
+    try {
+      await cancelTableSession({ sessionId });
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setClosingSessionId(null);
+    }
+  }
+
+  async function handleClearWaiterAlert(sessionId: string) {
+    setClearingWaiterSessionId(sessionId);
+    setSubmitError(null);
+
+    try {
+      await clearWaiterAlert({ sessionId });
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setClearingWaiterSessionId(null);
+    }
+  }
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,7 +118,7 @@ function PosTablesContent() {
       });
       setTableNumber("");
       setTableLabel("");
-      router.push(`/pos/tables/session?id=${result.tableId}`);
+      router.push(`${path("tables")}/session?id=${result.tableId}`);
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -61,7 +131,7 @@ function PosTablesContent() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm text-[var(--ghost-text-muted)]">
-            <Link href="/pos" className="underline">
+            <Link href={path("counter")} className="underline">
               Mostrador
             </Link>
           </p>
@@ -82,7 +152,7 @@ function PosTablesContent() {
           <div className="rounded-xl border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-1)] px-4 py-3 text-sm">
             Cuenta cobrada · comprobante{" "}
             <span className="font-mono font-medium">{paidSaleNumber}</span> registrado en{" "}
-            <Link href="/billing" className="underline">
+            <Link href={path("records")} className="underline">
               Registros
             </Link>
           </div>
@@ -163,6 +233,21 @@ function PosTablesContent() {
                       <p className="mt-2 text-sm text-[var(--ghost-text-muted)]">Sin cuenta abierta</p>
                     )}
 
+                    {session?.waiterRequestedAt ? (
+                      <div className="mt-2 rounded-lg border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-2)] px-3 py-2 text-sm">
+                        <p className="font-medium text-[var(--ghost-brand-500)]">Cliente pide mesero</p>
+                        <Button
+                          fullWidth
+                          size="sm"
+                          className="mt-2"
+                          disabled={clearingWaiterSessionId === session.id}
+                          onClick={() => handleClearWaiterAlert(session.id)}
+                        >
+                          {clearingWaiterSessionId === session.id ? "Marcando..." : "Atendido"}
+                        </Button>
+                      </div>
+                    ) : null}
+
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrUrl)}`}
                       alt={`QR mesa ${table.number}`}
@@ -171,11 +256,22 @@ function PosTablesContent() {
 
                     <p className="break-all text-[10px] text-[var(--ghost-text-muted)]">{qrUrl}</p>
 
-                    <Link href={`/pos/tables/session?id=${table.id}`} className="mt-3 block">
+                    <Link href={`${path("tables")}/session?id=${table.id}`} className="mt-3 block">
                       <Button fullWidth variant={session ? "primary" : "secondary"}>
                         {session ? "Ver cuenta" : "Abrir cuenta"}
                       </Button>
                     </Link>
+                    {session ? (
+                      <Button
+                        fullWidth
+                        variant="secondary"
+                        className="mt-2"
+                        disabled={closingSessionId === session.id}
+                        onClick={() => handleCloseSession(session.id)}
+                      >
+                        {closingSessionId === session.id ? "Cerrando..." : "Cerrar mesa"}
+                      </Button>
+                    ) : null}
                   </div>
                 );
               })}
@@ -183,6 +279,33 @@ function PosTablesContent() {
           )}
         </Card>
       </div>
+
+      {recentHistory.length > 0 ? (
+        <Card title="Historial reciente">
+          <ul className="divide-y divide-[var(--ghost-border)] text-sm">
+            {recentHistory.map((session) => (
+              <li key={session.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <div>
+                  <p className="font-medium">
+                    Mesa {session.tableNumber}
+                    {session.tableLabel ? ` · ${session.tableLabel}` : ""}
+                  </p>
+                  <p className="text-[var(--ghost-text-muted)]">
+                    {TABLE_SESSION_STATUS_LABELS[session.status]}
+                    {" · "}
+                    {formatDateTime(session.closedAt ?? session.openedAt)}
+                  </p>
+                </div>
+                {session.saleId ? (
+                  <Link href={`${path("records")}?sale=${session.saleId}`} className="text-xs underline">
+                    Ver venta
+                  </Link>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
     </div>
   );
 }

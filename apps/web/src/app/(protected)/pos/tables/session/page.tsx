@@ -7,8 +7,10 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useDiningTables } from "@/hooks/use-dining-tables";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useTableSessions } from "@/hooks/use-table-sessions";
+import { useAuth } from "@/providers/auth-provider";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
+import { CashSessionGate } from "@/components/cash-session-gate";
 import { TableServiceProcessLine, type TableServiceStepId } from "@/components/table-service-process";
 import {
   activeSessionLines,
@@ -23,14 +25,19 @@ import {
 } from "@ghost/domain";
 import {
   addTableSessionLines,
+  cancelTableSession,
   checkoutTableSession,
+  clearWaiterAlert,
   openTableSession,
   sendTableSessionToKitchen,
 } from "@/lib/tables/table-sessions";
+import { useSalesPaths } from "@/hooks/use-sales-paths";
 import { Button, Card } from "@ghost/ui";
 
 function TableSessionContent() {
   const router = useRouter();
+  const { firebaseUser } = useAuth();
+  const { path, inSalesExtension } = useSalesPaths();
   const searchParams = useSearchParams();
   const tableId = searchParams.get("id") ?? "";
   const { tables, loading: tablesLoading } = useDiningTables();
@@ -59,11 +66,12 @@ function TableSessionContent() {
       tableNumber: table.number,
       tableLabel: table.label,
       guestToken: table.qrToken,
+      actorUserId: firebaseUser?.uid,
     })
       .then(() => setAccountOpenedNotice(true))
       .catch((cause) => setSubmitError(getCallableErrorMessage(cause)))
       .finally(() => setOpening(false));
-  }, [table, session, opening, sessionsLoading]);
+  }, [table, session, opening, sessionsLoading, firebaseUser?.uid]);
 
   const totals = useMemo(() => {
     if (!session) {
@@ -173,7 +181,34 @@ function TableSessionContent() {
         paymentMethod,
       });
       setSuccess(`Cuenta cobrada · ${result.saleNumber} · ${formatMoney(result.total)}`);
-      router.push(`/pos/tables?paid=${encodeURIComponent(result.saleNumber)}`);
+      router.push(`${path("tables")}?paid=${encodeURIComponent(result.saleNumber)}`);
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function handleCancelSession() {
+    if (!session) {
+      return;
+    }
+
+    const hasItems = activeLines.length > 0;
+    const message = hasItems
+      ? "¿Cerrar la cuenta sin cobrar? La mesa quedará libre y el detalle se guarda en historial."
+      : "¿Cerrar la cuenta vacía? La mesa quedará libre.";
+
+    if (!window.confirm(message)) {
+      return;
+    }
+
+    setWorking(true);
+    setSubmitError(null);
+
+    try {
+      await cancelTableSession({ sessionId: session.id });
+      router.push(path("tables"));
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
     } finally {
@@ -185,7 +220,7 @@ function TableSessionContent() {
     return (
       <div className="space-y-4">
         <p className="text-sm text-[var(--ghost-danger)]">Mesa no indicada.</p>
-        <Link href="/pos/tables" className="underline">
+        <Link href={path("tables")} className="underline">
           Volver a mesas
         </Link>
       </div>
@@ -200,7 +235,7 @@ function TableSessionContent() {
     return (
       <div className="space-y-4">
         <p className="text-sm text-[var(--ghost-danger)]">Mesa no encontrada.</p>
-        <Link href="/pos/tables" className="underline">
+        <Link href={path("tables")} className="underline">
           Volver a mesas
         </Link>
       </div>
@@ -211,11 +246,11 @@ function TableSessionContent() {
     <div className="space-y-6 pb-24">
       <div>
         <p className="text-sm text-[var(--ghost-text-muted)]">
-          <Link href="/pos" className="underline">
+          <Link href={path("counter")} className="underline">
             Mostrador
           </Link>
           {" · "}
-          <Link href="/pos/tables" className="underline">
+          <Link href={path("tables")} className="underline">
             Mesas
           </Link>
         </p>
@@ -223,10 +258,45 @@ function TableSessionContent() {
           Mesa {table.number}
           {table.label ? ` · ${table.label}` : ""}
         </h1>
+        {!inSalesExtension ? (
+          <div className="mt-2">
+            <Link href="/pos/menu#nuevo-producto">
+              <Button size="sm" variant="secondary">
+                Crear producto
+              </Button>
+            </Link>
+          </div>
+        ) : null}
         {session ? (
           <p className="mt-1 text-sm text-[var(--ghost-brand-500)]">
             {TABLE_SESSION_STATUS_LABELS[session.status]}
           </p>
+        ) : null}
+        {session?.waiterRequestedAt ? (
+          <div className="mt-3 rounded-xl border border-[var(--ghost-brand-500)] bg-[var(--ghost-surface-2)] px-4 py-3">
+            <p className="text-sm font-medium text-[var(--ghost-brand-500)]">
+              El cliente pidió mesero
+            </p>
+            <Button
+              size="sm"
+              className="mt-2"
+              disabled={working}
+              onClick={async () => {
+                setWorking(true);
+                setSubmitError(null);
+                try {
+                  await clearWaiterAlert({ sessionId: session.id });
+                  setSuccess("Alerta de mesero atendida.");
+                } catch (cause) {
+                  setSubmitError(getCallableErrorMessage(cause));
+                } finally {
+                  setWorking(false);
+                }
+              }}
+            >
+              Marcar atendido
+            </Button>
+          </div>
         ) : null}
         <div className="mt-3">
           <TableServiceProcessLine currentStep={processStep} compact />
@@ -339,24 +409,40 @@ function TableSessionContent() {
                 Los pedidos del QR quedan pendientes hasta enviar comanda.
               </p>
 
-              <label className="block space-y-1">
-                <span className="text-sm font-medium">Medio de pago</span>
-                <select
-                  value={paymentMethod}
-                  onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
-                  className="ghost-input"
-                >
-                  {PAYMENT_METHODS.map((method) => (
-                    <option key={method} value={method}>
-                      {PAYMENT_METHOD_LABELS[method]}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <CashSessionGate>
+                <>
+                  <label className="block space-y-1">
+                    <span className="text-sm font-medium">Medio de pago</span>
+                    <select
+                      value={paymentMethod}
+                      onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
+                      className="ghost-input"
+                    >
+                      {PAYMENT_METHODS.map((method) => (
+                        <option key={method} value={method}>
+                          {PAYMENT_METHOD_LABELS[method]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-              <Button fullWidth disabled={working || activeLines.length === 0} onClick={handleCheckout}>
-                Cobrar cuenta
+                  <Button fullWidth disabled={working || activeLines.length === 0} onClick={handleCheckout}>
+                    Cobrar cuenta
+                  </Button>
+                </>
+              </CashSessionGate>
+
+              <Button
+                fullWidth
+                variant="secondary"
+                disabled={working}
+                onClick={handleCancelSession}
+              >
+                Cerrar mesa
               </Button>
+              <p className="text-xs text-[var(--ghost-text-muted)]">
+                Libera la mesa sin venta. La cuenta queda en historial.
+              </p>
 
               {submitError ? (
                 <p className="text-sm text-[var(--ghost-danger)]">{submitError}</p>

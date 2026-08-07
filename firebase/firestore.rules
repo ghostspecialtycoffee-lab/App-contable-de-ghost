@@ -53,6 +53,12 @@ service cloud.firestore {
         && (
           (resource.data.status == 'open' && request.resource.data.status == 'open')
           || (resource.data.status == 'open' && request.resource.data.status == 'requested_bill')
+          || (
+            request.resource.data.status == resource.data.status
+            && (resource.data.status == 'open' || resource.data.status == 'requested_bill')
+            && request.resource.data.waiterRequestedAt is string
+            && request.resource.data.waiterRequestedAt.size() > 0
+          )
         );
     }
 
@@ -165,6 +171,21 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /inventoryLots/{lotId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
+      match /analyticsDaily/{dateId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.date is string;
+        allow delete: if false;
+      }
+
       match /menuProducts/{productId} {
         allow read: if canAccessOrg(organizationId)
           || resource.data.status == 'active';
@@ -182,7 +203,8 @@ service cloud.firestore {
             !('imageDataUrl' in request.resource.data)
             || request.resource.data.imageDataUrl.size() <= 500000
           );
-        allow delete: if false;
+        allow delete: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
       }
 
       match /sales/{saleId} {
@@ -224,7 +246,16 @@ service cloud.firestore {
           && request.resource.data.createdBy == request.auth.uid;
         allow update: if canAccessOrg(organizationId)
           && resource.data.organizationId == organizationId;
-        allow delete: if false;
+        allow delete: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
+
+        match /versions/{versionId} {
+          allow read: if canAccessOrg(organizationId);
+          allow create: if canAccessOrg(organizationId)
+            && request.resource.data.organizationId == organizationId
+            && request.resource.data.createdBy == request.auth.uid;
+          allow update, delete: if false;
+        }
       }
 
       match /purchaseInvoices/{invoiceId} {
@@ -237,6 +268,25 @@ service cloud.firestore {
           && resource.data.organizationId == organizationId
           && resource.data.status == 'draft';
         allow delete: if false;
+      }
+
+      match /suppliers/{supplierId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.isActive == true;
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
+      match /purchasePriceHistory/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update, delete: if false;
       }
 
       match /fixedExpenses/{expenseId} {
@@ -263,6 +313,14 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /tableQrLookup/{qrToken} {
+        allow read: if resource.data.status != 'closed';
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.qrToken == qrToken;
+        allow delete: if canAccessOrg(organizationId);
+      }
+
       match /tableSessions/{sessionId} {
         allow read: if canAccessOrg(organizationId)
           || (resource.data.guestToken is string
@@ -274,6 +332,85 @@ service cloud.firestore {
         allow update: if (canAccessOrg(organizationId)
           && resource.data.organizationId == organizationId)
           || validGuestSessionUpdate(organizationId);
+        allow delete: if false;
+      }
+
+      match /cashSessions/{sessionId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.status == 'open'
+          && request.resource.data.openedBy == request.auth.uid
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.openingAmount >= 0;
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId
+          && resource.data.status == 'open'
+          && request.resource.data.status == 'closed'
+          && request.resource.data.closedBy == request.auth.uid;
+        allow delete: if false;
+      }
+
+      match /cashMovements/{movementId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.actorUserId == request.auth.uid
+          && request.resource.data.amount > 0
+          && request.resource.data.reason is string
+          && request.resource.data.reason.size() >= 2;
+        allow update, delete: if false;
+      }
+
+      match /notificationOutbox/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId;
+        allow update, delete: if false;
+      }
+
+      match /domainEventOutbox/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.status == 'pending'
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      match /analyticsDaily/{dateId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update, delete: if false;
+      }
+
+      match /notificationPreferences/{userId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.auth.uid == userId
+          && request.resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
+      match /workShifts/{shiftId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid;
+        allow delete: if false;
+      }
+
+      match /agentKnowledge/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId);
+        allow update: if canAccessOrg(organizationId);
+        allow delete: if false;
+      }
+
+      match /agentSessions/{sessionId} {
+        allow read: if canAccessOrg(organizationId)
+          && resource.data.userId == request.auth.uid;
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.userId == request.auth.uid;
         allow delete: if false;
       }
     }

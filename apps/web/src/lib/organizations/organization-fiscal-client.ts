@@ -1,7 +1,7 @@
 import type { OrganizationFiscalProfile } from "@ghost/domain";
-import { validateFiscalProfile } from "@ghost/domain";
+import { serializeFiscalProfileForFirestore, validateFiscalProfile } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 
@@ -29,13 +29,11 @@ export async function updateOrganizationFiscalProfileClient(input: {
     firestorePaths.organization(input.organizationId),
   );
 
-  await setDoc(
-    organizationRef,
-    {
-      fiscalProfile: validation.value,
-      updatedAt: serverTimestamp(),
-      updatedBy: userId,
-    },
-    { merge: true },
-  );
+  const fiscalProfile = serializeFiscalProfileForFirestore(validation.value);
+
+  await updateDoc(organizationRef, {
+    fiscalProfile,
+    updatedAt: serverTimestamp(),
+    updatedBy: userId,
+  });
 }

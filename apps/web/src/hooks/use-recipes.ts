@@ -40,8 +40,11 @@ export function useRecipes() {
               organizationId: data.organizationId,
               menuProductId: data.menuProductId,
               menuProductName: data.menuProductName,
+              currentVersion: data.currentVersion ?? 1,
+              recipeCost: data.recipeCost ?? 0,
               yieldQuantity: data.yieldQuantity ?? 1,
               lines: data.lines ?? [],
+              advancedSetupAnswers: data.advancedSetupAnswers ?? undefined,
             } satisfies Recipe;
           }),
         );

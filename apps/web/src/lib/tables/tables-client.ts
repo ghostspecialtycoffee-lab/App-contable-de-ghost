@@ -13,6 +13,13 @@ import {
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 import { openTableSessionClient } from "./table-sessions-client";
+import {
+  findDiningTableByQrLookupClient,
+  refreshTableQrLookupClient,
+  upsertTableQrLookupClient,
+} from "./table-qr-lookup-client";
+
+export { syncTableQrLookupsClient } from "./table-qr-lookup-client";
 
 function createQrToken(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -86,6 +93,16 @@ export async function createDiningTableClient(input: {
     updatedBy: userId,
   });
 
+  await upsertTableQrLookupClient({
+    organizationId,
+    tableId: tableRef.id,
+    qrToken,
+    number: input.number,
+    label: input.label?.trim() ?? "",
+    branchId,
+    status: "occupied",
+  });
+
   const session = await openTableSessionClient({
     organizationId,
     branchId,
@@ -118,6 +135,8 @@ export async function updateDiningTableStatusClient(input: {
     },
     { merge: true },
   );
+
+  await refreshTableQrLookupClient({ organizationId, tableId: input.tableId });
 }
 
 export function buildTableQrUrl(organizationId: string, qrToken: string): string {
@@ -126,6 +145,14 @@ export function buildTableQrUrl(organizationId: string, qrToken: string): string
     return `${window.location.origin}/mesa?${query}`;
   }
   return `/mesa?${query}`;
+}
+
+export function buildGuestMenuUrl(organizationId: string): string {
+  const query = `o=${encodeURIComponent(organizationId)}`;
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/menu?${query}`;
+  }
+  return `/menu?${query}`;
 }
 
 export async function findDiningTableByTokenClient(input: {
@@ -138,6 +165,15 @@ export async function findDiningTableByTokenClient(input: {
   branchId: string;
   status: string;
 } | null> {
+  const fromLookup = await findDiningTableByQrLookupClient(input);
+  if (fromLookup) {
+    return fromLookup;
+  }
+
+  if (!getFirebaseAuth().currentUser) {
+    return null;
+  }
+
   const db = getFirestoreDb();
   const tablesQuery = query(
     collection(db, firestorePaths.organizationDiningTables(input.organizationId)),
@@ -152,12 +188,23 @@ export async function findDiningTableByTokenClient(input: {
   }
 
   const data = match.data();
-
-  return {
+  const result = {
     tableId: match.id,
     number: data.number,
     label: data.label ?? "",
     branchId: data.branchId,
     status: data.status,
   };
+
+  await upsertTableQrLookupClient({
+    organizationId: input.organizationId,
+    tableId: match.id,
+    qrToken: input.qrToken,
+    number: data.number,
+    label: data.label ?? "",
+    branchId: data.branchId,
+    status: data.status,
+  });
+
+  return result;
 }

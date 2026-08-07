@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      firebase-admin:
+        specifier: ^13.2.0
+        version: 13.10.0(@firebase/app-compat@0.4.2)(@firebase/app@0.13.2)
       firebase-tools:
         specifier: '13'
         version: 13.35.1(@types/node@22.20.1)

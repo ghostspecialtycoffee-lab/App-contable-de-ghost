@@ -4,13 +4,17 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { RecipeYieldField } from "@/components/recipe-yield-field";
+import { ProductCostPanoramaPanel } from "@/components/product-cost-panorama-panel";
+import { BeverageAdvancedSetupPanel } from "@/components/beverage-advanced-setup-panel";
 import { useCostMatrixSettings } from "@/hooks/use-cost-matrix-settings";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { useRecipes } from "@/hooks/use-recipes";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
-import { buildInventoryCostProfiles } from "@/lib/costing/recipe-costing";
+import { buildInventoryCostProfiles, getResolvedUnitCost } from "@/lib/costing/recipe-costing";
+import { seedCostMatrix } from "@/lib/costing/seed-cost-matrix";
 import { updateMenuProduct } from "@/lib/pos/pos";
 import { saveRecipe } from "@/lib/recipes/recipes";
 import {
@@ -18,16 +22,25 @@ import {
   BASE_UNIT_LABELS,
   CO_TAX_CATEGORIES,
   CO_TAX_CATEGORY_LABELS,
+  buildProductCostPanorama,
   calculateCostMatrix,
-  calculateRecipeCost,
+  calculatePastryPortionCost,
+  calculateRecipeBatchCost,
   calculateRecipeCostBreakdown,
   calculateRecipeLineCost,
+  getCostBasisNote,
   getTargetCostPctForCategory,
   inferMenuProductTaxCategory,
   isCoffeeBeverageName,
+  PASTRY_DOMICILIO_ALLOCATION_COP,
+  suggestRecipeYieldForProduct,
   type BaseUnit,
+  type BeverageAdvancedSetupAnswers,
   type CoTaxCategory,
   type RecipeLineInput,
+  getBeverageAdvancedSetupProgress,
+  getBeverageAdvancedSetupSpec,
+  needsBeverageAdvancedSetup,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
 
@@ -48,13 +61,26 @@ export default function CostingPage() {
   const [price, setPrice] = useState("");
   const [saleTaxCategory, setSaleTaxCategory] = useState<CoTaxCategory>("IVA_19");
   const [recipeLines, setRecipeLines] = useState<RecipeLineInput[]>([emptyRecipeLine()]);
+  const [yieldQuantity, setYieldQuantity] = useState(1);
+  const [advancedSetupAnswers, setAdvancedSetupAnswers] = useState<BeverageAdvancedSetupAnswers>(
+    {},
+  );
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+  const [seedMessage, setSeedMessage] = useState<string | null>(null);
+  const [seedWarnings, setSeedWarnings] = useState<string[]>([]);
 
   const selectedProduct = products.find((product) => product.id === productId) ?? products[0];
   const selectedRecipe = selectedProduct
     ? recipes.find((recipe) => recipe.menuProductId === selectedProduct.id)
+    : null;
+  const advancedSetupSpec = selectedProduct
+    ? getBeverageAdvancedSetupSpec(selectedProduct.name)
+    : null;
+  const advancedSetupProgress = selectedProduct
+    ? getBeverageAdvancedSetupProgress(selectedProduct.name, advancedSetupAnswers)
     : null;
 
   useEffect(() => {
@@ -83,8 +109,14 @@ export default function CostingPage() {
           unit: line.unit,
         })),
       );
+      setYieldQuantity(selectedRecipe.yieldQuantity || 1);
+      setAdvancedSetupAnswers(selectedRecipe.advancedSetupAnswers ?? {});
     } else {
       setRecipeLines([emptyRecipeLine()]);
+      setYieldQuantity(
+        suggestRecipeYieldForProduct(selectedProduct.name, selectedProduct.category),
+      );
+      setAdvancedSetupAnswers({});
     }
 
     setSubmitError(null);
@@ -106,10 +138,21 @@ export default function CostingPage() {
     [validRecipeLines, itemProfiles],
   );
 
-  const previewRecipeCost = useMemo(
-    () => recipeBreakdown.reduce((total, line) => total + line.lineCost, 0),
-    [recipeBreakdown],
+  const previewBatchCost = useMemo(
+    () => calculateRecipeBatchCost(validRecipeLines, itemProfiles),
+    [validRecipeLines, itemProfiles],
   );
+
+  const previewRecipeCost = useMemo(() => {
+    if (!selectedProduct) {
+      return 0;
+    }
+    return calculatePastryPortionCost({
+      batchCostNet: previewBatchCost,
+      yieldQuantity,
+      category: selectedProduct.category,
+    });
+  }, [previewBatchCost, yieldQuantity, selectedProduct]);
 
   const suggestedTaxCategory = useMemo(() => {
     if (!selectedProduct) {
@@ -131,6 +174,28 @@ export default function CostingPage() {
   const targetCostPct = selectedProduct
     ? getTargetCostPctForCategory(selectedProduct.category, costMatrixSettings)
     : costMatrixSettings.targetFoodCostPct;
+
+  const costPanorama = useMemo(() => {
+    if (!selectedProduct || previewBatchCost <= 0) {
+      return null;
+    }
+
+    return buildProductCostPanorama({
+      category: selectedProduct.category,
+      batchCostNet: previewBatchCost,
+      yieldQuantity,
+      userSalePrice: Number(price) || 0,
+      saleTaxCategory,
+      matrixSettings: costMatrixSettings,
+    });
+  }, [
+    selectedProduct,
+    previewBatchCost,
+    yieldQuantity,
+    price,
+    saleTaxCategory,
+    costMatrixSettings,
+  ]);
 
   const matrix = useMemo(() => {
     const salePrice = Number(price) || 0;
@@ -177,6 +242,50 @@ export default function CostingPage() {
       unit: item.baseUnit as BaseUnit,
       quantity: lineDefaultQuantity(item.baseUnit as BaseUnit),
     });
+
+    const suggested = suggestRecipeYieldForProduct(
+      item.name,
+      selectedProduct?.category,
+    );
+    if (suggested > 1) {
+      setYieldQuantity((current) => (current <= 1 ? suggested : current));
+    }
+  }
+
+  async function handleSeedCostMatrix() {
+    setSeedMessage(null);
+    setSeedWarnings([]);
+    setSubmitError(null);
+    setSeeding(true);
+
+    try {
+      const result = await seedCostMatrix();
+      const parts = [
+        result.productsCreated > 0
+          ? `${result.productsCreated} productos nuevos`
+          : null,
+        result.recipesCreated > 0
+          ? `${result.recipesCreated} fichas creadas`
+          : null,
+        result.recipesUpdated > 0
+          ? `${result.recipesUpdated} fichas actualizadas`
+          : null,
+        result.recipesSkipped > 0
+          ? `${result.recipesSkipped} sin cambios`
+          : null,
+      ].filter(Boolean);
+
+      setSeedMessage(
+        parts.length > 0
+          ? `Listo: ${parts.join(" · ")}.`
+          : "No hubo cambios: revisa el catálogo e inventario.",
+      );
+      setSeedWarnings(result.warnings);
+    } catch (cause) {
+      setSubmitError(getCallableErrorMessage(cause));
+    } finally {
+      setSeeding(false);
+    }
   }
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
@@ -212,11 +321,25 @@ export default function CostingPage() {
       const result = await saveRecipe({
         menuProductId: selectedProduct.id,
         menuProductName: selectedProduct.name,
+        yieldQuantity,
+        category: selectedProduct.category,
         lines: validLines,
+        advancedSetupAnswers: advancedSetupSpec ? advancedSetupAnswers : undefined,
       });
 
+      const setupNote =
+        advancedSetupSpec && advancedSetupProgress && !advancedSetupProgress.isComplete
+          ? " Confirma las preguntas de barra para cerrar la ficha."
+          : "";
+
       setSaveMessage(
-        `Ficha guardada. Costo receta: ${formatMoney(result.recipeCost)}.`,
+        `Ficha guardada (receta v${result.recipeVersion}). Costo por porción: ${formatMoney(result.recipeCost)}` +
+          (yieldQuantity > 1
+            ? selectedProduct.category === "pastry"
+              ? ` (factura ${formatMoney(previewBatchCost)} + ${formatMoney(PASTRY_DOMICILIO_ALLOCATION_COP)} domicilio ÷ ${yieldQuantity})`
+              : ` (lote ${formatMoney(previewBatchCost)} ÷ ${yieldQuantity})`
+            : "") +
+          `.${setupNote}`,
       );
     } catch (cause) {
       setSubmitError(getCallableErrorMessage(cause));
@@ -228,9 +351,20 @@ export default function CostingPage() {
   const productSummaries = useMemo(() => {
     return products.map((product) => {
       const recipe = recipes.find((entry) => entry.menuProductId === product.id);
+      const setupProgress = needsBeverageAdvancedSetup(product.name)
+        ? getBeverageAdvancedSetupProgress(product.name, recipe?.advancedSetupAnswers)
+        : null;
+      const batchCost =
+        recipe && recipe.lines.length > 0
+          ? calculateRecipeBatchCost(recipe.lines, itemProfiles)
+          : 0;
       const cost =
         recipe && recipe.lines.length > 0
-          ? calculateRecipeCost(recipe.lines, itemProfiles)
+          ? calculatePastryPortionCost({
+              batchCostNet: batchCost,
+              yieldQuantity: recipe.yieldQuantity,
+              category: product.category,
+            })
           : product.recipeCost ?? 0;
       const foodCostPct =
         product.price > 0 && cost > 0 ? cost / product.price : null;
@@ -239,6 +373,7 @@ export default function CostingPage() {
         product,
         hasRecipe: Boolean(recipe?.lines.length),
         foodCostPct,
+        setupProgress,
       };
     });
   }, [products, recipes, itemProfiles]);
@@ -279,6 +414,31 @@ export default function CostingPage() {
           <li>3. Armar receta del producto en cantidades de consumo</li>
           <li>4. Guardar ficha y revisar utilidad bruta / food cost</li>
         </ol>
+        <div className="mt-4 space-y-2 border-t border-[var(--ghost-border)] pt-4">
+          <p className="text-sm text-[var(--ghost-text-muted)]">
+            Carga la carta Ghost (25 bebidas) con base espresso: 18 g café Black Coffee
+            (paq 5 lb · $145.000) + agua de red. Las fichas se cruzan con compras; productos
+            Kiuegi y extras se irán completando al registrar facturas.
+          </p>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={seeding || inventoryItems.length === 0}
+            onClick={handleSeedCostMatrix}
+          >
+            {seeding ? "Generando carta..." : "Cargar carta Ghost y fichas base"}
+          </Button>
+          {seedMessage ? (
+            <p className="text-sm text-[var(--ghost-brand-500)]">{seedMessage}</p>
+          ) : null}
+          {seedWarnings.length > 0 ? (
+            <ul className="space-y-1 text-xs text-[var(--ghost-text-muted)]">
+              {seedWarnings.map((warning) => (
+                <li key={warning}>· {warning}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
@@ -293,7 +453,7 @@ export default function CostingPage() {
             </p>
           ) : (
             <ul className="space-y-1">
-              {productSummaries.map(({ product, hasRecipe, foodCostPct }) => {
+              {productSummaries.map(({ product, hasRecipe, foodCostPct, setupProgress }) => {
                 const active = (productId || products[0]?.id) === product.id;
                 return (
                   <li key={product.id}>
@@ -313,6 +473,9 @@ export default function CostingPage() {
                         {foodCostPct !== null
                           ? ` · FC ${(foodCostPct * 100).toFixed(0)}%`
                           : ""}
+                        {setupProgress && !setupProgress.isComplete
+                          ? ` · confirmar barra ${setupProgress.answered}/${setupProgress.total}`
+                          : ""}
                       </p>
                     </button>
                   </li>
@@ -324,7 +487,11 @@ export default function CostingPage() {
 
         <div className="space-y-4">
           {selectedProduct ? (
-            <Card title={`Ficha: ${selectedProduct.name}`}>
+            <Card
+              title={`Ficha: ${selectedProduct.name}${
+                selectedRecipe?.currentVersion ? ` · v${selectedRecipe.currentVersion}` : ""
+              }`}
+            >
               <form className="space-y-4" onSubmit={handleSave}>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block space-y-1">
@@ -366,9 +533,26 @@ export default function CostingPage() {
                   </label>
                 </div>
 
+                <RecipeYieldField
+                  productName={selectedProduct.name}
+                  category={selectedProduct.category}
+                  value={yieldQuantity}
+                  onChange={setYieldQuantity}
+                  ingredientNames={validRecipeLines.map((line) => line.itemName).filter(Boolean)}
+                />
+
+                {advancedSetupSpec ? (
+                  <BeverageAdvancedSetupPanel
+                    spec={advancedSetupSpec}
+                    answers={advancedSetupAnswers}
+                    onChange={setAdvancedSetupAnswers}
+                    disabled={submitting}
+                  />
+                ) : null}
+
                 <div className="space-y-2 border-t border-[var(--ghost-border)] pt-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium">Receta (ingredientes)</span>
+                    <span className="text-sm font-medium">Receta (lote completo)</span>
                     <Button
                       type="button"
                       variant="secondary"
@@ -407,7 +591,7 @@ export default function CostingPage() {
                           <option value="">Seleccionar insumo</option>
                           {inventoryItems.map((item) => (
                             <option key={item.id} value={item.id}>
-                              {item.name} · {formatMoney(item.averageCost || item.lastCost)}/
+                              {item.name} · {formatMoney(getResolvedUnitCost(item))}/
                               {item.baseUnit}
                             </option>
                           ))}
@@ -443,30 +627,50 @@ export default function CostingPage() {
                           </select>
                         </div>
                         {line.inventoryItemId && line.quantity > 0 ? (
-                          <p className="text-xs text-[var(--ghost-text-muted)]">
+                          <div className="space-y-0.5">
+                            <p className="text-xs text-[var(--ghost-text-muted)]">
+                              {(() => {
+                                const profile =
+                                  itemProfiles[line.inventoryItemId] ?? {
+                                    baseUnit: line.unit,
+                                    averageCost: 0,
+                                  };
+                                const breakdown = calculateRecipeLineCost(line, profile);
+                                return `${breakdown.quantityInBase.toLocaleString("es-CO")} ${breakdown.baseUnit} × ${formatMoney(breakdown.unitCostPerBase)} = ${formatMoney(breakdown.lineCost)}`;
+                              })()}
+                            </p>
                             {(() => {
-                              const breakdown = calculateRecipeLineCost(
-                                line,
+                              const profile =
                                 itemProfiles[line.inventoryItemId] ?? {
                                   baseUnit: line.unit,
                                   averageCost: 0,
-                                },
-                              );
-                              return `${breakdown.quantityInBase.toLocaleString("es-CO")} ${breakdown.baseUnit} × ${formatMoney(breakdown.unitCostPerBase)} = ${formatMoney(breakdown.lineCost)}`;
+                                };
+                              const note = getCostBasisNote(profile);
+                              return note ? (
+                                <p className="text-xs text-amber-700 dark:text-amber-400">
+                                  {note}
+                                </p>
+                              ) : null;
                             })()}
-                          </p>
+                          </div>
                         ) : null}
                       </div>
                     ))
                   )}
                 </div>
 
+                <ProductCostPanoramaPanel panorama={costPanorama} />
+
                 {matrix ? (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <Metric
                       label="Food cost"
                       value={`${(matrix.foodCostPct * 100).toFixed(1)}%`}
-                      hint={`Meta ${(targetCostPct * 100).toFixed(0)}%`}
+                      hint={
+                        selectedProduct?.category === "pastry"
+                          ? `Meta ${(targetCostPct * 100).toFixed(0)}% · costo incluye ${formatMoney(PASTRY_DOMICILIO_ALLOCATION_COP)} domicilio`
+                          : `Meta ${(targetCostPct * 100).toFixed(0)}%`
+                      }
                     />
                     <Metric
                       label="Utilidad bruta"
@@ -478,7 +682,14 @@ export default function CostingPage() {
                       value={formatMoney(matrix.netProfitAfterSaleTax)}
                       hint="Referencia operativa"
                     />
-                    <Metric label="Costo receta (COGS)" value={formatMoney(previewRecipeCost)} />
+                    <Metric label="Costo por porción (COGS)" value={formatMoney(previewRecipeCost)} />
+                    {yieldQuantity > 1 ? (
+                      <Metric
+                        label="Costo lote completo"
+                        value={formatMoney(previewBatchCost)}
+                        hint={`÷ ${yieldQuantity} porciones`}
+                      />
+                    ) : null}
                     <Metric label="Precio neto venta" value={formatMoney(matrix.salePriceNet)} />
                     <Metric
                       label={CO_TAX_CATEGORY_LABELS[saleTaxCategory]}

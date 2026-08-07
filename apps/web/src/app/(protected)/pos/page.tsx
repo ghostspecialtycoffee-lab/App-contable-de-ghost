@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { SalesAccessButtons } from "@/components/sales-access-buttons";
+import { CashSessionGate } from "@/components/cash-session-gate";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
+import { normalizeCatalogName } from "@/lib/costing/ghost-menu-catalog";
 import { createSale } from "@/lib/pos/pos";
 import {
   MENU_CATEGORIES,
@@ -32,6 +34,7 @@ interface CartLine {
 export default function PosPage() {
   const { products, loading, error } = useMenuProducts();
   const [category, setCategory] = useState<MenuCategory | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [customerName, setCustomerName] = useState("");
@@ -41,12 +44,24 @@ export default function PosPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const filteredProducts = useMemo(() => {
-    if (category === "all") {
-      return products;
-    }
+    const normalizedQuery = normalizeCatalogName(searchQuery);
 
-    return products.filter((product) => product.category === category);
-  }, [category, products]);
+    return products.filter((product) => {
+      const matchesCategory = category === "all" || product.category === category;
+      if (!matchesCategory) {
+        return false;
+      }
+
+      if (!normalizedQuery) {
+        return true;
+      }
+
+      const haystack = normalizeCatalogName(
+        [product.name, product.description ?? "", MENU_CATEGORY_LABELS[product.category]].join(" "),
+      );
+      return haystack.includes(normalizedQuery);
+    });
+  }, [category, products, searchQuery]);
 
   const salePreview = useMemo(
     () =>
@@ -143,26 +158,48 @@ export default function PosPage() {
           <p className="text-sm text-[var(--ghost-text-muted)]">Mostrador</p>
           <h1 className="text-2xl font-semibold">Mostrador</h1>
         </div>
-        <SalesAccessButtons compact title="Ventas" />
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/pos/menu#nuevo-producto">
+            <Button size="sm" variant="secondary">
+              Crear producto
+            </Button>
+          </Link>
+          <SalesAccessButtons compact />
+        </div>
       </div>
 
       {loading ? (
         <p className="text-sm text-[var(--ghost-text-muted)]">Cargando menú...</p>
       ) : error ? (
         <p className="text-sm text-[var(--ghost-danger)]">{error}</p>
-      ) : products.length === 0 ? (
+      ) : (
+        <CashSessionGate>
+          {products.length === 0 ? (
         <Card title="Sin catálogo">
           <p className="text-sm text-[var(--ghost-text-muted)]">
             Agrega ítems al catálogo antes de registrar operaciones en mostrador.
           </p>
-          <Link href="/pos/menu" className="mt-4 inline-block">
-            <Button>Ir al catálogo</Button>
+          <Link href="/pos/menu#nuevo-producto" className="mt-4 inline-block">
+            <Button>Crear producto</Button>
           </Link>
         </Card>
       ) : (
         <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
           <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
+            <label className="block space-y-1">
+              <span className="sr-only">Buscar producto</span>
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="ghost-input"
+                placeholder="Buscar producto..."
+                autoComplete="off"
+              />
+            </label>
+
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setCategory("all")}
@@ -190,10 +227,23 @@ export default function PosPage() {
                   {MENU_CATEGORY_LABELS[item]}
                 </button>
               ))}
+              </div>
+              <Link href="/pos/menu#nuevo-producto">
+                <Button size="sm" variant="secondary">
+                  Crear producto
+                </Button>
+              </Link>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {filteredProducts.map((product) => (
+              {filteredProducts.length === 0 ? (
+                <p className="col-span-full text-sm text-[var(--ghost-text-muted)]">
+                  {searchQuery.trim()
+                    ? `Sin resultados para "${searchQuery.trim()}".`
+                    : "No hay productos en esta categoría."}
+                </p>
+              ) : (
+                filteredProducts.map((product) => (
                 <button
                   key={product.id}
                   type="button"
@@ -205,7 +255,8 @@ export default function PosPage() {
                     {formatMoney(product.price)}
                   </p>
                 </button>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -329,6 +380,8 @@ export default function PosPage() {
             )}
           </Card>
         </div>
+          )}
+        </CashSessionGate>
       )}
     </div>
   );

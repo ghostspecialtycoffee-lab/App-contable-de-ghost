@@ -3,12 +3,18 @@
 import { useEffect, type PropsWithChildren } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-import { useAuth } from "@/providers/auth-provider";
+import {
+  getHomePath,
+  isSalesOnlyUser,
+  resolveSalesOnlyRedirect,
+} from "@/lib/auth/navigation-profile";
+import { useActiveMembership, useAuth } from "@/providers/auth-provider";
 
 export function AuthGuard({ children }: PropsWithChildren) {
   const router = useRouter();
   const pathname = usePathname();
   const { firebaseUser, profile, loading, isConfigured } = useAuth();
+  const membership = useActiveMembership();
 
   useEffect(() => {
     if (loading) {
@@ -34,9 +40,17 @@ export function AuthGuard({ children }: PropsWithChildren) {
     }
 
     if (hasMembership && pathname === "/onboarding") {
-      router.replace("/dashboard");
+      router.replace(getHomePath(membership?.roles ?? []));
+      return;
     }
-  }, [firebaseUser, profile, loading, isConfigured, pathname, router]);
+
+    if (hasMembership && membership && isSalesOnlyUser(membership.roles)) {
+      const redirectPath = resolveSalesOnlyRedirect(pathname);
+      if (redirectPath) {
+        router.replace(redirectPath);
+      }
+    }
+  }, [firebaseUser, profile, membership, loading, isConfigured, pathname, router]);
 
   if (loading) {
     return (

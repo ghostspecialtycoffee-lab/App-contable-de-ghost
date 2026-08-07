@@ -3,13 +3,16 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 
+import { PageHeader } from "@/components/page-header";
+import { InitialDataImportPanel } from "@/components/initial-data-import-panel";
 import { useInventoryItems } from "@/hooks/use-inventory-items";
 import { usePurchaseInvoices } from "@/hooks/use-purchase-invoices";
+import { useSuppliers } from "@/hooks/use-suppliers";
 import { useWarehouses } from "@/hooks/use-warehouses";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatDate, formatMoney, todayIsoDate } from "@/lib/format";
 import { compressImageFile } from "@/lib/image/compress-image";
-import { createInventoryItem, createWarehouse } from "@/lib/inventory/inventory";
+import { createWarehouse } from "@/lib/inventory/inventory";
 import {
   confirmPurchaseInvoice,
   createPurchaseInvoice,
@@ -48,8 +51,10 @@ export default function PurchasesPage() {
   const { items: inventoryItems } = useInventoryItems();
   const { warehouses } = useWarehouses();
   const { invoices, loading, error } = usePurchaseInvoices();
+  const { suppliers } = useSuppliers();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [supplierId, setSupplierId] = useState("");
   const [supplierName, setSupplierName] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(todayIsoDate());
@@ -61,7 +66,6 @@ export default function PurchasesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [creatingWarehouse, setCreatingWarehouse] = useState(false);
-  const [creatingItemIndex, setCreatingItemIndex] = useState<number | null>(null);
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -86,6 +90,7 @@ export default function PurchasesPage() {
 
   function resetForm() {
     setEditingInvoiceId(null);
+    setSupplierId("");
     setSupplierName("");
     setInvoiceNumber("");
     setInvoiceDate(todayIsoDate());
@@ -102,6 +107,7 @@ export default function PurchasesPage() {
     }
 
     setEditingInvoiceId(invoice.id);
+    setSupplierId(invoice.supplierId ?? "");
     setSupplierName(invoice.supplierName);
     setInvoiceNumber(invoice.invoiceNumber);
     setInvoiceDate(invoice.invoiceDate);
@@ -170,55 +176,6 @@ export default function PurchasesPage() {
     }
   }
 
-  async function handleCreateInventoryItem(index: number) {
-    const line = lines[index];
-    if (!line) {
-      return;
-    }
-
-    const name = line.description.trim();
-
-    if (!name || name.length < 2) {
-      setSubmitError("Escribe la descripción del insumo antes de crearlo.");
-      return;
-    }
-
-    setSubmitError(null);
-    setCreatingItemIndex(index);
-
-    try {
-      const sku = buildQuickSku(name);
-      const baseUnit =
-        line.unit === "kg" ? "g" : line.unit === "l" ? "ml" : (line.unit as BaseUnit);
-      const purchaseUnit = line.unit;
-      const presentationQuantity =
-        line.unit === "kg" || line.unit === "l" ? 1000 : 1;
-
-      const result = await createInventoryItem({
-        sku,
-        name,
-        type: "raw_material",
-        baseUnit,
-        purchaseUnit,
-        presentationQuantity,
-        presentationLabel: formatPresentationLabel({
-          purchaseUnit,
-          presentationQuantity,
-          baseUnit,
-        }),
-      });
-
-      updateLine(index, {
-        inventoryItemId: result.itemId,
-        description: name,
-      });
-    } catch (cause) {
-      setSubmitError(getCallableErrorMessage(cause));
-    } finally {
-      setCreatingItemIndex(null);
-    }
-  }
-
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -264,6 +221,7 @@ export default function PurchasesPage() {
       }
 
       const payload = {
+        supplierId: supplierId || undefined,
         supplierName,
         invoiceNumber,
         invoiceDate,
@@ -314,32 +272,12 @@ export default function PurchasesPage() {
   }
 
   return (
-    <div className="space-y-6 pb-4">
-      <div>
-        <p className="text-sm text-[var(--ghost-text-muted)]">
-          <Link href="/inventory" className="underline">
-            Inventario
-          </Link>
-        </p>
-        <h1 className="text-2xl font-semibold">Compras</h1>
-        <p className="mt-1 text-sm text-[var(--ghost-text-muted)]">
-          Registra todas tus facturas (históricas y nuevas). Se ordenan por fecha. Solo las de{" "}
-          <strong>hoy en adelante</strong> ({formatDate(operationalToday)}) entran a bodega al
-          confirmar; las anteriores quedan como archivo sin mover inventario.
-        </p>
-      </div>
-
-      <Card title="Regla de bodega">
-        <p className="text-sm text-[var(--ghost-text-muted)]">
-          Puedes cargar facturas pasadas para tener el historial de compras. Al confirmarlas,{" "}
-          <strong>no suman stock ni cambian costos</strong> en inventario. Desde{" "}
-          {formatDate(operationalToday)} cada compra confirmada sí actualiza bodega y costos para{" "}
-          <Link href="/costing" className="underline">
-            costeo
-          </Link>
-          .
-        </p>
-      </Card>
+    <div className="ghost-page-stack pb-4">
+      <PageHeader
+        title="Compras"
+        backHref="/inventory"
+        backLabel="Inventario"
+      />
 
       {warehouses.length === 0 ? (
         <Card title="Configura tu bodega">
@@ -364,6 +302,10 @@ export default function PurchasesPage() {
         </Card>
       ) : null}
 
+      {!loading && invoices.length === 0 ? (
+        <InitialDataImportPanel compact warehouseId={selectedWarehouseId || undefined} />
+      ) : null}
+
       <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
         <Card title={editingInvoiceId ? "Editar borrador" : "Nueva factura de compra"}>
           {editingInvoiceId ? (
@@ -373,12 +315,41 @@ export default function PurchasesPage() {
           ) : null}
           <form className="space-y-3" onSubmit={handleSubmit}>
             <label className="block space-y-1">
-              <span className="text-sm font-medium">Proveedor</span>
+              <span className="text-sm font-medium">
+                Proveedor{" "}
+                <Link href="/purchases/suppliers" className="text-xs underline">
+                  catálogo
+                </Link>
+              </span>
+              {suppliers.filter((supplier) => supplier.isActive).length > 0 ? (
+                <select
+                  value={supplierId}
+                  onChange={(event) => {
+                    const nextId = event.target.value;
+                    setSupplierId(nextId);
+                    const selected = suppliers.find((supplier) => supplier.id === nextId);
+                    if (selected) {
+                      setSupplierName(selected.name);
+                    }
+                  }}
+                  className="ghost-input mb-2"
+                >
+                  <option value="">Seleccionar del catálogo…</option>
+                  {suppliers
+                    .filter((supplier) => supplier.isActive)
+                    .map((supplier) => (
+                      <option key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </option>
+                    ))}
+                </select>
+              ) : null}
               <input
                 required
                 value={supplierName}
                 onChange={(event) => setSupplierName(event.target.value)}
                 className="ghost-input"
+                placeholder="Nombre del proveedor"
               />
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -429,16 +400,23 @@ export default function PurchasesPage() {
             </label>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm font-medium">Productos de la factura</span>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setLines((current) => [...current, emptyLine()])}
-                >
-                  + Agregar producto
-                </Button>
+                <Link href="/inventory/items" className="text-xs text-[var(--ghost-brand-500)] underline">
+                  Gestionar insumos (g/ml por unidad)
+                </Link>
               </div>
+              <p className="text-xs text-[var(--ghost-text-muted)]">
+                Vincula cada línea a un insumo ya creado en Inventario. La presentación (gramos o ml por
+                unidad) se define allí, no en la factura.
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setLines((current) => [...current, emptyLine()])}
+              >
+                + Agregar producto
+              </Button>
               {lines.map((line, index) => (
                 <div
                   key={index}
@@ -463,7 +441,7 @@ export default function PurchasesPage() {
                     onChange={(event) => linkInventoryItem(index, event.target.value)}
                     className="ghost-input"
                   >
-                    <option value="">Ítem inventario (opcional)</option>
+                    <option value="">Selecciona insumo de inventario</option>
                     {inventoryItems.map((item) => (
                       <option key={item.id} value={item.id}>
                         {item.name} ({item.sku})
@@ -475,23 +453,15 @@ export default function PurchasesPage() {
                     value={line.description}
                     onChange={(event) => updateLine(index, { description: event.target.value })}
                     className="ghost-input"
-                    placeholder="Descripción del insumo"
+                    placeholder="Descripción en factura"
                   />
-                  {!line.inventoryItemId ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      fullWidth
-                      disabled={creatingItemIndex === index}
-                      onClick={() => handleCreateInventoryItem(index)}
-                    >
-                      {creatingItemIndex === index
-                        ? "Creando insumo..."
-                        : "Crear insumo en inventario"}
-                    </Button>
-                  ) : (
+                  {line.inventoryItemId ? (
                     <p className="text-xs text-[var(--ghost-brand-500)]">
-                      Vinculado a inventario · al confirmar actualiza el costo
+                      Vinculado · al confirmar actualiza stock y costo según la presentación del insumo
+                    </p>
+                  ) : (
+                    <p className="text-xs text-[var(--ghost-danger)]">
+                      Sin insumo vinculado: la línea queda en compras pero no entra a bodega.
                     </p>
                   )}
                   <div className="grid grid-cols-2 gap-2">
@@ -617,7 +587,8 @@ export default function PurchasesPage() {
             <p className="text-sm text-[var(--ghost-danger)]">{error}</p>
           ) : invoices.length === 0 ? (
             <p className="text-sm text-[var(--ghost-text-muted)]">
-              Aún no hay facturas de compra.
+              Aún no hay facturas de compra. Usa la carga inicial arriba o registra una factura
+              manualmente.
             </p>
           ) : (
             <div className="space-y-3">
@@ -752,17 +723,4 @@ function readFileAsDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
     reader.readAsDataURL(file);
   });
-}
-
-function buildQuickSku(name: string): string {
-  const prefix = name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^A-Za-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .toUpperCase()
-    .slice(0, 12);
-
-  const suffix = Date.now().toString(36).toUpperCase().slice(-6);
-  return `${prefix || "INS"}-${suffix}`;
 }

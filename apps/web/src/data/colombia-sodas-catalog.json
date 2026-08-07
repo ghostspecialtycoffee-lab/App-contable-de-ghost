@@ -1,0 +1,26 @@
+{
+  "brandGroups": [
+    {
+      "brand": "Coca-Cola",
+      "items": [
+        { "name": "Coca-Cola", "description": "Lata 350 ml", "price": 5000 },
+        { "name": "Coca-Cola Zero", "description": "Lata 350 ml", "price": 5000 },
+        { "name": "Sprite", "description": "Lata 350 ml", "price": 5000 },
+        { "name": "Fanta Naranja", "description": "Lata 350 ml", "price": 5000 },
+        { "name": "Quatro", "description": "Lata 350 ml", "price": 5000 }
+      ]
+    },
+    {
+      "brand": "Postobón",
+      "items": [
+        { "name": "Colombiana", "description": "Lata 350 ml", "price": 5000 },
+        { "name": "Manzana Postobón", "description": "Lata 350 ml", "price": 5000 },
+        { "name": "Uva Postobón", "description": "Lata 350 ml", "price": 5000 },
+        { "name": "Bretaña", "description": "Lata 350 ml", "price": 5000 },
+        { "name": "Pony Malta", "description": "Lata 330 ml", "price": 5500 },
+        { "name": "Canada Dry", "description": "Lata 350 ml", "price": 5000 },
+        { "name": "Agua Cristal con gas", "description": "Botella 600 ml", "price": 4000 }
+      ]
+    }
+  ]
+}

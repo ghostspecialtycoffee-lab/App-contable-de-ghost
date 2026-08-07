@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonVariant = "primary" | "secondary" | "accent" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps
@@ -14,16 +14,19 @@ export interface ButtonProps
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
     "bg-[var(--ghost-brand-500)] text-[var(--ghost-brand-fg)] hover:bg-[var(--ghost-brand-600)]",
+  accent:
+    "bg-[var(--ghost-accent-500)] text-[var(--ghost-accent-fg)] hover:bg-[var(--ghost-accent-600)]",
   secondary:
-    "bg-[var(--ghost-surface-2)] text-[var(--ghost-text)] border border-[var(--ghost-border)] hover:bg-[var(--ghost-surface-3)]",
+    "bg-[var(--ghost-surface-1)] text-[var(--ghost-text)] border border-[var(--ghost-border)] hover:border-[var(--ghost-accent-500)] hover:bg-[var(--ghost-surface-2)]",
   ghost: "bg-transparent text-[var(--ghost-text)] hover:bg-[var(--ghost-surface-2)]",
-  danger: "bg-[var(--ghost-danger)] text-white hover:opacity-90",
+  danger:
+    "bg-[var(--ghost-danger)] text-white hover:opacity-90",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-8 px-3 text-sm",
-  md: "h-10 px-4 text-sm",
-  lg: "h-12 px-6 text-base",
+  sm: "min-h-10 px-3.5 text-sm",
+  md: "min-h-11 px-4 text-sm",
+  lg: "min-h-[3.25rem] px-6 text-base",
 };
 
 export function Button({
@@ -37,7 +40,7 @@ export function Button({
   return (
     <button
       className={[
-        "inline-flex items-center justify-center rounded-lg font-medium transition-colors",
+        "inline-flex items-center justify-center rounded-xl font-medium transition-all active:scale-[0.98]",
         "disabled:pointer-events-none disabled:opacity-50",
         variantClasses[variant],
         sizeClasses[size],

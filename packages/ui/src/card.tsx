@@ -15,7 +15,7 @@ export function Card({
   return (
     <section
       className={[
-        "rounded-xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] p-5 shadow-sm",
+        "rounded-2xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] p-4 sm:p-5",
         className,
       ]
         .filter(Boolean)
@@ -24,7 +24,7 @@ export function Card({
       {(title || description) && (
         <header className="mb-4">
           {title ? (
-            <h2 className="text-lg font-semibold text-[var(--ghost-text)]">
+            <h2 className="text-base font-semibold text-[var(--ghost-text)]">
               {title}
             </h2>
           ) : null}

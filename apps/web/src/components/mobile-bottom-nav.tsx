@@ -2,22 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
+import {
+  NavIconHome,
+  NavIconMore,
+  NavIconSales,
+  NavIconTables,
+} from "@/components/nav-icons";
+import { MobileMoreMenu } from "@/components/mobile-more-menu";
 import { useAuth } from "@/providers/auth-provider";
+import { MOBILE_PRIMARY_TABS, isNavActive } from "@/lib/navigation/app-navigation";
 
-const tabs = [
-  { href: "/dashboard", label: "Panel" },
-  { href: "/pos", label: "Mostrador" },
-  { href: "/pos/tables", label: "Mesas" },
-  { href: "/kds", label: "Comandas" },
-  { href: "/billing", label: "Registros" },
-];
+const hiddenPrefixes = ["/login", "/register", "/onboarding", "/mesa", "/menu"];
 
-const hiddenPrefixes = ["/login", "/register", "/onboarding"];
+const TAB_ICONS = {
+  "/dashboard": NavIconHome,
+  "/ventas": NavIconSales,
+  "/pos/tables": NavIconTables,
+} as const;
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { firebaseUser } = useAuth();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   if (!firebaseUser) {
     return null;
@@ -27,41 +35,53 @@ export function MobileBottomNav() {
     return null;
   }
 
-  return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--ghost-border)] bg-[var(--ghost-surface-1)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
-      aria-label="Navegación principal"
-    >
-      <ul className="mx-auto grid max-w-lg grid-cols-5">
-        {tabs.map((tab) => {
-          const active =
-            tab.href === "/dashboard"
-              ? pathname === "/dashboard"
-              : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+  const moreActive = MOBILE_PRIMARY_TABS.every(
+    (tab) => !isNavActive(pathname, tab.href, [...tab.match]),
+  );
 
-          return (
-            <li key={tab.href}>
-              <Link
-                href={tab.href}
-                className={[
-                  "flex min-h-[56px] flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-medium transition-colors",
-                  active
-                    ? "text-[var(--ghost-brand-500)]"
-                    : "text-[var(--ghost-text-muted)]",
-                ].join(" ")}
-              >
-                <span
+  return (
+    <>
+      <nav
+        className="ghost-bottom-nav md:hidden"
+        aria-label="Navegación principal"
+      >
+        <ul className="ghost-bottom-nav-list">
+          {MOBILE_PRIMARY_TABS.map((tab) => {
+            const active = isNavActive(pathname, tab.href, [...tab.match]);
+            const Icon = TAB_ICONS[tab.href as keyof typeof TAB_ICONS];
+            return (
+              <li key={tab.href}>
+                <Link
+                  href={tab.href}
                   className={[
-                    "h-1 w-8 rounded-full",
-                    active ? "bg-[var(--ghost-brand-500)]" : "bg-transparent",
+                    "ghost-bottom-tab",
+                    active ? "ghost-bottom-tab-active" : "",
                   ].join(" ")}
-                />
-                {tab.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+                  aria-current={active ? "page" : undefined}
+                >
+                  {Icon ? <Icon /> : null}
+                  <span>{tab.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+          <li>
+            <button
+              type="button"
+              className={[
+                "ghost-bottom-tab w-full",
+                moreActive ? "ghost-bottom-tab-active" : "",
+              ].join(" ")}
+              onClick={() => setMoreOpen(true)}
+              aria-expanded={moreOpen}
+            >
+              <NavIconMore />
+              <span>Más</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+      <MobileMoreMenu open={moreOpen} onClose={() => setMoreOpen(false)} />
+    </>
   );
 }

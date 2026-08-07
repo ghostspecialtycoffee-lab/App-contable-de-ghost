@@ -92,27 +92,62 @@ export function validateFiscalProfile(
     return err("El documento del representante legal es obligatorio.");
   }
 
-  return ok({
-    ...profile,
+  return ok(normalizeFiscalProfile(profile));
+}
+
+export function normalizeFiscalProfile(
+  profile: OrganizationFiscalProfile,
+): OrganizationFiscalProfile {
+  return {
     legalName: profile.legalName.trim(),
-    tradeName: profile.tradeName?.trim() || undefined,
+    tradeName: profile.tradeName?.trim() ?? "",
     nit: profile.nit.trim(),
-    verificationDigit: profile.verificationDigit?.trim() || undefined,
-    email: profile.email?.trim() || undefined,
-    phone: profile.phone?.trim() || undefined,
-    invoiceFooter: profile.invoiceFooter?.trim() || undefined,
+    verificationDigit: profile.verificationDigit?.trim() ?? "",
+    email: profile.email?.trim() ?? "",
+    phone: profile.phone?.trim() ?? "",
+    invoiceFooter: profile.invoiceFooter?.trim() ?? "",
     address: {
       line1: profile.address.line1.trim(),
-      line2: profile.address.line2?.trim() || undefined,
+      line2: profile.address.line2?.trim() ?? "",
       city: profile.address.city.trim(),
-      state: profile.address.state?.trim() || undefined,
+      state: profile.address.state?.trim() ?? "",
       country: profile.address.country.trim() || "CO",
-      postalCode: profile.address.postalCode?.trim() || undefined,
+      postalCode: profile.address.postalCode?.trim() ?? "",
     },
     legalRepresentative: {
       fullName: profile.legalRepresentative.fullName.trim(),
       documentType: profile.legalRepresentative.documentType.trim() || "CC",
       documentNumber: profile.legalRepresentative.documentNumber.trim(),
     },
-  });
+  };
+}
+
+/** Objeto explícito para Firestore (sin undefined ni spread del input). */
+export function serializeFiscalProfileForFirestore(
+  profile: OrganizationFiscalProfile,
+): OrganizationFiscalProfile {
+  const normalized = normalizeFiscalProfile(profile);
+
+  return {
+    legalName: normalized.legalName,
+    tradeName: normalized.tradeName,
+    nit: normalized.nit,
+    verificationDigit: normalized.verificationDigit,
+    email: normalized.email,
+    phone: normalized.phone,
+    invoiceFooter: normalized.invoiceFooter,
+    address: {
+      line1: normalized.address.line1,
+      line2: normalized.address.line2,
+      city: normalized.address.city,
+      state: normalized.address.state,
+      country: normalized.address.country,
+      postalCode: normalized.address.postalCode,
+    },
+    legalRepresentative: {
+      fullName: normalized.legalRepresentative.fullName,
+      documentType: normalized.legalRepresentative.documentType,
+      documentNumber: normalized.legalRepresentative.documentNumber,
+    },
+  };
 }

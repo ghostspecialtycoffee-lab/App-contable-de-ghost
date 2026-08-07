@@ -58,6 +58,9 @@ export interface TableSession {
   saleId?: EntityId;
   openedAt: ISODateString;
   closedAt?: ISODateString;
+  cancelReason?: string;
+  /** ISO timestamp when the guest requested waiter attention. */
+  waiterRequestedAt?: ISODateString;
 }
 
 export interface TableSessionLineInput {

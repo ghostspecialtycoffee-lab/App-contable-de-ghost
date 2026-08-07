@@ -2,28 +2,35 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import {
-  collection,
-  doc,
-  onSnapshot,
-  query,
-} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
+import { GuestMenuCatalog } from "@/components/guest-menu-catalog";
+import { GuestTableProcessLine, type GuestTableStepId } from "@/components/guest-table-process";
+import { useGuestMenuProducts } from "@/hooks/use-guest-menu-products";
 import { getFirestoreErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
 import { getFirestoreDb } from "@/lib/firebase/client";
-import { addTableSessionLines, openTableSession, requestTableBillGuest } from "@/lib/tables/table-sessions";
+import { subscribeDocumentWithPoll } from "@/lib/realtime/subscribe-document";
+import {
+  addTableSessionLines,
+  findOpenTableSessionClient,
+  openTableSession,
+  requestTableBillGuest,
+  requestWaiterGuest,
+} from "@/lib/tables/table-sessions";
 import { findDiningTableByTokenClient } from "@/lib/tables/tables";
-import { GuestTableProcessLine, type GuestTableStepId } from "@/components/guest-table-process";
 import {
   activeSessionLines,
   calculateSaleTotals,
   inferMenuProductTaxCategory,
   sessionLinesToSaleInputs,
-  type MenuProduct,
 } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import { Button, Card } from "@ghost/ui";
+
+function guestSessionStorageKey(organizationId: string, qrToken: string): string {
+  return `ghost-mesa-session:${organizationId}:${qrToken}`;
+}
 
 function GuestTableContent() {
   const searchParams = useSearchParams();
@@ -38,8 +45,11 @@ function GuestTableContent() {
   } | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionStatus, setSessionStatus] = useState<string>("open");
+  const [waiterRequestedAt, setWaiterRequestedAt] = useState<string | null>(null);
   const [lines, setLines] = useState<Array<Record<string, unknown>>>([]);
-  const [products, setProducts] = useState<MenuProduct[]>([]);
+  const { products, loading: productsLoading, error: productsError } = useGuestMenuProducts(
+    organizationId || null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cartQty, setCartQty] = useState<Record<string, number>>({});
@@ -71,6 +81,48 @@ function GuestTableContent() {
           branchId: found.branchId,
         });
 
+        const storageKey = guestSessionStorageKey(organizationId, qrToken);
+        const storedSessionId =
+          typeof window !== "undefined" ? window.localStorage.getItem(storageKey) : null;
+
+        if (storedSessionId) {
+          const sessionRef = doc(
+            getFirestoreDb(),
+            firestorePaths.organizationTableSession(organizationId, storedSessionId),
+          );
+          const sessionSnap = await getDoc(sessionRef);
+
+          if (sessionSnap.exists()) {
+            const sessionData = sessionSnap.data();
+            if (
+              sessionData.guestToken === qrToken &&
+              (sessionData.status === "open" || sessionData.status === "requested_bill")
+            ) {
+              if (!cancelled) {
+                setSessionId(storedSessionId);
+              }
+              return;
+            }
+          }
+
+          window.localStorage.removeItem(storageKey);
+        }
+
+        try {
+          const existing = await findOpenTableSessionClient({
+            organizationId,
+            tableId: found.tableId,
+          });
+
+          if (existing && !cancelled) {
+            window.localStorage.setItem(storageKey, existing.sessionId);
+            setSessionId(existing.sessionId);
+            return;
+          }
+        } catch {
+          // El invitado puede no tener permiso de consulta; openTableSession deduplica.
+        }
+
         const opened = await openTableSession({
           organizationId,
           branchId: found.branchId,
@@ -81,6 +133,7 @@ function GuestTableContent() {
         });
 
         if (!cancelled) {
+          window.localStorage.setItem(storageKey, opened.sessionId);
           setSessionId(opened.sessionId);
         }
       } catch (cause) {
@@ -110,55 +163,19 @@ function GuestTableContent() {
       firestorePaths.organizationTableSession(organizationId, sessionId),
     );
 
-    return onSnapshot(sessionRef, (snapshot) => {
-      if (!snapshot.exists()) {
-        return;
-      }
-      const data = snapshot.data();
-      setSessionStatus(data.status);
-      setLines((data.lines as Array<Record<string, unknown>>) ?? []);
+    return subscribeDocumentWithPoll({
+      reference: sessionRef,
+      mapSnapshot: (snapshot) => (snapshot.exists() ? snapshot.data() : null),
+      onData: (data) => {
+        if (!data) {
+          return;
+        }
+        setSessionStatus(String(data.status ?? "open"));
+        setWaiterRequestedAt((data.waiterRequestedAt as string | undefined) ?? null);
+        setLines((data.lines as Array<Record<string, unknown>>) ?? []);
+      },
     });
   }, [organizationId, sessionId]);
-
-  useEffect(() => {
-    if (!organizationId) {
-      return;
-    }
-
-    const productsQuery = query(
-      collection(getFirestoreDb(), firestorePaths.organizationMenuProducts(organizationId)),
-    );
-
-    return onSnapshot(productsQuery, (snapshot) => {
-      setProducts(
-        snapshot.docs
-          .map((document) => {
-            const data = document.data();
-            return {
-              id: document.id,
-              organizationId: data.organizationId,
-              name: data.name,
-              price: data.price ?? 0,
-              category: data.category,
-              station: data.station,
-              status: data.status,
-              sortOrder: data.sortOrder ?? 0,
-              description: data.description ?? "",
-              saleTaxCategory: data.saleTaxCategory,
-              recipeCost: data.recipeCost ?? 0,
-              imageDataUrl: data.imageDataUrl,
-              imageMimeType: data.imageMimeType,
-              createdAt: "",
-              updatedAt: "",
-              createdBy: "",
-              updatedBy: "",
-            } satisfies MenuProduct;
-          })
-          .filter((product) => product.status === "active")
-          .sort((left, right) => left.sortOrder - right.sortOrder),
-      );
-    });
-  }, [organizationId]);
 
   const totals = useMemo(() => {
     if (lines.length === 0) {
@@ -168,6 +185,13 @@ function GuestTableContent() {
       sessionLinesToSaleInputs(activeSessionLines(lines as never)),
     );
   }, [lines]);
+
+  function handleQtyChange(productId: string, quantity: number) {
+    setCartQty((current) => ({
+      ...current,
+      [productId]: quantity,
+    }));
+  }
 
   async function handleSubmitOrder() {
     if (!table || !sessionId) {
@@ -205,7 +229,7 @@ function GuestTableContent() {
         lines: orderLines,
       });
       setCartQty({});
-      setMessage("Ítems agregados a tu cuenta. El staff enviará la comanda a cocina.");
+      setMessage("Ítems agregados a tu cuenta. El equipo enviará la comanda a cocina.");
     } catch (cause) {
       setError(getFirestoreErrorMessage(cause));
     } finally {
@@ -235,7 +259,30 @@ function GuestTableContent() {
     }
   }
 
-  if (loading) {
+  async function handleRequestWaiter() {
+    if (!sessionId) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      await requestWaiterGuest({
+        organizationId,
+        sessionId,
+        guestToken: qrToken,
+      });
+      setMessage("Mesero avisado. Te atenderemos en breve.");
+    } catch (cause) {
+      setError(getFirestoreErrorMessage(cause));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (loading || productsLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <p className="text-sm text-[var(--ghost-text-muted)]">Cargando menú...</p>
@@ -263,6 +310,7 @@ function GuestTableContent() {
   }
 
   const canOrder = sessionStatus === "open";
+  const canRequestWaiter = sessionStatus === "open" || sessionStatus === "requested_bill";
   const guestStep: GuestTableStepId =
     sessionStatus === "requested_bill"
       ? "cuenta"
@@ -271,7 +319,7 @@ function GuestTableContent() {
         : "menu";
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-4 pb-24">
+    <div className="mx-auto max-w-3xl space-y-4 p-4 pb-32">
       <div className="text-center">
         <p className="text-sm text-[var(--ghost-text-muted)]">Menú de mesa</p>
         <h1 className="text-2xl font-semibold">
@@ -281,55 +329,31 @@ function GuestTableContent() {
         {sessionStatus === "requested_bill" ? (
           <p className="mt-1 text-sm text-[var(--ghost-brand-500)]">Cuenta solicitada</p>
         ) : null}
+        {waiterRequestedAt ? (
+          <p className="mt-1 text-sm text-[var(--ghost-brand-500)]">
+            Mesero avisado · espera un momento
+          </p>
+        ) : null}
         <div className="mt-3 flex justify-center">
           <GuestTableProcessLine currentStep={guestStep} />
         </div>
       </div>
 
-      <Card title="Menú">
-        <div className="grid gap-3 sm:grid-cols-2">
-          {products.map((product) => (
-            <div key={product.id} className="rounded-xl border border-[var(--ghost-border)] p-3">
-              {product.imageDataUrl ? (
-                <img
-                  src={product.imageDataUrl}
-                  alt={product.name}
-                  className="mb-2 h-28 w-full rounded-lg object-cover"
-                />
-              ) : null}
-              <p className="font-medium">{product.name}</p>
-              <p className="text-sm text-[var(--ghost-brand-500)]">{formatMoney(product.price)}</p>
-              <div className="mt-2 flex items-center gap-2">
-                <button
-                  type="button"
-                  className="ghost-input h-8 w-8 px-0"
-                  onClick={() =>
-                    setCartQty((current) => ({
-                      ...current,
-                      [product.id]: Math.max(0, (current[product.id] ?? 0) - 1),
-                    }))
-                  }
-                >
-                  −
-                </button>
-                <span className="w-6 text-center text-sm">{cartQty[product.id] ?? 0}</span>
-                <button
-                  type="button"
-                  className="ghost-input h-8 w-8 px-0"
-                  onClick={() =>
-                    setCartQty((current) => ({
-                      ...current,
-                      [product.id]: (current[product.id] ?? 0) + 1,
-                    }))
-                  }
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
+      {productsError ? (
+        <p className="text-sm text-[var(--ghost-danger)]">{productsError}</p>
+      ) : null}
+      {products.length === 0 && !productsLoading ? (
+        <p className="text-sm text-[var(--ghost-text-muted)]">
+          El menú no está disponible en este momento. Pide ayuda a un mesero.
+        </p>
+      ) : null}
+
+      <GuestMenuCatalog
+        products={products}
+        orderMode
+        cartQty={cartQty}
+        onQtyChange={handleQtyChange}
+      />
 
       {lines.length > 0 ? (
         <Card title="Tu cuenta">
@@ -349,20 +373,30 @@ function GuestTableContent() {
         </Card>
       ) : null}
 
-      <div className="space-y-2">
-        <Button fullWidth size="lg" disabled={submitting || !canOrder} onClick={handleSubmitOrder}>
-          {submitting ? "Enviando..." : canOrder ? "Agregar a la cuenta" : "Cuenta solicitada"}
-        </Button>
-        <Button
-          fullWidth
-          variant="secondary"
-          disabled={submitting || sessionStatus !== "open"}
-          onClick={handleRequestBill}
-        >
-          Pedir la cuenta
-        </Button>
-        {message ? <p className="text-sm text-[var(--ghost-brand-500)]">{message}</p> : null}
-        {error ? <p className="text-sm text-[var(--ghost-danger)]">{error}</p> : null}
+      <div className="fixed inset-x-0 bottom-0 border-t border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto max-w-3xl space-y-2">
+          <Button
+            fullWidth
+            variant="secondary"
+            disabled={submitting || !canRequestWaiter}
+            onClick={handleRequestWaiter}
+          >
+            {waiterRequestedAt ? "Volver a llamar al mesero" : "Llamar al mesero"}
+          </Button>
+          <Button fullWidth size="lg" disabled={submitting || !canOrder} onClick={handleSubmitOrder}>
+            {submitting ? "Enviando..." : canOrder ? "Agregar a la cuenta" : "Cuenta solicitada"}
+          </Button>
+          <Button
+            fullWidth
+            variant="secondary"
+            disabled={submitting || sessionStatus !== "open"}
+            onClick={handleRequestBill}
+          >
+            Pedir la cuenta
+          </Button>
+          {message ? <p className="text-sm text-[var(--ghost-brand-500)]">{message}</p> : null}
+          {error ? <p className="text-sm text-[var(--ghost-danger)]">{error}</p> : null}
+        </div>
       </div>
     </div>
   );
