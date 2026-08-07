@@ -1,4 +1,5 @@
 import {
+  buildInventoryMovementRegisteredEvent,
   calculateWeightedAverageCost,
   validateMovementQuantity,
   validateSku,
@@ -20,6 +21,7 @@ import {
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
+import { publishDomainEventSafe } from "@/lib/events/domain-events";
 
 function requireUserId(): string {
   const uid = getFirebaseAuth().currentUser?.uid;
@@ -354,6 +356,21 @@ export async function registerInventoryMovementClient(input: {
 
     return nextBalance;
   });
+
+  await publishDomainEventSafe(
+    buildInventoryMovementRegisteredEvent({
+      organizationId,
+      branchId: input.branchId,
+      actorUserId: userId,
+      movementId: movementRef.id,
+      itemId: input.itemId,
+      warehouseId: input.warehouseId,
+      movementType: input.type,
+      quantity: signedQuantity,
+      balanceAfter,
+      reference: input.reference,
+    }),
+  );
 
   return { movementId: movementRef.id, balanceAfter };
 }

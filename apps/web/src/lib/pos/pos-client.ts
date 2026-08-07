@@ -1,5 +1,6 @@
 import {
   buildSaleNumber,
+  buildSaleRecordedEvent,
   calculateSaleTotals,
   groupKitchenLines,
   inferMenuProductTaxCategory,
@@ -28,6 +29,7 @@ import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 import { normalizeCatalogName } from "@/lib/costing/ghost-menu-catalog";
 import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
 import { loadSaleRecipeSnapshots } from "@/lib/recipes/sale-recipe-snapshots";
+import { publishDomainEventSafe } from "@/lib/events/domain-events";
 import { consumeInventoryForSale } from "@/lib/inventory/sale-inventory-consumption";
 import { COLOMBIA_SODAS_CATALOG } from "./colombia-sodas-catalog";
 
@@ -361,6 +363,23 @@ export async function createSaleClient(input: {
   }).catch(() => {
     // Venta registrada; consumo de bodega opcional si falta stock o receta.
   });
+
+  await publishDomainEventSafe(
+    buildSaleRecordedEvent({
+      organizationId,
+      branchId,
+      actorUserId: userId,
+      saleId: saleRef.id,
+      saleNumber,
+      total: totals.total,
+      subtotal: totals.subtotal,
+      taxAmount: totals.taxAmount,
+      paymentMethod: input.paymentMethod,
+      lineCount: totals.lines.length,
+      soldOn,
+      occurredAt: soldAt,
+    }),
+  );
 
   return {
     saleId: saleRef.id,

@@ -43,16 +43,42 @@ export function resolvePresentationQuantity(
   const stored = normalizePresentationQuantity(presentationQuantity);
 
   if (purchaseUnit === "kg" && baseUnit === "g") {
-    return stored === 1 ? 1000 : stored;
+    if (stored === 1) {
+      return 1000;
+    }
+    // Usuario escribió 2.5 pensando en kg, no en 2.5 gramos
+    if (stored > 0 && stored < 100) {
+      return Math.round(stored * 1000);
+    }
+    return stored;
   }
   if (purchaseUnit === "l" && baseUnit === "ml") {
-    return stored === 1 ? 1000 : stored;
+    if (stored === 1) {
+      return 1000;
+    }
+    if (stored > 0 && stored < 100) {
+      return Math.round(stored * 1000);
+    }
+    return stored;
   }
   if (purchaseUnit === "g" && baseUnit === "kg") {
     return stored === 1 ? 0.001 : stored;
   }
   if (purchaseUnit === "ml" && baseUnit === "l") {
     return stored === 1 ? 0.001 : stored;
+  }
+
+  if (
+    (purchaseUnit === "bag" || purchaseUnit === "box" || purchaseUnit === "unit") &&
+    (baseUnit === "g" || baseUnit === "ml")
+  ) {
+    if (stored >= 100) {
+      return stored;
+    }
+    // Bolsa "2.5" sin unidad → interpretar como 2.5 kg / 2.5 L (no confundir con 1 unidad)
+    if (stored > 1 && stored < 100) {
+      return Math.round(stored * 1000);
+    }
   }
 
   return stored;
@@ -134,25 +160,86 @@ export function resolveUnitCostPerBase(profile: InventoryCostProfile): number {
     presentationQuantity,
   );
 
-  if (quantityInBase <= 1) {
-    return averageCost;
-  }
-
   const isWeightOrVolume = baseUnit === "g" || baseUnit === "ml";
   const purchaseIsPackage =
     effectivePurchaseUnit === "bag" ||
     effectivePurchaseUnit === "box" ||
     effectivePurchaseUnit !== baseUnit;
 
+  let divisor = quantityInBase;
+
+  if (divisor <= 1 && isWeightOrVolume && averageCost >= 10_000) {
+    const inferred = inferDefaultPackageQuantity(profile);
+    if (inferred > 1) {
+      divisor = inferred;
+    }
+  }
+
+  if (divisor <= 1) {
+    return averageCost;
+  }
+
   const looksLikePurchasePrice =
-    averageCost >= quantityInBase &&
-    (isWeightOrVolume || averageCost >= 1000);
+    averageCost >= divisor && (isWeightOrVolume || averageCost >= 1000);
 
   if (looksLikePurchasePrice && (isWeightOrVolume || purchaseIsPackage)) {
-    return Math.round(averageCost / quantityInBase);
+    return Math.round(averageCost / divisor);
   }
 
   return averageCost;
+}
+
+/** Gramos/ml típicos cuando falta configurar presentación (ej. bolsa café 2.5 kg). */
+function inferDefaultPackageQuantity(profile: InventoryCostProfile): number {
+  const { averageCost, baseUnit } = profile;
+
+  if (baseUnit === "g" && averageCost >= 100_000 && averageCost <= 200_000) {
+    return 2500;
+  }
+
+  if (baseUnit === "ml" && averageCost >= 3000 && averageCost <= 15_000) {
+    return 1000;
+  }
+
+  return 0;
+}
+
+export function getCostBasisNote(profile: InventoryCostProfile): string | null {
+  const unitCost = resolveUnitCostPerBase(profile);
+  const raw = profile.averageCost;
+  if (raw <= 0 || unitCost <= 0) {
+    return null;
+  }
+
+  const qtyInBase = resolvePresentationQuantity(
+    profile.purchaseUnit ?? profile.baseUnit,
+    profile.baseUnit,
+    profile.presentationQuantity,
+  );
+
+  const inferred =
+    qtyInBase <= 1 && (profile.baseUnit === "g" || profile.baseUnit === "ml")
+      ? inferDefaultPackageQuantity(profile)
+      : 0;
+  const divisor = qtyInBase > 1 ? qtyInBase : inferred;
+
+  if (unitCost !== raw && divisor > 1) {
+    if (inferred > 1) {
+      return `Estimado: compra $${raw.toLocaleString("es-CO")} ÷ ${inferred.toLocaleString("es-CO")} ${profile.baseUnit} (configura presentación en Inventario)`;
+    }
+    return `Compra $${raw.toLocaleString("es-CO")} ÷ ${divisor.toLocaleString("es-CO")} ${profile.baseUnit}`;
+  }
+
+  if (
+    qtyInBase <= 1 &&
+    raw >= 10_000 &&
+    (profile.baseUnit === "g" || profile.baseUnit === "ml") &&
+    unitCost === raw
+  ) {
+    return "Configura presentación en Inventario (ej. bolsa = 2500 g)";
+  }
+
+  return null;
 }
 
 export function formatPresentationLabel(input: {
