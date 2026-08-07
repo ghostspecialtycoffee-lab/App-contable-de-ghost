@@ -18,6 +18,7 @@ import {
   PRODUCT_CATEGORIES,
   PRODUCT_CATEGORY_LABELS,
   formatPresentationLabel,
+  getCostBasisNote,
   resolveUnitCostPerBase,
   type BaseUnit,
   type InventoryItemType,
@@ -323,18 +324,20 @@ export default function InventoryItemsPage() {
                               <td className="px-2 py-2">
                                 {(() => {
                                   const rawCost = item.averageCost || item.lastCost;
-                                  const unitCost = resolveUnitCostPerBase({
+                                  const profile = {
                                     baseUnit: item.baseUnit,
                                     averageCost: rawCost,
                                     purchaseUnit: item.purchaseUnit,
                                     presentationQuantity: item.presentationQuantity,
-                                  });
+                                  };
+                                  const unitCost = resolveUnitCostPerBase(profile);
                                   const presentation = formatPresentationLabel({
                                     presentationLabel: item.presentationLabel,
                                     purchaseUnit: item.purchaseUnit,
                                     presentationQuantity: item.presentationQuantity,
                                     baseUnit: item.baseUnit,
                                   });
+                                  const costNote = getCostBasisNote(profile);
                                   return (
                                     <div className="space-y-0.5">
                                       <span>
@@ -343,6 +346,11 @@ export default function InventoryItemsPage() {
                                       {rawCost > 0 && unitCost !== rawCost && presentation ? (
                                         <p className="text-[10px] text-[var(--ghost-text-muted)]">
                                           Compra: {formatMoney(rawCost)} ({presentation})
+                                        </p>
+                                      ) : null}
+                                      {costNote ? (
+                                        <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                                          {costNote}
                                         </p>
                                       ) : null}
                                     </div>
