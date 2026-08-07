@@ -166,6 +166,21 @@ Kardex append-only.
 }
 ```
 
+### `analyticsDaily/{YYYY-MM-DD}`
+
+Agregados diarios del DWH operativo (ventas, compras, movimientos).
+
+```typescript
+{
+  organizationId: string
+  date: string              // YYYY-MM-DD
+  salesCount, salesTotal: number
+  purchasesCount, purchasesTotal: number
+  inventoryMovements: number
+  updatedAt: Timestamp
+}
+```
+
 ### `sales/{saleId}` — trazabilidad
 
 Campo opcional `lotConsumptions[]` con los lotes consumidos al cobrar (enlaza compra → venta).

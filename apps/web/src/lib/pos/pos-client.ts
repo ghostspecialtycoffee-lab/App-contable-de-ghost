@@ -27,6 +27,7 @@ import {
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 import { normalizeCatalogName } from "@/lib/costing/ghost-menu-catalog";
 import { planSaleInventoryConsumption, applySaleInventoryConsumption } from "@/lib/inventory/sale-inventory-consumption";
+import { recordSaleAnalyticsSafe } from "@/lib/analytics/analytics-client";
 import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
 import { COLOMBIA_SODAS_CATALOG } from "./colombia-sodas-catalog";
 
@@ -360,6 +361,12 @@ export async function createSaleClient(input: {
     plannedExits: inventoryPlan.plannedExits,
   }).catch(() => {
     // Venta registrada; consumo de bodega opcional si falta stock o receta.
+  });
+
+  await recordSaleAnalyticsSafe({
+    organizationId,
+    soldOn,
+    total: totals.total,
   });
 
   return {

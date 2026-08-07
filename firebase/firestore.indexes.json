@@ -116,6 +116,13 @@
         { "fieldPath": "warehouseId", "order": "ASCENDING" },
         { "fieldPath": "itemId", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "analyticsDaily",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "date", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

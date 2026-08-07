@@ -27,6 +27,7 @@ import {
   applySaleInventoryConsumption,
   planSaleInventoryConsumption,
 } from "@/lib/inventory/sale-inventory-consumption";
+import { recordSaleAnalyticsSafe } from "@/lib/analytics/analytics-client";
 import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
 import { refreshTableQrLookupClient } from "./table-qr-lookup-client";
 
@@ -434,6 +435,12 @@ export async function checkoutTableSessionClient(input: {
     plannedExits: inventoryPlan.plannedExits,
   }).catch(() => {
     // Venta registrada; consumo de bodega opcional si falta stock o receta.
+  });
+
+  await recordSaleAnalyticsSafe({
+    organizationId,
+    soldOn,
+    total: totals.total,
   });
 
   return {

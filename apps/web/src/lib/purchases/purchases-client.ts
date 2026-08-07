@@ -18,6 +18,7 @@ import {
 } from "firebase/firestore";
 
 import { registerInventoryMovementClient } from "@/lib/inventory/inventory-client";
+import { recordPurchaseAnalyticsSafe } from "@/lib/analytics/analytics-client";
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 
 function requireUserId(): string {
@@ -218,6 +219,11 @@ export async function confirmPurchaseInvoiceClient(input: {
   });
 
   if (!inventoryApplied) {
+    await recordPurchaseAnalyticsSafe({
+      organizationId,
+      invoiceDate,
+      total: Number(invoice.total ?? 0),
+    });
     return { movements: 0, inventoryApplied: false };
   }
 
@@ -270,6 +276,12 @@ export async function confirmPurchaseInvoiceClient(input: {
     movements += 1;
     lineIndex += 1;
   }
+
+  await recordPurchaseAnalyticsSafe({
+    organizationId,
+    invoiceDate,
+    total: Number(invoice.total ?? 0),
+  });
 
   return { movements, inventoryApplied: true };
 }

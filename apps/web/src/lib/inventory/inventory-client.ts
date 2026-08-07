@@ -22,6 +22,7 @@ import {
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
+import { recordInventoryMovementAnalyticsSafe } from "@/lib/analytics/analytics-client";
 
 function requireUserId(): string {
   const uid = getFirebaseAuth().currentUser?.uid;
@@ -411,6 +412,11 @@ export async function registerInventoryMovementClient(input: {
     );
 
     return nextBalance;
+  });
+
+  await recordInventoryMovementAnalyticsSafe({
+    organizationId,
+    occurredAt: new Date().toISOString(),
   });
 
   return { movementId: movementRef.id, balanceAfter };
