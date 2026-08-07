@@ -1,4 +1,4 @@
-import type { CoTaxCategory } from "../fiscal/colombia-tax.js";
+import type { InventoryMovementType } from "../inventory/movement.js";
 import type { BaseUnit } from "../inventory/units.js";
 import type { InventoryCostProfile } from "../inventory/unit-conversion.js";
 import type { MenuCategory } from "../pos/menu-product.js";
@@ -22,6 +22,10 @@ import {
   buildPurchasesReport,
   filterPurchasesByPeriod,
 } from "../reports/purchases-report.js";
+import {
+  buildPurchaseSuggestions,
+  compareSupplierPricesForItem,
+} from "../purchases/services/purchase-intelligence.js";
 import type { GhostConversationContext } from "./ghost-conversation.js";
 
 function formatMoney(value: number): string {
@@ -145,7 +149,7 @@ export function buildInventoryLowStockReply(context: GhostConversationContext): 
     return (
       "**Inventario**\n" +
       "No hay insumos bajo el mínimo configurado.\n\n" +
-      "Configura `minStock` en cada insumo o pregunta «revisar compras» para ver facturas recientes."
+      "Configura `minStock` en cada insumo o pregunta «sugerencias de compra» para pronóstico de quiebre."
     );
   }
 
@@ -160,7 +164,100 @@ export function buildInventoryLowStockReply(context: GhostConversationContext): 
 
   return (
     `**Insumos bajo mínimo** (${lowStock.length})\n${lines}\n\n` +
-    "Revisa **Inventario → Stock** o registra una compra: «registra compra de [insumo] del proveedor [nombre]»."
+    "Revisa **Inventario → Stock** o pregunta «sugerencias de compra» para ver cuándo se agotan."
+  );
+}
+
+export function buildPurchaseSuggestionsReply(context: GhostConversationContext): string {
+  const suggestions = buildPurchaseSuggestions({
+    stock: context.inventoryStockSnapshot.map((entry) => ({
+      itemId: entry.itemId,
+      name: entry.name,
+      baseUnit: entry.baseUnit as BaseUnit,
+      quantity: entry.quantity,
+      minStock: entry.minStock,
+    })),
+    movements: (context.inventoryMovementsSnapshot ?? []).map((movement) => ({
+      itemId: movement.itemId,
+      type: movement.type as InventoryMovementType,
+      quantity: movement.quantity,
+      occurredAt: movement.occurredAt,
+    })),
+    priceHistory: (context.purchasePriceHistorySnapshot ?? []).map((entry, index) => ({
+      id: `history-${index}`,
+      organizationId: "",
+      inventoryItemId: entry.inventoryItemId,
+      supplierName: entry.supplierName,
+      unitPriceNet: entry.unitPriceNet,
+      unit: "unit" as BaseUnit,
+      quantity: 1,
+      invoiceId: "",
+      invoiceNumber: "",
+      purchasedAt: entry.purchasedAt,
+    })),
+  });
+
+  if (suggestions.length === 0) {
+    return (
+      "**Compras inteligentes**\n" +
+      "No hay alertas de reposición por ahora.\n\n" +
+      "Configura `minStock` en inventario y registra ventas para que calcule consumo diario."
+    );
+  }
+
+  const lines = suggestions.slice(0, 8).map((entry) => {
+    const daysLabel =
+      entry.daysUntilStockout === null
+        ? "sin consumo reciente"
+        : entry.daysUntilStockout === 0
+          ? "ya bajo mínimo"
+          : `~${entry.daysUntilStockout} día(s)`;
+    const supplier = entry.preferredSupplierName
+      ? ` · proveedor: **${entry.preferredSupplierName}**`
+      : "";
+    const qty = formatQuantity(entry.suggestedQuantity, entry.baseUnit);
+
+    return (
+      `· **${entry.name}** — queda ${formatQuantity(entry.currentQuantity, entry.baseUnit)} ` +
+      `(${daysLabel}) → comprar **${qty}**${supplier}`
+    );
+  });
+
+  const milkSuggestion = suggestions.find((entry) => /leche/i.test(entry.name));
+  const priceTip =
+    milkSuggestion &&
+    compareSupplierPricesForItem(
+      (context.purchasePriceHistorySnapshot ?? []).map((entry, index) => ({
+        id: `history-${index}`,
+        organizationId: "",
+        inventoryItemId: entry.inventoryItemId,
+        supplierName: entry.supplierName,
+        unitPriceNet: entry.unitPriceNet,
+        unit: "ml" as BaseUnit,
+        quantity: 1,
+        invoiceId: "",
+        invoiceNumber: "",
+        purchasedAt: entry.purchasedAt,
+      })),
+      milkSuggestion.itemId,
+    );
+
+  const supplierTip =
+    priceTip && priceTip.length > 1
+      ? `\n\n**Precios leche:** ${priceTip
+          .slice(0, 3)
+          .map(
+            (entry) =>
+              `${entry.supplierName} ${formatMoney(entry.lastUnitPrice)}` +
+              (entry.priceChangePct ? ` (${entry.priceChangePct > 0 ? "+" : ""}${entry.priceChangePct}%)` : ""),
+          )
+          .join(" · ")}`
+      : "";
+
+  return (
+    `**Sugerencias de compra** (${suggestions.length})\n${lines.join("\n")}` +
+    supplierTip +
+    "\n\nRegistra la compra: «registra compra de [insumo] del proveedor [nombre]»."
   );
 }
 

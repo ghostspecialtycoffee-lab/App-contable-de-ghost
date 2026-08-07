@@ -74,6 +74,20 @@ export const GHOST_BRAIN_SKILLS: GhostBrainSkill[] = [
     examples: ["informe de compras del mes", "¿cuánto compramos este mes?"],
   },
   {
+    id: "query-purchase-suggestions",
+    domain: "compras",
+    kind: "query",
+    title: "Sugerencias de compra",
+    description: "Qué comprar, cuándo se agota el stock y proveedor sugerido.",
+    keywords:
+      /(que debo comprar|que comprar|sugerencia de compra|compras inteligentes|cuando se acaba|me quedo sin|sin leche|sin cafe|reposicion|reponer stock|pedido sugerido)/,
+    examples: [
+      "¿qué debo comprar?",
+      "en dos días me quedo sin leche",
+      "sugerencias de compra",
+    ],
+  },
+  {
     id: "query-inventory-low-stock",
     domain: "logistica",
     kind: "query",
@@ -393,6 +407,7 @@ export function classifyBrainQueryIntent(message: string): string | null {
     "query-sales-report",
     "query-purchases-review",
     "query-purchases-report",
+    "query-purchase-suggestions",
     "query-cash-summary",
     "query-inventory-low-stock",
     "query-fixed-expenses",
