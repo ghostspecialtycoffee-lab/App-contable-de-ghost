@@ -1534,6 +1534,7 @@
   "importRules": {
     "bootstrap": "Usar --bootstrap en la carga inicial: aplica bodega en facturas históricas, organiza insumos por clase (alimenticio/menaje), crea productos POS desde terminados y registra operativo sin bodega.",
     "dailyCutoff": "Sin --bootstrap: fechas anteriores a hoy (Colombia) quedan como histórico sin movimiento de bodega.",
+    "historicalCutoff": "Colombia today — fechas anteriores: confirmar sin movimiento de bodega",
     "operationalExpenses": [
       "Domicilio",
       "Parqueadero"
