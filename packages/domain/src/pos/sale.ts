@@ -75,6 +75,22 @@ export interface Sale extends AuditMetadata {
       unit: string;
     }>;
   }>;
+  /** Costo inmutable al momento de la venta (método + food cost). */
+  costSnapshot?: {
+    method: string;
+    totalIngredientCost: number;
+    totalRevenue: number;
+    foodCostPct: number;
+    lines: Array<{
+      productId: string;
+      productName: string;
+      quantity: number;
+      revenue: number;
+      unitCost: number;
+      lineCost: number;
+      method: string;
+    }>;
+  };
   tableId?: EntityId;
   tableNumber?: number;
   tableLabel?: string;

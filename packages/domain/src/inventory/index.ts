@@ -1,3 +1,4 @@
+export * from "./cost-method.js";
 export * from "./item.js";
 export * from "./lot.js";
 export {
@@ -9,6 +10,7 @@ export {
 export * from "./movement.js";
 export * from "./product-categories.js";
 export * from "./services/inventory.js";
+export * from "./services/sale-cost-snapshot.js";
 export * from "./unit-conversion.js";
 export * from "./units.js";
 export * from "./warehouse.js";
