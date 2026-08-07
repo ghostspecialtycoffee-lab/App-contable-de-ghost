@@ -329,7 +329,7 @@ export default function CostingPage() {
           : "";
 
       setSaveMessage(
-        `Ficha guardada. Costo por porción: ${formatMoney(result.recipeCost)}` +
+        `Ficha guardada (receta v${result.recipeVersion}). Costo por porción: ${formatMoney(result.recipeCost)}` +
           (yieldQuantity > 1
             ? selectedProduct.category === "pastry"
               ? ` (factura ${formatMoney(previewBatchCost)} + ${formatMoney(PASTRY_DOMICILIO_ALLOCATION_COP)} domicilio ÷ ${yieldQuantity})`
@@ -483,7 +483,11 @@ export default function CostingPage() {
 
         <div className="space-y-4">
           {selectedProduct ? (
-            <Card title={`Ficha: ${selectedProduct.name}`}>
+            <Card
+              title={`Ficha: ${selectedProduct.name}${
+                selectedRecipe?.currentVersion ? ` · v${selectedRecipe.currentVersion}` : ""
+              }`}
+            >
               <form className="space-y-4" onSubmit={handleSave}>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block space-y-1">
