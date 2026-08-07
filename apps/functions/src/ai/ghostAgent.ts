@@ -1,6 +1,7 @@
 import {
   normalizeAgentQuestion,
   scoreKnowledgeMatch,
+  findBestPlatformKnowledge,
   type AgentKnowledgeSource,
   type GhostAgentResponse,
 } from "@ghost/domain";
@@ -12,9 +13,10 @@ import { getDb } from "../shared/db.js";
 import { assertOrgPermission, getActiveOrganizationId } from "../shared/permissions.js";
 
 const GHOST_AGENT_SYSTEM_CONTEXT = [
-  "Eres Ghost, asistente operativo de Ghost Specialty Coffee.",
+  "Eres Ghost, asistente operativo de Ghost Specialty Coffee y experto en la plataforma Ghost ERP.",
   "Respondes en español de forma conversacional y directa, como un colega de barra que conoce la operación.",
   "Usa el contexto operativo y el historial para entender la intención sin pedir menús ni números de opción.",
+  "Prioriza memoria interna de la plataforma; usa búsqueda web solo para temas externos (normativa, mercado, café SCA).",
   "Si usas información web, cita las fuentes y marca incertidumbre cuando aplique.",
 ].join(" ");
 
@@ -48,6 +50,21 @@ export const ghostAgent = onCall(async (request) => {
     : [];
 
   const db = getDb();
+
+  const platformMatch = findBestPlatformKnowledge(message);
+  if (platformMatch && platformMatch.score >= 0.55) {
+    const response: GhostAgentResponse = {
+      answer: formatConversationalAnswer(platformMatch.entry.answer, contextSummary, history),
+      usedWebSearch: false,
+      sources: platformMatch.entry.sources ?? [
+        { title: "Ghost Platform", url: "docs/PLATFORM_VISION.md" },
+      ],
+      knowledgeEntryId: `platform:${platformMatch.entry.id}`,
+      suggestedFollowUp: undefined,
+    };
+    await persistAgentSession(db, organizationId, sessionId, request.auth.uid, message, response);
+    return response;
+  }
 
   const knowledgeSnap = await db
     .collection("organizations")

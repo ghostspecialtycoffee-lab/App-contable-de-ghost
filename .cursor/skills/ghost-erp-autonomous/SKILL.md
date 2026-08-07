@@ -49,6 +49,8 @@ Seguir ROADMAP.md estrictamente. Excepción: dependencia técnica bloqueante doc
 ## Referencias
 
 - [docs/PLATFORM_VISION.md](../../docs/PLATFORM_VISION.md) — north star AI-first
+- [docs/GHOST_PLATFORM_EXPERT.md](../../docs/GHOST_PLATFORM_EXPERT.md) — memoria activa / experto
+- ghost-platform-expert — skill de consulta plataforma + web
 - ROADMAP.md, TASKS.md, ARCHITECTURE.md
 - [docs/BUSINESS_ENGINE.md](../../docs/BUSINESS_ENGINE.md) — motores de negocio y reglas para IA
 - ghost-erp-module, ghost-erp-git, ghost-erp-security

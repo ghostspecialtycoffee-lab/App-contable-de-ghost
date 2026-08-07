@@ -36,5 +36,16 @@ Sin `RESEND_API_KEY`, las notificaciones se encolan en Firestore y quedan regist
 ## Agente evolutivo
 
 - Chat `/chat` → **Pregunta libre (búsqueda web)**
+- Ghost flotante → memoria plataforma (`query-platform-guide`) + operación
 - Conocimiento guardado en `organizations/{orgId}/agentKnowledge`
+- Memoria canónica en código: `packages/domain/src/ai/platform-knowledge.ts`
 - Callable Cloud Function: `ghostAgent`
+
+### Orden de respuesta del agente
+
+1. **Plataforma** (`findBestPlatformKnowledge`) — rutas, docs, flujos internos
+2. **Org** (`agentKnowledge` Firestore) — preguntas previas del tenant
+3. **Web** (Tavily / DuckDuckGo) — temas externos
+4. **Fallback** operativo
+
+Ver [GHOST_PLATFORM_EXPERT.md](GHOST_PLATFORM_EXPERT.md).

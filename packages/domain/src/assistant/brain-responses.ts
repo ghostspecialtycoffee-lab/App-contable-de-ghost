@@ -27,7 +27,7 @@ import {
   buildPurchaseSuggestions,
   compareSupplierPricesForItem,
 } from "../purchases/services/purchase-intelligence.js";
-import type { GhostConversationContext } from "./ghost-conversation.js";
+import { findBestPlatformKnowledge } from "../ai/platform-knowledge.js";
 import {
   briefingInputFromGhostContext,
   buildDailyOperationsBriefing,
@@ -765,4 +765,17 @@ export function buildDailyBriefingReply(context: GhostConversationContext): stri
     }),
   );
   return briefing.message;
+}
+
+export function buildPlatformGuideReply(message: string): string {
+  const match = findBestPlatformKnowledge(message);
+  if (match) {
+    return match.entry.answer;
+  }
+
+  return (
+    "Puedo explicarte **ventas**, **costeo** (FIFO/promedio/estándar), **workflows WhatsApp**, " +
+    "**event bus**, **trazabilidad por lotes** y **analytics**.\n\n" +
+    "Pregunta algo concreto, por ejemplo: «¿cómo registro una venta?» o «automatizaciones WhatsApp»."
+  );
 }
