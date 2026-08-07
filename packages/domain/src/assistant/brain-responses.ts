@@ -27,6 +27,7 @@ import {
   buildPurchaseSuggestions,
   compareSupplierPricesForItem,
 } from "../purchases/services/purchase-intelligence.js";
+import type { GhostConversationContext } from "./ghost-conversation.js";
 import { findBestPlatformKnowledge } from "../ai/platform-knowledge.js";
 import {
   briefingInputFromGhostContext,

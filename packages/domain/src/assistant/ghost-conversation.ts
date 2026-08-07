@@ -314,6 +314,7 @@ type ExecutableGhostConversationIntent = Exclude<
   | "query-inventory-catalog"
   | "query-tables-status"
   | "query-daily-briefing"
+  | "query-platform-guide"
   | "agent-query"
 >;
 
@@ -1671,7 +1672,7 @@ export function processConversationTurn(input: {
     return {
       kind: "reply",
       session: clearPending(session),
-      messages: [buildPlatformGuideReply(message)],
+      messages: [buildPlatformGuideReply(trimmed)],
     };
   }
 
