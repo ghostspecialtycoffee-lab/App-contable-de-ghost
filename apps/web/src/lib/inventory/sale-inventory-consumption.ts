@@ -1,4 +1,4 @@
-import type { Recipe } from "@ghost/domain";
+import type { Recipe, SaleRecipeSnapshot } from "@ghost/domain";
 import {
   calculateRecipeConsumption,
   type InventoryCostProfile,
@@ -31,15 +31,10 @@ async function getDefaultWarehouseId(organizationId: string): Promise<string> {
   return anySnap.docs[0]!.id;
 }
 
-export async function consumeInventoryForSale(input: {
-  organizationId: string;
-  branchId: string;
-  saleNumber: string;
-  lines: Array<{ productId: string; quantity: number }>;
-}): Promise<number> {
+async function loadRecipesByProduct(organizationId: string): Promise<Map<string, Recipe>> {
   const db = getFirestoreDb();
   const recipesSnap = await getDocs(
-    collection(db, firestorePaths.organizationRecipes(input.organizationId)),
+    collection(db, firestorePaths.organizationRecipes(organizationId)),
   );
   const recipesByProduct = new Map<string, Recipe>();
 
@@ -50,10 +45,43 @@ export async function consumeInventoryForSale(input: {
       organizationId: data.organizationId,
       menuProductId: data.menuProductId,
       menuProductName: data.menuProductName,
+      currentVersion: data.currentVersion ?? 1,
+      recipeCost: data.recipeCost ?? 0,
       yieldQuantity: data.yieldQuantity ?? 1,
       lines: data.lines ?? [],
     });
   }
+
+  return recipesByProduct;
+}
+
+function recipeFromSnapshot(snapshot: SaleRecipeSnapshot): Recipe {
+  return {
+    id: snapshot.recipeId,
+    organizationId: "",
+    menuProductId: snapshot.productId,
+    menuProductName: "",
+    currentVersion: snapshot.recipeVersion,
+    recipeCost: snapshot.recipeCost,
+    yieldQuantity: snapshot.yieldQuantity,
+    lines: snapshot.lines,
+  };
+}
+
+export async function consumeInventoryForSale(input: {
+  organizationId: string;
+  branchId: string;
+  saleNumber: string;
+  lines: Array<{ productId: string; quantity: number }>;
+  recipeSnapshots?: SaleRecipeSnapshot[];
+}): Promise<number> {
+  const snapshotsByProduct = new Map(
+    (input.recipeSnapshots ?? []).map((snapshot) => [snapshot.productId, snapshot]),
+  );
+  const recipesByProduct =
+    snapshotsByProduct.size > 0
+      ? null
+      : await loadRecipesByProduct(input.organizationId);
 
   const consumptionByItem = new Map<
     string,
@@ -61,7 +89,11 @@ export async function consumeInventoryForSale(input: {
   >();
 
   for (const saleLine of input.lines) {
-    const recipe = recipesByProduct.get(saleLine.productId);
+    const snapshot = snapshotsByProduct.get(saleLine.productId);
+    const recipe = snapshot
+      ? recipeFromSnapshot(snapshot)
+      : recipesByProduct?.get(saleLine.productId);
+
     if (!recipe || recipe.lines.length === 0) {
       continue;
     }
@@ -72,7 +104,10 @@ export async function consumeInventoryForSale(input: {
         continue;
       }
       const itemSnap = await getDoc(
-        doc(db, firestorePaths.organizationInventoryItem(input.organizationId, line.inventoryItemId)),
+        doc(
+          getFirestoreDb(),
+          firestorePaths.organizationInventoryItem(input.organizationId, line.inventoryItemId),
+        ),
       );
       if (!itemSnap.exists()) {
         continue;

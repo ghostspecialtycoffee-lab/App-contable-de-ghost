@@ -1,7 +1,11 @@
 import type { BaseUnit, InventoryCostProfile, MenuCategory, RecipeLineInput } from "@ghost/domain";
 import {
+  buildRecipeContentSignature,
+  buildRecipeVersionDocument,
   calculatePastryPortionCost,
   calculateRecipeBatchCost,
+  hasRecipeContentChanged,
+  resolveNextRecipeVersion,
   sanitizeBeverageAdvancedSetupAnswers,
   type InventoryItem,
 } from "@ghost/domain";
@@ -55,7 +59,8 @@ export async function saveRecipeClient(input: {
   category?: MenuCategory;
   lines: RecipeLineInput[];
   advancedSetupAnswers?: Record<string, string>;
-}): Promise<{ recipeId: string; recipeCost: number }> {
+  changeNote?: string;
+}): Promise<{ recipeId: string; recipeCost: number; recipeVersion: number }> {
   const userId = requireUserId();
   const organizationId = await getOrganizationIdFromProfile();
   const lines = input.lines.filter((line) => line.quantity > 0);
@@ -108,35 +113,96 @@ export async function saveRecipeClient(input: {
     yieldQuantity: input.yieldQuantity,
     category,
   });
+  const normalizedLines = lines.map((line) => ({
+    inventoryItemId: line.inventoryItemId,
+    itemName: line.itemName.trim(),
+    quantity: line.quantity,
+    unit: line.unit as BaseUnit,
+  }));
+
   const existingQuery = query(
     collection(db, firestorePaths.organizationRecipes(organizationId)),
     where("menuProductId", "==", input.menuProductId),
     limit(1),
   );
   const existingSnap = await getDocs(existingQuery);
-  const recipeRef = existingSnap.empty
-    ? doc(collection(db, firestorePaths.organizationRecipes(organizationId)))
-    : existingSnap.docs[0]!.ref;
+  const existingDoc = existingSnap.empty ? null : existingSnap.docs[0]!;
+  const existingData = existingDoc?.data();
+  const recipeRef = existingDoc?.ref ?? doc(collection(db, firestorePaths.organizationRecipes(organizationId)));
+  const isNewRecipe = !existingDoc;
+  const contentChanged = hasRecipeContentChanged(
+    existingData
+      ? {
+          yieldQuantity: existingData.yieldQuantity ?? 1,
+          lines: existingData.lines ?? [],
+          advancedSetupAnswers: existingData.advancedSetupAnswers ?? {},
+        }
+      : null,
+    {
+      yieldQuantity: input.yieldQuantity,
+      lines,
+      advancedSetupAnswers,
+    },
+  );
+
+  const recipeVersion = resolveNextRecipeVersion(
+    existingData?.currentVersion,
+    isNewRecipe,
+    contentChanged,
+  );
+
   const now = serverTimestamp();
+  const publishedAt = new Date().toISOString();
+
+  if (contentChanged) {
+    const versionRef = doc(
+      db,
+      firestorePaths.organizationRecipeVersion(organizationId, recipeRef.id, recipeVersion),
+    );
+
+    await setDoc(versionRef, {
+      ...buildRecipeVersionDocument({
+        recipeId: recipeRef.id,
+        organizationId,
+        menuProductId: input.menuProductId,
+        menuProductName: input.menuProductName.trim(),
+        version: recipeVersion,
+        yieldQuantity: input.yieldQuantity ?? 1,
+        lines: normalizedLines,
+        recipeCost,
+        advancedSetupAnswers:
+          Object.keys(advancedSetupAnswers).length > 0 ? advancedSetupAnswers : undefined,
+        changeNote: input.changeNote,
+        publishedAt,
+        publishedBy: userId,
+      }),
+      contentSignature: buildRecipeContentSignature({
+        yieldQuantity: input.yieldQuantity,
+        lines,
+        advancedSetupAnswers,
+      }),
+      createdAt: now,
+      createdBy: userId,
+    });
+  }
 
   await setDoc(recipeRef, {
     organizationId,
     menuProductId: input.menuProductId,
     menuProductName: input.menuProductName.trim(),
+    currentVersion: recipeVersion,
     yieldQuantity: input.yieldQuantity ?? 1,
-    lines: lines.map((line) => ({
-      inventoryItemId: line.inventoryItemId,
-      itemName: line.itemName.trim(),
-      quantity: line.quantity,
-      unit: line.unit as BaseUnit,
-    })),
-    ...(Object.keys(advancedSetupAnswers).length > 0
-      ? { advancedSetupAnswers }
-      : {}),
+    lines: normalizedLines,
+    ...(Object.keys(advancedSetupAnswers).length > 0 ? { advancedSetupAnswers } : {}),
     recipeCost,
-    createdAt: now,
+    contentSignature: buildRecipeContentSignature({
+      yieldQuantity: input.yieldQuantity,
+      lines,
+      advancedSetupAnswers,
+    }),
+    createdAt: existingData?.createdAt ?? now,
     updatedAt: now,
-    createdBy: userId,
+    createdBy: existingData?.createdBy ?? userId,
     updatedBy: userId,
   });
 
@@ -150,5 +216,5 @@ export async function saveRecipeClient(input: {
     { merge: true },
   );
 
-  return { recipeId: recipeRef.id, recipeCost };
+  return { recipeId: recipeRef.id, recipeCost, recipeVersion };
 }
