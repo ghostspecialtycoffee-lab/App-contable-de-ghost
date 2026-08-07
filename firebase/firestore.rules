@@ -188,7 +188,8 @@ service cloud.firestore {
             !('imageDataUrl' in request.resource.data)
             || request.resource.data.imageDataUrl.size() <= 500000
           );
-        allow delete: if false;
+        allow delete: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
       }
 
       match /sales/{saleId} {
@@ -230,10 +231,9 @@ service cloud.firestore {
           && request.resource.data.createdBy == request.auth.uid;
         allow update: if canAccessOrg(organizationId)
           && resource.data.organizationId == organizationId;
-        allow delete: if false;
+        allow delete: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
       }
-
-      match /purchaseInvoices/{invoiceId} {
         allow read: if canAccessOrg(organizationId);
         allow create: if canAccessOrg(organizationId)
           && request.resource.data.organizationId == organizationId
