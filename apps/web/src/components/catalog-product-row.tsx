@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { formatMoney } from "@/lib/format";
-import { toggleMenuProductStatus, updateMenuProduct } from "@/lib/pos/pos";
+import { toggleMenuProductStatus, updateMenuProduct, deleteMenuProduct } from "@/lib/pos/pos";
 import {
   CO_TAX_CATEGORY_LABELS,
   MENU_CATEGORY_LABELS,
@@ -20,6 +20,7 @@ export function CatalogProductRow({ product }: { product: MenuProduct }) {
   const [description, setDescription] = useState(product.description ?? "");
   const [saving, setSaving] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -78,6 +79,26 @@ export function CatalogProductRow({ product }: { product: MenuProduct }) {
       setError(getCallableErrorMessage(cause));
     } finally {
       setToggling(false);
+    }
+  }
+
+  async function handleDelete() {
+    const confirmed = window.confirm(
+      `¿Eliminar "${product.name}" del menú?\n\nSe borrará el producto y su ficha de costos. Las ventas anteriores no se modifican.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleting(true);
+    setError(null);
+
+    try {
+      await deleteMenuProduct({ productId: product.id });
+    } catch (cause) {
+      setError(getCallableErrorMessage(cause));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -143,7 +164,7 @@ export function CatalogProductRow({ product }: { product: MenuProduct }) {
             type="button"
             size="sm"
             variant={product.status === "active" ? "secondary" : "primary"}
-            disabled={toggling || saving}
+            disabled={toggling || saving || deleting}
             onClick={handleToggleStatus}
           >
             {toggling
@@ -153,12 +174,27 @@ export function CatalogProductRow({ product }: { product: MenuProduct }) {
                 : "Activar en menú"}
           </Button>
           {isDirty ? (
-            <Button type="button" size="sm" variant="secondary" disabled={saving} onClick={handleSave}>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={saving || deleting}
+              onClick={handleSave}
+            >
               {saving ? "Guardando..." : "Guardar"}
             </Button>
           ) : saved ? (
             <span className="text-xs text-[var(--ghost-brand-500)]">Guardado</span>
           ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="danger"
+            disabled={deleting || saving || toggling}
+            onClick={handleDelete}
+          >
+            {deleting ? "Eliminando..." : "Eliminar"}
+          </Button>
           <Link
             href={`/costing?product=${product.id}`}
             className="text-xs text-[var(--ghost-brand-500)] underline"

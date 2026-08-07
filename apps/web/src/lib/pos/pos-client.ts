@@ -16,9 +16,12 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   runTransaction,
   serverTimestamp,
   setDoc,
+  where,
+  writeBatch,
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
@@ -183,6 +186,37 @@ export async function toggleMenuProductStatusClient(input: {
   status: "active" | "inactive";
 }): Promise<void> {
   return updateMenuProductClient(input);
+}
+
+export async function deleteMenuProductClient(input: {
+  productId: string;
+}): Promise<void> {
+  requireUserId();
+  const { organizationId } = await getActiveContext();
+  const db = getFirestoreDb();
+  const productRef = doc(
+    db,
+    firestorePaths.organizationMenuProduct(organizationId, input.productId),
+  );
+  const productSnap = await getDoc(productRef);
+
+  if (!productSnap.exists()) {
+    throw new Error("Producto no encontrado.");
+  }
+
+  const recipesSnap = await getDocs(
+    query(
+      collection(db, firestorePaths.organizationRecipes(organizationId)),
+      where("menuProductId", "==", input.productId),
+    ),
+  );
+
+  const batch = writeBatch(db);
+  for (const recipeDoc of recipesSnap.docs) {
+    batch.delete(recipeDoc.ref);
+  }
+  batch.delete(productRef);
+  await batch.commit();
 }
 
 export async function updateMenuProductImageClient(input: {
