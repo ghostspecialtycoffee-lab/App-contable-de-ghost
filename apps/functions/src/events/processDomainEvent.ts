@@ -4,6 +4,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { writeAuditLog } from "../shared/audit.js";
 import { getDb } from "../shared/db.js";
 import { resolveDomainEventSideEffects } from "@ghost/domain";
+import { enqueueWorkflowOutboxEntries } from "../workflows/enqueue.js";
 
 export async function processDomainEventOutboxEntry(
   organizationId: string,
@@ -88,6 +89,15 @@ export async function processDomainEventOutboxEntry(
 
       await analyticsRef.set(patch, { merge: true });
     }
+
+    const orgSnap = await db.collection("organizations").doc(organizationId).get();
+    await enqueueWorkflowOutboxEntries({
+      organizationId,
+      domainEventId: entryId,
+      event,
+      organizationName: String(orgSnap.data()?.name ?? "Organización"),
+      workflowSettings: orgSnap.data()?.workflowSettings,
+    });
 
     await entryRef.update({
       status: "processed",

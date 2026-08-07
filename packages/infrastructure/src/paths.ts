@@ -105,6 +105,10 @@ export const firestorePaths = {
     `organizations/${organizationId}/domainEventOutbox`,
   organizationDomainEventOutboxEntry: (organizationId: string, entryId: string) =>
     `organizations/${organizationId}/domainEventOutbox/${entryId}`,
+  organizationWorkflowOutbox: (organizationId: string) =>
+    `organizations/${organizationId}/workflowOutbox`,
+  organizationWorkflowOutboxEntry: (organizationId: string, entryId: string) =>
+    `organizations/${organizationId}/workflowOutbox/${entryId}`,
   organizationNotificationPreferences: (organizationId: string) =>
     `organizations/${organizationId}/notificationPreferences`,
   organizationNotificationPreference: (organizationId: string, userId: string) =>

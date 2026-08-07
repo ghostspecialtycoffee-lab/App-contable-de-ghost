@@ -1,12 +1,14 @@
 import {
   createDomainEvent,
   type DomainEventActorSource,
+  type OrganizationWorkflowSettingsInput,
   type PublishDomainEventInput,
 } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
+import { enqueueWorkflowOutboxEntriesSafe } from "@/lib/workflows/workflows";
 
 function requireUserId(): string {
   const uid = getFirebaseAuth().currentUser?.uid;
@@ -48,10 +50,29 @@ export async function publishDomainEventClient(
 }
 
 export async function publishDomainEventSafe(
-  input: PublishDomainEventInput & { actorSource?: DomainEventActorSource },
+  input: PublishDomainEventInput & {
+    actorSource?: DomainEventActorSource;
+    workflowContext?: {
+      organizationName: string;
+      workflowSettings?: OrganizationWorkflowSettingsInput;
+    };
+  },
 ): Promise<void> {
   try {
-    await publishDomainEventClient(input);
+    const { eventId } = await publishDomainEventClient(input);
+    if (input.workflowContext) {
+      const event = createDomainEvent({
+        ...input,
+        actorUserId: input.actorUserId || requireUserId(),
+      });
+      await enqueueWorkflowOutboxEntriesSafe({
+        organizationId: input.organizationId,
+        domainEventId: eventId,
+        event: { ...event, id: eventId },
+        organizationName: input.workflowContext.organizationName,
+        workflowSettings: input.workflowContext.workflowSettings,
+      });
+    }
   } catch {
     // No bloquear operación principal si falla el bus de eventos.
   }

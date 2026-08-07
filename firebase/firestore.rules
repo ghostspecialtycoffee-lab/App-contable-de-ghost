@@ -378,6 +378,17 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
+      match /workflowOutbox/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.status == 'pending';
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.status == 'pending'
+          && request.resource.data.status in ['ready', 'sent', 'failed', 'skipped'];
+        allow delete: if false;
+      }
+
       match /analyticsDaily/{dateId} {
         allow read: if canAccessOrg(organizationId);
         allow create, update, delete: if false;

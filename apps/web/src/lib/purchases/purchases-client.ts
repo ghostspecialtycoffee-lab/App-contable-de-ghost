@@ -247,8 +247,8 @@ export async function confirmPurchaseInvoiceClient(input: {
       invoiceDate,
       total: Number(invoice.total ?? 0),
     });
-    await publishDomainEventSafe(
-      buildPurchaseConfirmedEvent({
+    await publishDomainEventSafe({
+      ...buildPurchaseConfirmedEvent({
         organizationId,
         branchId,
         actorUserId: userId,
@@ -262,7 +262,17 @@ export async function confirmPurchaseInvoiceClient(input: {
         movements: 0,
         invoiceDate,
       }),
-    );
+      workflowContext: {
+        organizationName: String(
+          (
+            await getDoc(doc(getFirestoreDb(), firestorePaths.organization(organizationId)))
+          ).data()?.name ?? "Organización",
+        ),
+        workflowSettings: (
+          await getDoc(doc(getFirestoreDb(), firestorePaths.organization(organizationId)))
+        ).data()?.workflowSettings,
+      },
+    });
     return { movements: 0, inventoryApplied: false };
   }
 
@@ -321,8 +331,15 @@ export async function confirmPurchaseInvoiceClient(input: {
     invoiceDate,
     total: Number(invoice.total ?? 0),
   });
-  await publishDomainEventSafe(
-    buildPurchaseConfirmedEvent({
+  const orgSnap = await getDoc(
+    doc(getFirestoreDb(), firestorePaths.organization(organizationId)),
+  );
+  const workflowContext = {
+    organizationName: String(orgSnap.data()?.name ?? "Organización"),
+    workflowSettings: orgSnap.data()?.workflowSettings,
+  };
+  await publishDomainEventSafe({
+    ...buildPurchaseConfirmedEvent({
       organizationId,
       branchId,
       actorUserId: userId,
@@ -336,7 +353,8 @@ export async function confirmPurchaseInvoiceClient(input: {
       movements,
       invoiceDate,
     }),
-  );
+    workflowContext,
+  });
 
   return { movements, inventoryApplied: true };
 }
