@@ -171,6 +171,21 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /inventoryLots/{lotId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
+      match /analyticsDaily/{dateId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.date is string;
+        allow delete: if false;
+      }
+
       match /menuProducts/{productId} {
         allow read: if canAccessOrg(organizationId)
           || resource.data.status == 'active';
@@ -188,7 +203,8 @@ service cloud.firestore {
             !('imageDataUrl' in request.resource.data)
             || request.resource.data.imageDataUrl.size() <= 500000
           );
-        allow delete: if false;
+        allow delete: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
       }
 
       match /sales/{saleId} {
@@ -230,7 +246,16 @@ service cloud.firestore {
           && request.resource.data.createdBy == request.auth.uid;
         allow update: if canAccessOrg(organizationId)
           && resource.data.organizationId == organizationId;
-        allow delete: if false;
+        allow delete: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
+
+        match /versions/{versionId} {
+          allow read: if canAccessOrg(organizationId);
+          allow create: if canAccessOrg(organizationId)
+            && request.resource.data.organizationId == organizationId
+            && request.resource.data.createdBy == request.auth.uid;
+          allow update, delete: if false;
+        }
       }
 
       match /purchaseInvoices/{invoiceId} {
@@ -243,6 +268,25 @@ service cloud.firestore {
           && resource.data.organizationId == organizationId
           && resource.data.status == 'draft';
         allow delete: if false;
+      }
+
+      match /suppliers/{supplierId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.isActive == true;
+        allow update: if canAccessOrg(organizationId)
+          && resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
+      match /purchasePriceHistory/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update, delete: if false;
       }
 
       match /fixedExpenses/{expenseId} {
@@ -316,6 +360,58 @@ service cloud.firestore {
           && request.resource.data.reason is string
           && request.resource.data.reason.size() >= 2;
         allow update, delete: if false;
+      }
+
+      match /notificationOutbox/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId;
+        allow update, delete: if false;
+      }
+
+      match /domainEventOutbox/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.status == 'pending'
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      match /analyticsDaily/{dateId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update, delete: if false;
+      }
+
+      match /notificationPreferences/{userId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.auth.uid == userId
+          && request.resource.data.organizationId == organizationId;
+        allow delete: if false;
+      }
+
+      match /workShifts/{shiftId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && request.resource.data.createdBy == request.auth.uid;
+        allow delete: if false;
+      }
+
+      match /agentKnowledge/{entryId} {
+        allow read: if canAccessOrg(organizationId);
+        allow create: if canAccessOrg(organizationId);
+        allow update: if canAccessOrg(organizationId);
+        allow delete: if false;
+      }
+
+      match /agentSessions/{sessionId} {
+        allow read: if canAccessOrg(organizationId)
+          && resource.data.userId == request.auth.uid;
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.userId == request.auth.uid;
+        allow delete: if false;
       }
     }
   }

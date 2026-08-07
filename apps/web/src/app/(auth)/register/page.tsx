@@ -55,7 +55,7 @@ export default function RegisterPage() {
               required
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
-              className="w-full rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] px-3 py-2 text-sm outline-none ring-[var(--ghost-brand-500)] focus:ring-2"
+              className="ghost-input"
             />
           </label>
           <label className="block space-y-1">
@@ -66,7 +66,7 @@ export default function RegisterPage() {
               autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] px-3 py-2 text-sm outline-none ring-[var(--ghost-brand-500)] focus:ring-2"
+              className="ghost-input"
             />
           </label>
           <label className="block space-y-1">
@@ -78,7 +78,7 @@ export default function RegisterPage() {
               minLength={6}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-lg border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] px-3 py-2 text-sm outline-none ring-[var(--ghost-brand-500)] focus:ring-2"
+              className="ghost-input"
             />
           </label>
           {error ? (

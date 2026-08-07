@@ -30,6 +30,7 @@ export function mapOrganization(
     settings: data.settings,
     fiscalProfile: data.fiscalProfile,
     costMatrixSettings: data.costMatrixSettings,
+    emailDelivery: data.emailDelivery,
     createdAt: serializeTimestamp(data.createdAt),
     updatedAt: serializeTimestamp(data.updatedAt),
     createdBy: data.createdBy,

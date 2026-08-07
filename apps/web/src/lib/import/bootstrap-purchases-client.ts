@@ -1,13 +1,10 @@
-import type { BaseUnit, CoTaxCategory, KitchenStation, MenuCategory } from "@ghost/domain";
-import { suggestRecipeYield } from "@ghost/domain";
+import type { BaseUnit, CoTaxCategory } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
 
 import manifest from "@/data/purchase-invoices.manifest.json";
-import { formatMoney } from "@/lib/format";
 import { getFirestoreDb } from "@/lib/firebase/client";
-import { createInventoryItem, createWarehouse } from "@/lib/inventory/inventory";
-import { createMenuProduct } from "@/lib/pos/pos";
+import { createWarehouse } from "@/lib/inventory/inventory";
 import { confirmPurchaseInvoice, createPurchaseInvoice } from "@/lib/purchases/purchases";
 import { seedCostMatrix } from "@/lib/costing/seed-cost-matrix";
 
@@ -23,7 +20,14 @@ const TAX_MAP: Record<string, CoTaxCategory> = {
 };
 
 const VALID_UNITS = new Set<BaseUnit>(["g", "kg", "ml", "l", "unit", "box", "bag"]);
-const TRACKS_INVENTORY = new Set(["alimenticio", "menaje"]);
+
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function mapTax(value?: string): CoTaxCategory {
+  return TAX_MAP[value ?? "IVA_19"] ?? "IVA_19";
+}
 
 type ManifestLine = {
   description: string;
@@ -35,122 +39,8 @@ type ManifestLine = {
   taxCategory?: string;
 };
 
-type CatalogEntry = {
-  name: string;
-  productCategory: string;
-  itemType: string;
-  unit: BaseUnit;
-};
-
-function normalizeName(name: string): string {
-  return name.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-function mapTax(value?: string): CoTaxCategory {
-  return TAX_MAP[value ?? "IVA_19"] ?? "IVA_19";
-}
-
-function inferItemType(name: string, productCategory: string, explicitType?: string): string {
-  if (
-    explicitType === "raw_material" ||
-    explicitType === "finished_product" ||
-    explicitType === "supply" ||
-    explicitType === "packaging"
-  ) {
-    return explicitType;
-  }
-  if (productCategory === "menaje") {
-    return /bolsa|sticker|domo|empaque|vaso|recicl/i.test(name) ? "packaging" : "supply";
-  }
-  if (/brownie|croissant|galleta|torta|tarta|pan |pan$|enrollado|chicharrón|arequipe/i.test(name)) {
-    return "finished_product";
-  }
-  return "raw_material";
-}
-
-function slugSku(name: string, productCategory: string, index: number): string {
-  const prefix = productCategory === "menaje" ? "MN" : "AL";
-  const base = name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 12)
-    .toUpperCase();
-  return `${prefix}-${base || "ITEM"}-${String(index).padStart(3, "0")}`;
-}
-
 function invoiceKey(inv: { supplierName: string; invoiceNumber: string; invoiceDate: string }) {
   return `${inv.supplierName}|${inv.invoiceNumber}|${inv.invoiceDate}`;
-}
-
-function buildCatalog(): Map<string, CatalogEntry> {
-  const catalog = new Map<string, CatalogEntry>();
-
-  const productCatalog = manifest.productCatalog as Record<
-    string,
-    Array<{ name: string; productCategory?: string }>
-  >;
-
-  for (const [category, entries] of Object.entries(productCatalog ?? {})) {
-    if (category === "operativo" || !Array.isArray(entries)) {
-      continue;
-    }
-    for (const entry of entries) {
-      const norm = normalizeName(entry.name);
-      if (!catalog.has(norm)) {
-        catalog.set(norm, {
-          name: entry.name.trim(),
-          productCategory: entry.productCategory ?? category,
-          itemType: inferItemType(entry.name, entry.productCategory ?? category),
-          unit: "unit",
-        });
-      }
-    }
-  }
-
-  for (const inv of manifest.invoices) {
-    for (const line of (inv.lines ?? []) as ManifestLine[]) {
-      if (!line.description || line.productCategory === "operativo") {
-        continue;
-      }
-      const norm = normalizeName(line.description);
-      const existing = catalog.get(norm);
-      const productCategory = line.productCategory ?? existing?.productCategory ?? "alimenticio";
-      catalog.set(norm, {
-        name: line.description.trim(),
-        productCategory,
-        itemType: inferItemType(line.description, productCategory, line.itemType),
-        unit: VALID_UNITS.has(line.unit as BaseUnit)
-          ? (line.unit as BaseUnit)
-          : existing?.unit ?? "unit",
-      });
-    }
-  }
-
-  return catalog;
-}
-
-function inferMenuCategory(name: string): MenuCategory {
-  const normalized = name.toLowerCase();
-  if (/café|coffee|leche|agua|cerveza|bebida|jugo|latte|capuccino/.test(normalized)) {
-    return "beverage";
-  }
-  if (/croissant|galleta|brownie|torta|tarta|pan |enrollado|chicharrón/.test(normalized)) {
-    return "pastry";
-  }
-  return "food";
-}
-
-function inferMenuStation(menuCategory: MenuCategory): KitchenStation {
-  if (menuCategory === "beverage") return "bar";
-  if (menuCategory === "pastry") return "counter";
-  return "kitchen";
-}
-
-function roundSalePrice(unitCostNet: number): number {
-  const grossEstimate = unitCostNet * 2.5 * 1.19;
-  return Math.max(1000, Math.round(grossEstimate / 500) * 500);
 }
 
 export interface BootstrapImportResult {
@@ -159,10 +49,28 @@ export interface BootstrapImportResult {
   movements: number;
   menuProducts: number;
   skipped: number;
+  unlinkedLines: number;
   ghostMenuProducts: number;
   ghostRecipesCreated: number;
   ghostRecipesUpdated: number;
   ghostWarnings: string[];
+}
+
+async function loadExistingInventoryItemIds(organizationId: string): Promise<Map<string, string>> {
+  const snapshot = await getDocs(
+    collection(getFirestoreDb(), firestorePaths.organizationInventoryItems(organizationId)),
+  );
+  const itemIdByName = new Map<string, string>();
+
+  for (const document of snapshot.docs) {
+    const name = String(document.data().name ?? "");
+    const norm = normalizeName(name);
+    if (name && !itemIdByName.has(norm)) {
+      itemIdByName.set(norm, document.id);
+    }
+  }
+
+  return itemIdByName;
 }
 
 async function ensureDefaultWarehouse(input: {
@@ -208,30 +116,12 @@ export async function runBootstrapPurchaseImport(input: {
       branchId: input.branchId,
     }));
 
-  const catalog = buildCatalog();
-  const itemIdByName = new Map<string, string>();
-  let skuIndex = 1;
-
-  for (const [norm, entry] of catalog.entries()) {
-    const result = await createInventoryItem({
-      sku: slugSku(entry.name, entry.productCategory, skuIndex),
-      name: entry.name,
-      type: entry.itemType as "raw_material" | "finished_product" | "supply" | "packaging",
-      category: entry.productCategory,
-      baseUnit: entry.unit,
-      purchaseUnit: entry.unit,
-      presentationQuantity: 1,
-      minStock: 0,
-    });
-    itemIdByName.set(norm, result.itemId);
-    skuIndex += 1;
-  }
-
+  const itemIdByName = await loadExistingInventoryItemIds(input.organizationId);
   const seen = new Set<string>();
   let imported = 0;
   let skipped = 0;
   let movements = 0;
-  const finishedProducts = new Map<string, { name: string; unitCostNet: number }>();
+  let unlinkedLines = 0;
 
   for (const inv of manifest.invoices) {
     const key = invoiceKey(inv);
@@ -261,8 +151,12 @@ export async function runBootstrapPurchaseImport(input: {
       .map((line) => {
         const isOperativo = line.productCategory === "operativo";
         const norm = normalizeName(line.description);
+        const inventoryItemId = isOperativo ? undefined : itemIdByName.get(norm);
+        if (!isOperativo && line.productCategory !== "operativo" && !inventoryItemId) {
+          unlinkedLines += 1;
+        }
         return {
-          inventoryItemId: isOperativo ? undefined : itemIdByName.get(norm),
+          inventoryItemId,
           description: line.description.trim(),
           quantity: Number(line.quantity ?? 0),
           unit: VALID_UNITS.has(line.unit as BaseUnit) ? (line.unit as BaseUnit) : "unit",
@@ -293,46 +187,7 @@ export async function runBootstrapPurchaseImport(input: {
       bootstrapInventory: true,
     });
     movements += confirmResult.movements;
-
-    for (const line of lineInputs) {
-      if (
-        line.productCategory !== "operativo" &&
-        line.itemType === "finished_product" &&
-        line.productCategory === "alimenticio" &&
-        TRACKS_INVENTORY.has(line.productCategory)
-      ) {
-        const unitCostNet =
-          line.quantity > 0 ? Math.round((line.unitPriceNet * line.quantity) / line.quantity) : 0;
-        finishedProducts.set(normalizeName(line.description), {
-          name: line.description.trim(),
-          unitCostNet: unitCostNet || line.unitPriceNet,
-        });
-      }
-    }
-
     imported += 1;
-  }
-
-  let menuProducts = 0;
-  let sortOrder = 0;
-  for (const entry of finishedProducts.values()) {
-    const menuCategory = inferMenuCategory(entry.name);
-    const yieldQuantity = suggestRecipeYield(entry.name);
-    const isPastry = menuCategory === "pastry";
-
-    await createMenuProduct({
-      name: entry.name,
-      price: isPastry ? 0 : roundSalePrice(Math.round(entry.unitCostNet / yieldQuantity)),
-      category: menuCategory,
-      station: inferMenuStation(menuCategory),
-      status: isPastry ? "inactive" : "active",
-      description: isPastry
-        ? `Repostería · factura ${formatMoney(entry.unitCostNet)} + domicilio ÷ ${yieldQuantity} porciones. Define tu precio de venta en el catálogo.`
-        : `Importado desde compras · costo ref. ${entry.unitCostNet}`,
-      sortOrder,
-    });
-    sortOrder += 1;
-    menuProducts += 1;
   }
 
   let ghostMenuProducts = 0;
@@ -356,8 +211,9 @@ export async function runBootstrapPurchaseImport(input: {
     inventoryItems: itemIdByName.size,
     invoices: imported,
     movements,
-    menuProducts,
+    menuProducts: 0,
     skipped,
+    unlinkedLines,
     ghostMenuProducts,
     ghostRecipesCreated,
     ghostRecipesUpdated,

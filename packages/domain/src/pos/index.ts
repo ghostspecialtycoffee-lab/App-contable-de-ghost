@@ -4,5 +4,6 @@ export * from "./menu-product.js";
 export * from "./sale.js";
 export * from "./table-session.js";
 export * from "./services/reports.js";
+export * from "./services/sale-document.js";
 export * from "./services/sale.js";
 export * from "./services/table-session.js";

@@ -1,5 +1,6 @@
 import {
   buildSaleNumber,
+  buildSaleRecordedEvent,
   calculateSaleTotals,
   groupKitchenLines,
   inferMenuProductTaxCategory,
@@ -16,15 +17,24 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   runTransaction,
   serverTimestamp,
   setDoc,
+  where,
+  writeBatch,
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 import { normalizeCatalogName } from "@/lib/costing/ghost-menu-catalog";
-import { consumeInventoryForSale } from "@/lib/inventory/sale-inventory-consumption";
+import { recordSaleAnalyticsSafe } from "@/lib/analytics/analytics-client";
 import { requireOpenCashSessionClient } from "@/lib/cash/cash-client";
+import { publishDomainEventSafe } from "@/lib/events/domain-events";
+import {
+  applySaleInventoryConsumption,
+  planSaleInventoryConsumption,
+} from "@/lib/inventory/sale-inventory-consumption";
+import { loadSaleRecipeSnapshots } from "@/lib/recipes/sale-recipe-snapshots";
 import { COLOMBIA_SODAS_CATALOG } from "./colombia-sodas-catalog";
 
 function requireUserId(): string {
@@ -185,6 +195,37 @@ export async function toggleMenuProductStatusClient(input: {
   return updateMenuProductClient(input);
 }
 
+export async function deleteMenuProductClient(input: {
+  productId: string;
+}): Promise<void> {
+  requireUserId();
+  const { organizationId } = await getActiveContext();
+  const db = getFirestoreDb();
+  const productRef = doc(
+    db,
+    firestorePaths.organizationMenuProduct(organizationId, input.productId),
+  );
+  const productSnap = await getDoc(productRef);
+
+  if (!productSnap.exists()) {
+    throw new Error("Producto no encontrado.");
+  }
+
+  const recipesSnap = await getDocs(
+    query(
+      collection(db, firestorePaths.organizationRecipes(organizationId)),
+      where("menuProductId", "==", input.productId),
+    ),
+  );
+
+  const batch = writeBatch(db);
+  for (const recipeDoc of recipesSnap.docs) {
+    batch.delete(recipeDoc.ref);
+  }
+  batch.delete(productRef);
+  await batch.commit();
+}
+
 export async function updateMenuProductImageClient(input: {
   productId: string;
   imageDataUrl: string;
@@ -245,6 +286,20 @@ export async function createSaleClient(input: {
   const saleNumber = buildSaleNumber();
   const soldAt = new Date().toISOString();
   const soldOn = soldAt.slice(0, 10);
+  const recipeSnapshots = await loadSaleRecipeSnapshots(
+    organizationId,
+    totals.lines.map((line) => line.productId),
+  );
+  const inventoryPlan = await planSaleInventoryConsumption({
+    organizationId,
+    branchId,
+    saleNumber,
+    lines: totals.lines.map((line) => ({
+      productId: line.productId,
+      quantity: line.quantity,
+    })),
+    recipeSnapshots,
+  }).catch(() => ({ lotConsumptions: [], plannedExits: [] }));
   const db = getFirestoreDb();
   const saleRef = doc(
     collection(db, firestorePaths.organizationSales(organizationId)),
@@ -261,6 +316,7 @@ export async function createSaleClient(input: {
       saleNumber,
       status: "paid",
       lines: totals.lines,
+      recipeSnapshots,
       subtotal: totals.subtotal,
       taxRate: totals.taxRate,
       taxAmount: totals.taxAmount,
@@ -272,6 +328,7 @@ export async function createSaleClient(input: {
       notes: input.notes?.trim() ?? "",
       soldAt,
       soldOn,
+      lotConsumptions: inventoryPlan.lotConsumptions,
       createdAt: now,
       updatedAt: now,
       createdBy: userId,
@@ -309,17 +366,37 @@ export async function createSaleClient(input: {
     }
   });
 
-  await consumeInventoryForSale({
+  await applySaleInventoryConsumption({
     organizationId,
     branchId,
     saleNumber,
-    lines: totals.lines.map((line) => ({
-      productId: line.productId,
-      quantity: line.quantity,
-    })),
+    plannedExits: inventoryPlan.plannedExits,
   }).catch(() => {
     // Venta registrada; consumo de bodega opcional si falta stock o receta.
   });
+
+  await recordSaleAnalyticsSafe({
+    organizationId,
+    soldOn,
+    total: totals.total,
+  });
+
+  await publishDomainEventSafe(
+    buildSaleRecordedEvent({
+      organizationId,
+      branchId,
+      actorUserId: userId,
+      saleId: saleRef.id,
+      saleNumber,
+      total: totals.total,
+      subtotal: totals.subtotal,
+      taxAmount: totals.taxAmount,
+      paymentMethod: input.paymentMethod,
+      lineCount: totals.lines.length,
+      soldOn,
+      occurredAt: soldAt,
+    }),
+  );
 
   return {
     saleId: saleRef.id,

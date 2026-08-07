@@ -50,5 +50,8 @@ export interface UpdateInventoryItemInput {
   minStock?: number;
   maxStock?: number;
   status?: InventoryItemStatus;
+  purchaseUnit?: BaseUnit;
+  presentationQuantity?: number;
+  presentationLabel?: string;
   actorUserId: EntityId;
 }

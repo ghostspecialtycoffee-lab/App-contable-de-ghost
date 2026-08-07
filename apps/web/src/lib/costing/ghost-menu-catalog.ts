@@ -1,6 +1,6 @@
 import type { BeverageCatalogSpec } from "@ghost/domain";
 import type { CoTaxCategory, KitchenStation, MenuCategory } from "@ghost/domain";
-import { usesTapWaterForCoffeePrep as domainUsesTapWaterForCoffeePrep } from "@ghost/domain";
+import { needsBeverageAdvancedSetup, usesTapWaterForCoffeePrep as domainUsesTapWaterForCoffeePrep } from "@ghost/domain";
 
 import catalogData from "@/data/ghost-menu-catalog.json";
 
@@ -17,6 +17,8 @@ export interface GhostBeverageSpec extends BeverageCatalogSpec {
   saleTaxCategory: CoTaxCategory;
   kind: GhostBeverageKind;
   description?: string;
+  /** Bebida fuera del estándar SCA: requiere cuestionario en ficha de costos. */
+  needsAdvancedSetup?: boolean;
 }
 
 /** Carta Ghost Specialty Coffee (foto menú operativo — Drive). */
@@ -48,6 +50,14 @@ export function findCatalogSpec(productName: string): GhostBeverageSpec | undefi
 
 export function isCatalogBeverage(productName: string): boolean {
   return Boolean(findCatalogSpec(productName));
+}
+
+export function catalogNeedsAdvancedSetup(productName: string): boolean {
+  const spec = findCatalogSpec(productName);
+  if (spec?.needsAdvancedSetup) {
+    return true;
+  }
+  return needsBeverageAdvancedSetup(productName);
 }
 
 /** Agua de preparación de café = red/llave; no se descuenta botella de inventario. */

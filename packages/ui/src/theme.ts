@@ -1,30 +1,36 @@
+/** Referencia de tokens — la fuente de verdad vive en apps/web/src/app/globals.css */
 export const ghostTheme = {
   colors: {
     brand: {
-      50: "#f4f6fb",
-      100: "#e8edf7",
-      200: "#c9d5ea",
-      300: "#a9bddc",
-      400: "#6a8abf",
-      500: "#2b579f",
-      600: "#234681",
-      700: "#1b3563",
-      800: "#142445",
-      900: "#0c1327",
+      500: "#3d2914",
+      600: "#2a1c0e",
+      fg: "#fffbf5",
     },
     accent: {
-      500: "#d4a574",
-      600: "#b8874f",
+      500: "#c4893b",
+      600: "#a6702f",
+      fg: "#fffbf5",
     },
-    success: "#16a34a",
-    warning: "#ca8a04",
-    danger: "#dc2626",
+    surface: {
+      0: "#f7f3ed",
+      1: "#fffbf5",
+      2: "#efe8dc",
+      3: "#e2d9ca",
+    },
+    border: "#ddd3c4",
+    text: "#1f1408",
+    muted: "#7a6b58",
+    success: "#15803d",
+    warning: "#b45309",
+    danger: "#b42318",
   },
   radius: {
     sm: "0.375rem",
     md: "0.5rem",
     lg: "0.75rem",
     xl: "1rem",
+    "2xl": "1.25rem",
+    "3xl": "1.5rem",
   },
 } as const;
 

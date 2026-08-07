@@ -1,0 +1,66 @@
+name: Deploy Hosting (rápido)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+
+concurrency:
+  group: firebase-hosting-fast
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-hosting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git fetch --depth=1 origin main
+          git checkout FETCH_HEAD
+
+      - name: Setup pnpm
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@10.6.5 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Deploy hosting only
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          FB=(npx firebase-tools@13 deploy --project ghost-contable --non-interactive --only hosting)
+
+          if [ -n "${FIREBASE_SERVICE_ACCOUNT:-}" ]; then
+            CREDS="${RUNNER_TEMP}/firebase-sa.json"
+            printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$CREDS"
+            export GOOGLE_APPLICATION_CREDENTIALS="$CREDS"
+          elif [ -n "${FIREBASE_TOKEN:-}" ]; then
+            FB+=(--token "$FIREBASE_TOKEN")
+          else
+            echo "::error::Falta FIREBASE_SERVICE_ACCOUNT o FIREBASE_TOKEN"
+            exit 1
+          fi
+
+          "${FB[@]}"
+          echo "✅ Hosting publicado: https://ghost-contable.web.app"
