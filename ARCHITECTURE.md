@@ -78,4 +78,5 @@ Ver [docs/DECISIONS.md](docs/DECISIONS.md) para decisiones registradas (monorepo
 
 - [DATABASE.md](DATABASE.md) — esquema Firestore
 - [SECURITY.md](SECURITY.md) — reglas y auth
+- [docs/BUSINESS_ENGINE.md](docs/BUSINESS_ENGINE.md) — motores de negocio, reglas IA, flujos canónicos
 - [CODING_STANDARDS.md](CODING_STANDARDS.md) — convenciones de código
