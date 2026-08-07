@@ -125,6 +125,13 @@ export type GhostChatAction =
   | { type: "checkout-table"; payload: Record<string, string> }
   | { type: "send-kitchen"; payload: { sessionId: string } }
   | { type: "update-kitchen-order"; payload: { orderId: string; status: string } }
+  | { type: "delete-menu-product"; payload: Record<string, string> }
+  | { type: "update-menu-product"; payload: Record<string, string> }
+  | { type: "register-inventory-movement"; payload: Record<string, string> }
+  | { type: "create-fixed-expense"; payload: Record<string, string> }
+  | { type: "cancel-table-session"; payload: Record<string, string> }
+  | { type: "create-dining-table"; payload: Record<string, string> }
+  | { type: "create-warehouse"; payload: Record<string, string> }
   | { type: "ghost-agent-query"; payload: { message: string; sessionId: string; contextSummary?: string; history?: GhostConversationHistoryMessage[] } };
 
 export interface GhostChatTurnResult {
@@ -1053,6 +1060,68 @@ function buildAction(
         type: "save-recipe-cost",
         payload: { ...draft },
       };
+    case "admin/delete-menu-product":
+      return {
+        type: "delete-menu-product",
+        payload: {
+          productId: draft.productId ?? "",
+          productName: draft.productName ?? "",
+        },
+      };
+    case "admin/update-menu-product":
+      return {
+        type: "update-menu-product",
+        payload: {
+          productId: draft.productId ?? "",
+          productName: draft.productName ?? "",
+          price: draft.price ?? "",
+          status: draft.status ?? "",
+        },
+      };
+    case "admin/inventory-movement":
+      return {
+        type: "register-inventory-movement",
+        payload: {
+          inventoryItemId: draft.inventoryItemId ?? "",
+          itemName: draft.itemName ?? "",
+          quantity: draft.quantity ?? "1",
+          movementType: draft.movementType ?? "entry",
+        },
+      };
+    case "admin/create-fixed-expense":
+      return {
+        type: "create-fixed-expense",
+        payload: {
+          name: draft.name ?? "",
+          amount: draft.amount ?? "0",
+          frequency: draft.frequency ?? "monthly",
+          category: draft.category ?? "other",
+        },
+      };
+    case "waiter/cancel-table":
+      return {
+        type: "cancel-table-session",
+        payload: {
+          sessionId: draft.sessionId ?? "",
+          tableId: draft.tableId ?? "",
+          tableNumber: draft.tableNumber ?? "",
+        },
+      };
+    case "admin/create-dining-table":
+      return {
+        type: "create-dining-table",
+        payload: {
+          tableNumber: draft.tableNumber ?? "",
+          label: draft.label ?? "",
+        },
+      };
+    case "admin/create-warehouse":
+      return {
+        type: "create-warehouse",
+        payload: {
+          name: draft.name ?? "",
+        },
+      };
     default:
       return undefined;
   }
@@ -1176,6 +1245,20 @@ export function formatGhostActionSuccess(action: GhostChatAction, result?: strin
       return "Comanda enviada a barra/cocina.";
     case "update-kitchen-order":
       return `Comanda actualizada a **${action.payload.status}**.`;
+    case "delete-menu-product":
+      return `Producto **${action.payload.productName}** eliminado del menú.`;
+    case "update-menu-product":
+      return result ?? `Producto **${action.payload.productName}** actualizado.`;
+    case "register-inventory-movement":
+      return result ?? `Movimiento de inventario registrado.`;
+    case "create-fixed-expense":
+      return `Gasto fijo **${action.payload.name}** creado.`;
+    case "cancel-table-session":
+      return `Mesa **${action.payload.tableNumber || "?"}** cancelada sin cobro.`;
+    case "create-dining-table":
+      return `Mesa **${action.payload.tableNumber}** creada.`;
+    case "create-warehouse":
+      return `Bodega **${action.payload.name}** creada.`;
     case "ghost-agent-query":
       return result ?? "Aquí está lo que encontré.";
     default:

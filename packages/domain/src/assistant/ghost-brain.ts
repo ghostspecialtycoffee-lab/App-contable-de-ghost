@@ -31,7 +31,7 @@ export const GHOST_BRAIN_SKILLS: GhostBrainSkill[] = [
     kind: "guide",
     title: "Guía del cerebro Ghost",
     description: "Muestra palabras clave y ejemplos por área.",
-    keywords: /(ayuda|que puedes|que sabes|como funciona|ejemplos|palabras clave|comandos|capacidades|cerebro|menu)/,
+    keywords: /(ayuda|que puedes|que sabes|como funciona|ejemplos|palabras clave|comandos|capacidades|cerebro)/,
     examples: ["ayuda", "qué puedes hacer", "palabras clave"],
   },
   {
@@ -276,6 +276,100 @@ export const GHOST_BRAIN_SKILLS: GhostBrainSkill[] = [
     keywords: /(cargar carta|carta ghost|seed|menu ghost|actualiza matriz de costos|refresca matriz)/,
     examples: ["carga la carta Ghost"],
   },
+  {
+    id: "query-menu-catalog",
+    domain: "ventas",
+    kind: "query",
+    title: "Catálogo de productos",
+    description: "Lista bebidas, repostería y platos con precios.",
+    keywords:
+      /(que hay en (el )?menu|lista (de )?productos|catalogo de productos|productos en carta|que vendemos)/,
+    examples: ["¿qué hay en el menú?", "lista de productos"],
+  },
+  {
+    id: "query-inventory-catalog",
+    domain: "logistica",
+    kind: "query",
+    title: "Catálogo de inventario",
+    description: "Lista insumos, stock y unidades.",
+    keywords:
+      /(que insumos|lista (de )?inventario|catalogo de insumos|que tenemos en bodega|insumos disponibles)/,
+    examples: ["¿qué insumos tenemos?", "lista de inventario"],
+  },
+  {
+    id: "query-tables-status",
+    domain: "operaciones",
+    kind: "query",
+    title: "Estado de mesas",
+    description: "Mesas libres, ocupadas y cuentas abiertas.",
+    keywords: /(estado de mesas|mesas libres|mesas ocupadas|que mesas|cuantas mesas)/,
+    examples: ["estado de mesas", "¿qué mesas están abiertas?"],
+  },
+  {
+    id: "delete-menu-product",
+    domain: "ventas",
+    kind: "execute",
+    title: "Eliminar producto del menú",
+    description: "Borra un producto y su ficha de costos.",
+    keywords: /(elimina|borra|quita|remueve).{0,24}(del menu|de la carta|del catalogo|producto)/,
+    examples: ["elimina torta de zanahoria del menú"],
+  },
+  {
+    id: "update-menu-product",
+    domain: "ventas",
+    kind: "execute",
+    title: "Actualizar producto del menú",
+    description: "Cambia precio, descripción o activa/desactiva en carta.",
+    keywords:
+      /(cambia|actualiza|ajusta|pon).{0,16}(precio|activa|desactiva|inactiva)|desactiva.{0,20}(menu|carta)|activa.{0,20}(menu|carta)/,
+    examples: ["cambia precio del Latte a 9000", "desactiva torta de zanahoria"],
+  },
+  {
+    id: "register-inventory-movement",
+    domain: "logistica",
+    kind: "execute",
+    title: "Movimiento de inventario",
+    description: "Entrada, salida, merma o ajuste de stock.",
+    keywords:
+      /(entrada de|ingreso de|salida de|egreso de|merma de|ajuste de|registra entrada|registra salida)/,
+    examples: ["entrada de 500g café caturra", "salida de 200ml leche"],
+  },
+  {
+    id: "create-fixed-expense",
+    domain: "finanzas",
+    kind: "execute",
+    title: "Nuevo gasto fijo",
+    description: "Registra arriendo, nómina u otro costo recurrente.",
+    keywords: /(nuevo gasto fijo|crear gasto fijo|registra gasto fijo|gasto recurrente)/,
+    examples: ["nuevo gasto fijo arriendo 2500000 mensual"],
+  },
+  {
+    id: "cancel-table-session",
+    domain: "operaciones",
+    kind: "execute",
+    title: "Cancelar mesa",
+    description: "Cierra sesión de mesa sin cobrar.",
+    keywords: /(cancela|anula|cierra sin cobrar).{0,16}mesa/,
+    examples: ["cancela la mesa 3"],
+  },
+  {
+    id: "create-dining-table",
+    domain: "operaciones",
+    kind: "execute",
+    title: "Crear mesa",
+    description: "Agrega una mesa nueva al salón.",
+    keywords: /(nueva mesa|crea mesa|agrega mesa|crear mesa)/,
+    examples: ["crea mesa 5"],
+  },
+  {
+    id: "create-warehouse",
+    domain: "logistica",
+    kind: "execute",
+    title: "Crear bodega",
+    description: "Agrega bodega o almacén.",
+    keywords: /(nueva bodega|crea bodega|agrega bodega|crear bodega)/,
+    examples: ["crea bodega principal"],
+  },
 ];
 
 const DOMAIN_LABELS: Record<GhostBrainDomain, string> = {
@@ -305,6 +399,9 @@ export function classifyBrainQueryIntent(message: string): string | null {
     "query-work-shifts",
     "query-kitchen-status",
     "query-cost-matrix",
+    "query-menu-catalog",
+    "query-inventory-catalog",
+    "query-tables-status",
     "org-status",
   ]);
 
@@ -357,10 +454,10 @@ export function buildBrainHelpMessage(context?: GhostBrainContext): string {
     : "";
 
   return (
-    "Soy el **cerebro operativo de Ghost**. Entiendo frases naturales y conecto funciones por palabras clave:\n\n" +
+    "Soy el **cerebro operativo de Ghost**. Tengo acceso a **todas las funciones de la app** — lo que puedes hacer en pantalla, yo lo hago con una orden:\n\n" +
     sections.join("\n\n") +
     statusLine +
-    "\n\nEscríbeme como a un compañero de turno. Si no entiendo algo, te haré una pregunta corta."
+    "\n\nEscríbeme como a un compañero de turno. Si falta un dato, te pregunto una cosa corta."
   );
 }
 

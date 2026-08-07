@@ -15,7 +15,7 @@ import {
 import { FIXED_EXPENSE_CATEGORY_LABELS, type FixedExpenseCategory } from "../expenses/fixed-expense.js";
 import { summarizeFixedExpenses } from "../expenses/services/fixed-expense.js";
 import { KITCHEN_ORDER_STATUS_LABELS, type KitchenOrderStatus } from "../pos/kitchen-order.js";
-import { KITCHEN_STATION_LABELS, type KitchenStation } from "../pos/menu-product.js";
+import { KITCHEN_STATION_LABELS, MENU_CATEGORY_LABELS, MENU_PRODUCT_STATUS_LABELS, type KitchenStation } from "../pos/menu-product.js";
 import { WORK_SHIFT_ROLE_LABELS } from "../operations/shifts.js";
 import type { PurchaseInvoice } from "../purchases/invoice.js";
 import {
@@ -565,5 +565,93 @@ export function buildRecipeCostPreviewReply(
     `· Food cost estimado: **${((panorama.yourPrice?.foodCostPct ?? 0) * 100).toFixed(1)}%**\n` +
     `· Precio sugerido: **${formatMoney(panorama.suggestedSalePriceGross)}**\n\n` +
     "Si está bien, confirma con **sí** o ajusta cantidades/precio."
+  );
+}
+
+export function buildMenuCatalogReply(context: GhostConversationContext): string {
+  if (context.menuProducts.length === 0) {
+    return "**Catálogo vacío.** Di «carga la carta Ghost» o «nuevo producto [nombre] a [precio]».";
+  }
+
+  const lines = context.menuProducts
+    .slice(0, 20)
+    .map((product) => {
+      const status =
+        product.status === "inactive"
+          ? ` · ${MENU_PRODUCT_STATUS_LABELS.inactive}`
+          : "";
+      const category = MENU_CATEGORY_LABELS[product.category as keyof typeof MENU_CATEGORY_LABELS] ?? product.category;
+      return `· **${product.name}** — ${formatMoney(product.price)} · ${category}${status}`;
+    })
+    .join("\n");
+
+  const more =
+    context.menuProducts.length > 20
+      ? `\n\n…y **${context.menuProducts.length - 20}** productos más.`
+      : "";
+
+  return (
+    `**Catálogo** (${context.menuProducts.length} productos)\n${lines}${more}\n\n` +
+    "Para cambiar precio: «cambia precio del Latte a 9000». Para eliminar: «elimina [producto] del menú»."
+  );
+}
+
+export function buildInventoryCatalogReply(context: GhostConversationContext): string {
+  if (context.inventoryItems.length === 0) {
+    return "**Inventario vacío.** Di «nuevo insumo [nombre]» o importa compras.";
+  }
+
+  const stockByItem = new Map(
+    context.inventoryStockSnapshot.map((entry) => [entry.itemId, entry]),
+  );
+
+  const lines = context.inventoryItems
+    .slice(0, 20)
+    .map((item) => {
+      const stock = stockByItem.get(item.id);
+      const qty = stock
+        ? `${stock.quantity.toLocaleString("es-CO")} ${stock.baseUnit}`
+        : "sin stock";
+      return `· **${item.name}** — ${qty} · SKU ${item.sku}`;
+    })
+    .join("\n");
+
+  const more =
+    context.inventoryItems.length > 20
+      ? `\n\n…y **${context.inventoryItems.length - 20}** insumos más.`
+      : "";
+
+  return (
+    `**Inventario** (${context.inventoryItems.length} insumos)\n${lines}${more}\n\n` +
+    "Para movimiento: «entrada de 500g café» o «salida de 200ml leche»."
+  );
+}
+
+export function buildTablesStatusReply(context: GhostConversationContext): string {
+  if (context.tables.length === 0) {
+    return "**No hay mesas configuradas.** Di «crea mesa 1» para agregar una.";
+  }
+
+  const openSessionTables = new Set(
+    context.openTableSessions.map((session) => session.tableNumber),
+  );
+
+  const lines = context.tables
+    .slice(0, 15)
+    .map((table) => {
+      const isOpen = openSessionTables.has(table.number);
+      const session = context.openTableSessions.find((entry) => entry.tableNumber === table.number);
+      const total = session?.total
+        ? ` · cuenta ${formatMoney(session.total)}`
+        : isOpen
+          ? " · abierta"
+          : "";
+      return `· **Mesa ${table.number}**${table.label ? ` (${table.label})` : ""} — ${table.status}${total}`;
+    })
+    .join("\n");
+
+  return (
+    `**Mesas** (${context.tables.length} configuradas · ${context.openTableSessions.length} abiertas)\n${lines}\n\n` +
+    "Para abrir: «abre la mesa 3». Para cobrar: «cuenta de la mesa 3». Para cancelar: «cancela mesa 3»."
   );
 }

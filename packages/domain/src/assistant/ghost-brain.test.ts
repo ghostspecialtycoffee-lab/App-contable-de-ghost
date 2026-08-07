@@ -22,6 +22,9 @@ describe("ghost brain registry", () => {
     expect(classifyBrainQueryIntent("estado de comandas")).toBe("query-kitchen-status");
     expect(classifyBrainQueryIntent("informe de compras del mes")).toBe("query-purchases-report");
     expect(classifyBrainQueryIntent("matriz de costos")).toBe("query-cost-matrix");
+    expect(classifyBrainQueryIntent("que hay en el menu")).toBe("query-menu-catalog");
+    expect(classifyBrainQueryIntent("lista de inventario")).toBe("query-inventory-catalog");
+    expect(classifyBrainQueryIntent("estado de mesas")).toBe("query-tables-status");
   });
 
   it("genera guía con ejemplos", () => {
@@ -32,6 +35,7 @@ describe("ghost brain registry", () => {
     });
 
     expect(help).toContain("cerebro operativo");
+    expect(help).toContain("todas las funciones");
     expect(help).toContain("Ventas");
     expect(help).toContain("caja **abierta**");
   });

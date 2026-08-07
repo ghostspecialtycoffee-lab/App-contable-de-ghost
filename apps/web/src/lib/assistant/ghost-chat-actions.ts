@@ -14,22 +14,32 @@ import { collection, getDocs, limit, query, where } from "firebase/firestore";
 import { closeCashSession, openCashSession, registerCashMovement } from "@/lib/cash/cash";
 import { seedCostMatrix } from "@/lib/costing/seed-cost-matrix";
 import { seedRecipeForProduct } from "@/lib/costing/seed-recipe-for-product";
+import { createFixedExpense } from "@/lib/expenses/expenses";
 import { getFirestoreDb } from "@/lib/firebase/client";
-import { createInventoryItem } from "@/lib/inventory/inventory";
+import {
+  createInventoryItem,
+  createWarehouse,
+  registerInventoryMovement,
+} from "@/lib/inventory/inventory";
 import { createPurchaseInvoice, confirmPurchaseInvoice } from "@/lib/purchases/purchases";
 import {
   createMenuProduct,
   createSale,
+  deleteMenuProduct,
+  toggleMenuProductStatus,
   updateKitchenOrderStatus,
   updateMenuProduct,
 } from "@/lib/pos/pos";
 import { saveRecipe } from "@/lib/recipes/recipes";
 import {
   addTableSessionLines,
+  cancelTableSession,
   checkoutTableSession,
   openTableSession,
   sendTableSessionToKitchen,
 } from "@/lib/tables/table-sessions";
+import { createDiningTable } from "@/lib/tables/tables";
+import { findOpenTableSessionClient } from "@/lib/tables/table-sessions-client";
 import { callGhostAgent } from "@/lib/firebase/functions";
 import { resolveGhostAgentQuery } from "@/lib/assistant/ghost-agent-client";
 import { sendSaleDocument } from "@/lib/sales/send-sale-document";
@@ -457,6 +467,143 @@ export async function executeGhostChatAction(
           | "delivered",
       });
       return undefined;
+    }
+
+    case "delete-menu-product": {
+      await deleteMenuProduct({
+        productId: payloadString(action.payload, "productId"),
+      });
+      return {
+        message: `**${payloadString(action.payload, "productName")}** eliminado del catálogo y su ficha de costos.`,
+      };
+    }
+
+    case "update-menu-product": {
+      const productId = payloadString(action.payload, "productId");
+      const price = Number(payloadString(action.payload, "price") || "0");
+      const status = payloadString(action.payload, "status");
+
+      if (price > 0) {
+        await updateMenuProduct({ productId, price });
+      }
+      if (status === "active" || status === "inactive") {
+        await toggleMenuProductStatus({ productId, status });
+      }
+
+      const productName = payloadString(action.payload, "productName");
+      if (status === "inactive") {
+        return { message: `**${productName}** desactivado en el menú.` };
+      }
+      if (status === "active") {
+        return { message: `**${productName}** activado en el menú.` };
+      }
+      return {
+        message: `Precio de **${productName}** actualizado a **$${price.toLocaleString("es-CO")}**.`,
+      };
+    }
+
+    case "register-inventory-movement": {
+      if (!context.defaultWarehouseId) {
+        throw new Error("No hay bodega configurada. Di «crea bodega principal» primero.");
+      }
+
+      const movementType = payloadString(action.payload, "movementType") || "entry";
+      const quantity = Number(payloadString(action.payload, "quantity") || "1");
+
+      const result = await registerInventoryMovement({
+        branchId: context.branchId,
+        warehouseId: context.defaultWarehouseId,
+        itemId: payloadString(action.payload, "inventoryItemId"),
+        type: movementType,
+        quantity,
+        notes: `Ghost: ${movementType}`,
+      });
+
+      const label =
+        movementType === "entry"
+          ? "Entrada"
+          : movementType === "exit"
+            ? "Salida"
+            : movementType === "waste"
+              ? "Merma"
+              : "Ajuste";
+
+      return {
+        message:
+          `${label} de **${quantity}** de **${payloadString(action.payload, "itemName")}** registrada. ` +
+          `Stock después: **${result.balanceAfter.toLocaleString("es-CO")}**.`,
+      };
+    }
+
+    case "create-fixed-expense": {
+      await createFixedExpense({
+        name: payloadString(action.payload, "name"),
+        category: (payloadString(action.payload, "category") || "other") as
+          | "rent"
+          | "payroll"
+          | "utilities"
+          | "services"
+          | "insurance"
+          | "marketing"
+          | "other",
+        amount: Number(payloadString(action.payload, "amount") || "0"),
+        frequency: (payloadString(action.payload, "frequency") || "monthly") as
+          | "weekly"
+          | "biweekly"
+          | "monthly"
+          | "annual",
+      });
+      return undefined;
+    }
+
+    case "cancel-table-session": {
+      let sessionId = payloadString(action.payload, "sessionId");
+      const tableId = payloadString(action.payload, "tableId");
+
+      if (!sessionId && tableId) {
+        const open = await findOpenTableSessionClient({
+          organizationId: context.organizationId,
+          tableId,
+        });
+        sessionId = open?.sessionId ?? "";
+      }
+
+      if (!sessionId) {
+        throw new Error("No encontré sesión abierta en esa mesa.");
+      }
+
+      await cancelTableSession({ sessionId });
+      return {
+        message: `Mesa **${payloadString(action.payload, "tableNumber") || "?"}** cancelada sin cobro.`,
+      };
+    }
+
+    case "create-dining-table": {
+      await createDiningTable({
+        number: Number(payloadString(action.payload, "tableNumber") || "0"),
+        label: payloadString(action.payload, "label") || undefined,
+      });
+      return {
+        message: `Mesa **${payloadString(action.payload, "tableNumber")}** creada.`,
+      };
+    }
+
+    case "create-warehouse": {
+      const name = payloadString(action.payload, "name");
+      const code = name
+        .trim()
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/\p{M}/gu, "")
+        .replace(/[^A-Z0-9]/g, "")
+        .slice(0, 8) || "BODEGA";
+      await createWarehouse({
+        name,
+        code,
+        branchId: context.branchId,
+        isDefault: true,
+      });
+      return { message: `Bodega **${name}** creada.` };
     }
 
     case "ghost-agent-query": {
