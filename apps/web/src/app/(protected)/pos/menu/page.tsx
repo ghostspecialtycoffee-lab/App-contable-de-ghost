@@ -41,7 +41,7 @@ import {
   type RecipeLineInput,
 } from "@ghost/domain";
 import { Button, Card } from "@ghost/ui";
-import { useActiveMembership } from "@/providers/auth-provider";
+import { useActiveMembership, useAuth } from "@/providers/auth-provider";
 
 const emptyRecipeLine = (): RecipeLineInput => ({
   inventoryItemId: "",
@@ -52,6 +52,7 @@ const emptyRecipeLine = (): RecipeLineInput => ({
 
 export default function PosMenuPage() {
   const membership = useActiveMembership();
+  const { organization } = useAuth();
   const { products, loading, error } = useMenuProducts({ includeInactive: true });
   const costMatrixSettings = useCostMatrixSettings();
   const { items: inventoryItems } = useInventoryItems();
@@ -253,7 +254,7 @@ export default function PosMenuPage() {
   }
 
   const guestMenuUrl = membership?.organizationId
-    ? buildGuestMenuUrl(membership.organizationId)
+    ? buildGuestMenuUrl(membership.organizationId, organization?.slug)
     : null;
 
   async function handleSeedSodas() {
@@ -318,7 +319,13 @@ export default function PosMenuPage() {
           />
           <p className="break-all text-[10px] text-[var(--ghost-text-muted)]">{guestMenuUrl}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Link href={`/menu?o=${encodeURIComponent(membership!.organizationId)}`}>
+            <Link
+              href={
+                organization?.slug
+                  ? `/menu?s=${encodeURIComponent(organization.slug)}`
+                  : `/menu?o=${encodeURIComponent(membership!.organizationId)}`
+              }
+            >
               <Button variant="secondary">Ver menú</Button>
             </Link>
             <Button

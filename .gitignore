@@ -19,3 +19,4 @@ coverage
 .DS_Store
 *.tsbuildinfo
 data/drive-invoices/
+package-lock.json

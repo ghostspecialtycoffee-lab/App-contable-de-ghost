@@ -49,7 +49,7 @@ jobs:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
           set -euo pipefail
-          FB=(npx firebase-tools@13 deploy --project ghost-contable --non-interactive --only hosting)
+          FB=(npx firebase-tools@13 deploy --project ghost-contable --non-interactive --only hosting,firestore:rules)
 
           if [ -n "${FIREBASE_SERVICE_ACCOUNT:-}" ]; then
             CREDS="${RUNNER_TEMP}/firebase-sa.json"

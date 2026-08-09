@@ -147,8 +147,10 @@ export function buildTableQrUrl(organizationId: string, qrToken: string): string
   return `/mesa?${query}`;
 }
 
-export function buildGuestMenuUrl(organizationId: string): string {
-  const query = `o=${encodeURIComponent(organizationId)}`;
+export function buildGuestMenuUrl(organizationId: string, slug?: string | null): string {
+  const query = slug
+    ? `s=${encodeURIComponent(slug)}`
+    : `o=${encodeURIComponent(organizationId)}`;
   if (typeof window !== "undefined") {
     return `${window.location.origin}/menu?${query}`;
   }

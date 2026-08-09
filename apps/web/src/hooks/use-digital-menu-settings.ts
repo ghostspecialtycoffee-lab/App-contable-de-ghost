@@ -86,6 +86,7 @@ export function usePublicDigitalMenu(organizationId: string | null) {
         setConfig({
           organizationId,
           organizationName: (data.organizationName as string) || "Menú",
+          slug: (data.slug as string | undefined) ?? undefined,
           logoDataUrl: data.logoDataUrl as string | undefined,
           logoMimeType: data.logoMimeType as string | undefined,
           ...settings,

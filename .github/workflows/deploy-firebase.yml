@@ -173,6 +173,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build packages for scripts
+        run: pnpm build
+
       - name: Bootstrap import if database empty
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
@@ -194,7 +197,8 @@ jobs:
           fi
 
           node scripts/import-initial-purchases.mjs \
-            --auto --bootstrap --confirm --skip-if-populated
+            --auto --bootstrap --confirm --skip-if-populated \
+            || echo "::warning::Import compras omitido o falló"
 
           node scripts/seed-ghost-menu.mjs \
             --auto --confirm --skip-if-seeded || echo "::warning::Seed carta Ghost omitido o falló"
@@ -204,3 +208,4 @@ jobs:
 
           node scripts/sync-table-qr-lookups.mjs \
             --auto --confirm || echo "::warning::Sync QR mesas omitido o falló"
+          exit 0

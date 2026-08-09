@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
+import { syncPublicDigitalMenuClient } from "@/lib/digital-menu/digital-menu-settings-client";
 
 async function getOrganizationId(): Promise<string> {
   const uid = getFirebaseAuth().currentUser?.uid;
@@ -96,6 +97,20 @@ export async function uploadBrandAssetClient(input: {
     });
   });
 
+  if (shouldBePrimary && input.type === "logo") {
+    const orgSnap = await getDoc(doc(db, firestorePaths.organization(organizationId)));
+    const orgData = orgSnap.data();
+    if (orgData?.name) {
+      await syncPublicDigitalMenuClient({
+        organizationId,
+        organizationName: orgData.name as string,
+        slug: orgData.slug as string | undefined,
+        logoDataUrl: input.dataUrl,
+        logoMimeType: input.mimeType,
+      }).catch(() => undefined);
+    }
+  }
+
   return { assetId: assetRef.id };
 }
 
@@ -121,6 +136,21 @@ export async function setPrimaryBrandAssetClient(assetId: string): Promise<void>
       });
     }
   });
+
+  const primaryAsset = assetsSnap.docs.find((document) => document.id === assetId)?.data();
+  if (primaryAsset?.type === "logo") {
+    const orgSnap = await getDoc(doc(db, firestorePaths.organization(organizationId)));
+    const orgData = orgSnap.data();
+    if (orgData?.name) {
+      await syncPublicDigitalMenuClient({
+        organizationId,
+        organizationName: orgData.name as string,
+        slug: orgData.slug as string | undefined,
+        logoDataUrl: primaryAsset.dataUrl as string,
+        logoMimeType: primaryAsset.mimeType as string,
+      }).catch(() => undefined);
+    }
+  }
 }
 
 export async function archiveBrandAssetClient(assetId: string): Promise<void> {

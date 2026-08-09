@@ -33,6 +33,8 @@ Este documento define cómo Ghost (chat, agente y Cursor) debe responder sobre l
 | Costeo fichas | `/costing` |
 | Método costeo | `/settings/costing` |
 | Automatizaciones | `/settings/automations` |
+| Menú digital (admin) | `/digital-menu` |
+| Menú público cliente | `/menu?s={slug}` |
 | Chat web + búsqueda | `/chat` |
 
 ## Reglas para el agente
