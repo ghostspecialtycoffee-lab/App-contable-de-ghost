@@ -494,7 +494,44 @@ a {
   }
 
   .ghost-menu-grid {
-    @apply grid gap-4 sm:grid-cols-2;
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2;
+  }
+
+  .ghost-menu-beverage-nav {
+    @apply flex gap-2 overflow-x-auto pb-1;
+    scrollbar-width: none;
+  }
+
+  .ghost-menu-beverage-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ghost-menu-theme-warm {
+    --ghost-menu-hero-bg: color-mix(in srgb, var(--ghost-accent-500) 8%, var(--ghost-surface-1));
+  }
+
+  .ghost-menu-theme-minimal .ghost-menu-hero {
+    @apply border-0 bg-[var(--ghost-surface-0)] shadow-none;
+  }
+
+  .ghost-menu-theme-minimal .ghost-menu-card {
+    @apply rounded-xl border-[var(--ghost-border)] shadow-none;
+  }
+
+  .ghost-menu-theme-espresso {
+    --ghost-surface-0: #14100c;
+    --ghost-surface-1: #1c1610;
+    --ghost-surface-2: #282018;
+    --ghost-surface-3: #3a3024;
+    --ghost-border: #3a3024;
+    --ghost-text: #f5ede3;
+    --ghost-text-muted: #a89880;
+    --ghost-brand-500: #c4893b;
+    --ghost-brand-fg: #1f1408;
+  }
+
+  .ghost-menu-theme-espresso .ghost-menu-hero {
+    background: linear-gradient(160deg, #282018, #14100c);
   }
 
   .ghost-menu-card {

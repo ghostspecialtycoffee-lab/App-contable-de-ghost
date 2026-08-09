@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 
 import { DesktopSidebar } from "@/components/desktop-sidebar";
 import { GhostChatFloating } from "@/components/ghost-chat-floating";
+import { GuestMenuHeader } from "@/components/guest-menu-header";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { SalesExtensionShell } from "@/components/sales-extension-shell";
 import { BrandLogo } from "@/components/brand-logo";
@@ -29,15 +31,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isGuestRoute) {
     const isMenu = pathname.startsWith("/menu");
-    const title = isMenu ? "Menú" : "Mesa";
     return (
       <div className="min-h-screen bg-[var(--ghost-surface-0)]">
-        <header className="sticky top-0 z-30 border-b border-[var(--ghost-border)]/80 bg-[var(--ghost-surface-0)]/90 px-4 py-3 text-center backdrop-blur-md">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ghost-accent-500)]">
-            Ghost Specialty Coffee
-          </p>
-          <p className="text-sm font-semibold">{title}</p>
-        </header>
+        {isMenu ? (
+          <Suspense fallback={null}>
+            <GuestMenuHeader />
+          </Suspense>
+        ) : (
+          <header className="sticky top-0 z-30 border-b border-[var(--ghost-border)]/80 bg-[var(--ghost-surface-0)]/90 px-4 py-3 text-center backdrop-blur-md">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ghost-accent-500)]">
+              Mesa
+            </p>
+            <p className="text-sm font-semibold">Pedido en mesa</p>
+          </header>
+        )}
         <main>{children}</main>
       </div>
     );

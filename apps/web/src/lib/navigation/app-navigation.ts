@@ -53,6 +53,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Ajustes",
     items: [
       { href: "/pos/menu", label: "Catálogo", description: "Productos del menú" },
+      { href: "/digital-menu", label: "Menú digital", description: "QR, fotos y vista cliente" },
       { href: "/brand", label: "Identidad", description: "Logo y marca" },
       { href: "/settings/fiscal", label: "Facturación", description: "Datos fiscales" },
       { href: "/settings/notifications", label: "Notificaciones", description: "Alertas por correo" },

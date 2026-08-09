@@ -6,9 +6,13 @@ import { formatMoney } from "@/lib/format";
 import { normalizeCatalogName } from "@/lib/costing/ghost-menu-catalog";
 import { normalizeMenuCategory } from "@/lib/pos/menu-queries";
 import {
+  BEVERAGE_GROUPS,
+  BEVERAGE_GROUP_EMOJI,
+  BEVERAGE_GROUP_LABELS,
   MENU_CATEGORIES,
   MENU_CATEGORY_LABELS,
   MENU_CATEGORY_META,
+  type BeverageGroup,
   type MenuCategory,
   type MenuProduct,
 } from "@ghost/domain";
@@ -34,27 +38,42 @@ export function GuestMenuCatalog({
 }: GuestMenuCatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<MenuCategory | null>(null);
+  const [activeBeverageGroup, setActiveBeverageGroup] = useState<BeverageGroup | "all">("all");
   const sectionRefs = useRef<Partial<Record<MenuCategory, HTMLElement | null>>>({});
 
   const visibleProducts = useMemo(() => {
     const normalizedQuery = normalizeCatalogName(searchQuery);
-    if (!normalizedQuery) {
-      return products;
+    let filtered = products;
+
+    if (normalizedQuery) {
+      filtered = products.filter((product) => {
+        const category = normalizeMenuCategory(product.category);
+        const beverageLabel = product.beverageGroup
+          ? BEVERAGE_GROUP_LABELS[product.beverageGroup]
+          : "";
+        const haystack = normalizeCatalogName(
+          [
+            product.name,
+            product.description ?? "",
+            MENU_CATEGORY_LABELS[category],
+            MENU_CATEGORY_META[category].tagline,
+            beverageLabel,
+          ].join(" "),
+        );
+        return haystack.includes(normalizedQuery);
+      });
     }
 
-    return products.filter((product) => {
-      const category = normalizeMenuCategory(product.category);
-      const haystack = normalizeCatalogName(
-        [
-          product.name,
-          product.description ?? "",
-          MENU_CATEGORY_LABELS[category],
-          MENU_CATEGORY_META[category].tagline,
-        ].join(" "),
+    if (activeBeverageGroup !== "all") {
+      filtered = filtered.filter(
+        (product) =>
+          normalizeMenuCategory(product.category) !== "beverage" ||
+          product.beverageGroup === activeBeverageGroup,
       );
-      return haystack.includes(normalizedQuery);
-    });
-  }, [products, searchQuery]);
+    }
+
+    return filtered;
+  }, [products, searchQuery, activeBeverageGroup]);
 
   const productsByCategory = useMemo(() => {
     const grouped = new Map<MenuCategory, MenuProduct[]>();
@@ -96,6 +115,16 @@ export function GuestMenuCatalog({
       setActiveCategory(productsByCategory[0]?.category ?? null);
     }
   }, [activeCategory, productsByCategory]);
+
+  const beverageGroupsInMenu = useMemo(() => {
+    return BEVERAGE_GROUPS.filter((group) =>
+      products.some(
+        (product) =>
+          normalizeMenuCategory(product.category) === "beverage" &&
+          product.beverageGroup === group,
+      ),
+    );
+  }, [products]);
 
   useEffect(() => {
     if (productsByCategory.length === 0 || searchQuery.trim()) {
@@ -152,7 +181,39 @@ export function GuestMenuCatalog({
           className="ghost-menu-search"
           placeholder="Buscar bebida, postre, plato..."
           autoComplete="off"
+          enterKeyHint="search"
         />
+      ) : null}
+
+      {beverageGroupsInMenu.length > 1 && !searchQuery.trim() ? (
+        <nav className="ghost-menu-beverage-nav" aria-label="Tipos de bebida">
+          <button
+            type="button"
+            className={[
+              "ghost-menu-nav-chip",
+              activeBeverageGroup === "all" ? "ghost-menu-nav-chip-active" : "",
+            ].join(" ")}
+            onClick={() => setActiveBeverageGroup("all")}
+          >
+            Todas las bebidas
+          </button>
+          {beverageGroupsInMenu.map((group) => (
+            <button
+              key={group}
+              type="button"
+              className={[
+                "ghost-menu-nav-chip",
+                activeBeverageGroup === group ? "ghost-menu-nav-chip-active" : "",
+              ].join(" ")}
+              onClick={() => setActiveBeverageGroup(group)}
+            >
+              <span aria-hidden="true" className="mr-1">
+                {BEVERAGE_GROUP_EMOJI[group]}
+              </span>
+              {BEVERAGE_GROUP_LABELS[group]}
+            </button>
+          ))}
+        </nav>
       ) : null}
 
       {productsByCategory.length > 1 && !searchQuery.trim() ? (
@@ -219,12 +280,21 @@ export function GuestMenuCatalog({
             <div className="ghost-menu-grid">
               {section.products.map((product) => {
                 const quantity = cartQty[product.id] ?? 0;
+                const beverageLabel =
+                  section.category === "beverage" && product.beverageGroup
+                    ? BEVERAGE_GROUP_LABELS[product.beverageGroup]
+                    : null;
 
                 return (
                   <article key={product.id} className="ghost-menu-card">
                     <div className="ghost-menu-card-media">
                       {product.imageDataUrl ? (
-                        <img src={product.imageDataUrl} alt={product.name} loading="lazy" />
+                        <img
+                          src={product.imageDataUrl}
+                          alt={product.name}
+                          loading="lazy"
+                          decoding="async"
+                        />
                       ) : (
                         <div className="ghost-menu-card-placeholder" aria-hidden="true">
                           {section.meta.emoji}
@@ -234,6 +304,11 @@ export function GuestMenuCatalog({
                     </div>
 
                     <div className="ghost-menu-card-body">
+                      {beverageLabel ? (
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--ghost-accent-500)]">
+                          {beverageLabel}
+                        </p>
+                      ) : null}
                       <h3 className="ghost-menu-card-title">{product.name}</h3>
                       {product.description ? (
                         <p className="ghost-menu-card-description">{product.description}</p>

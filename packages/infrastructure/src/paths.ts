@@ -125,4 +125,8 @@ export const firestorePaths = {
     `organizations/${organizationId}/agentSessions`,
   organizationAgentSession: (organizationId: string, sessionId: string) =>
     `organizations/${organizationId}/agentSessions/${sessionId}`,
+  organizationPublicDigitalMenu: (organizationId: string) =>
+    `organizations/${organizationId}/publicDigitalMenu`,
+  organizationPublicDigitalMenuConfig: (organizationId: string) =>
+    `organizations/${organizationId}/publicDigitalMenu/config`,
 } as const;

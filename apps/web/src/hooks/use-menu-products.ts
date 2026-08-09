@@ -54,6 +54,7 @@ export function useMenuProducts(options?: { includeInactive?: boolean }) {
               recipeCost: data.recipeCost ?? 0,
               imageDataUrl: data.imageDataUrl,
               imageMimeType: data.imageMimeType,
+              beverageGroup: data.beverageGroup,
               createdAt: "",
               updatedAt: "",
               createdBy: data.createdBy ?? "",
