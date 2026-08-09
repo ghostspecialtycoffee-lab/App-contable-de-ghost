@@ -1,0 +1,82 @@
+name: Setup Firebase Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      link_billing:
+        description: "Intentar vincular facturación con GCP_BILLING_ACCOUNT_ID"
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: firebase-infrastructure-setup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git fetch --depth=1 origin main
+          git checkout FETCH_HEAD
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup infrastructure (APIs, Storage, Blaze)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GCP_BILLING_ACCOUNT_ID: ${{ secrets.GCP_BILLING_ACCOUNT_ID }}
+          GOOGLE_CLOUD_PROJECT: ghost-contable
+        run: |
+          set -uo pipefail
+          ARGS=(--project ghost-contable)
+          if [ "${{ inputs.link_billing }}" = "true" ]; then
+            ARGS+=(--link-billing)
+          fi
+
+          if node scripts/setup-firebase-infrastructure.mjs "${ARGS[@]}"; then
+            echo "infra_ready=true" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Setup incompleto — revisa facturación Blaze o Storage en Firebase Console."
+            echo "infra_ready=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Deploy Functions + Storage rules
+        if: env.infra_ready == 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          CREDS="${RUNNER_TEMP}/firebase-sa.json"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$CREDS"
+          export GOOGLE_APPLICATION_CREDENTIALS="$CREDS"
+
+          corepack enable
+          corepack prepare pnpm@10.6.5 --activate
+          pnpm install --frozen-lockfile
+          pnpm build
+
+          npx firebase-tools@13 deploy \
+            --project ghost-contable \
+            --non-interactive \
+            --only functions,storage
+
+          echo "✅ Functions y Storage desplegados"
+
+      - name: Resumen si falta Blaze
+        if: env.infra_ready != 'true'
+        run: |
+          echo "::notice title=Blaze pendiente::Abre https://console.firebase.google.com/project/ghost-contable/usage/details y activa Blaze."
+          echo "::notice title=Storage pendiente::Abre https://console.firebase.google.com/project/ghost-contable/storage y pulsa Comenzar."
+          echo "::notice title=Automatizar facturación::Agrega secret GCP_BILLING_ACCOUNT_ID en GitHub y vuelve a ejecutar este workflow."
