@@ -6,26 +6,28 @@ import { Suspense } from "react";
 import { GuestMenuCatalog } from "@/components/guest-menu-catalog";
 import { usePublicDigitalMenu } from "@/hooks/use-digital-menu-settings";
 import { useGuestMenuProducts } from "@/hooks/use-guest-menu-products";
+import { useMenuOrganizationId } from "@/hooks/use-menu-organization-id";
 import { MENU_CATEGORIES, MENU_CATEGORY_LABELS, MENU_CATEGORY_META } from "@ghost/domain";
 
 function PublicMenuContent() {
   const searchParams = useSearchParams();
-  const organizationId = searchParams.get("o") ?? "";
+  const { organizationId, loading: orgLoading, error: orgError } = useMenuOrganizationId();
   const { products, loading: productsLoading, error: productsError } = useGuestMenuProducts(
-    organizationId || null,
+    organizationId,
   );
   const { config, loading: configLoading, error: configError } = usePublicDigitalMenu(
-    organizationId || null,
+    organizationId,
   );
 
-  const loading = productsLoading || configLoading;
+  const loading = orgLoading || productsLoading || configLoading;
   const accentStyle = config?.accentStyle ?? "warm";
+  const hasOrgParam = Boolean(searchParams.get("o") || searchParams.get("s"));
 
   const categoryCount = MENU_CATEGORIES.filter((category) =>
     products.some((product) => product.category === category),
   ).length;
 
-  if (!organizationId) {
+  if (!hasOrgParam) {
     return (
       <div className="mx-auto max-w-lg p-6">
         <p className="text-sm text-[var(--ghost-danger)]">Enlace de menú no válido.</p>
@@ -37,6 +39,16 @@ function PublicMenuContent() {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <p className="text-sm text-[var(--ghost-text-muted)]">Cargando menú...</p>
+      </div>
+    );
+  }
+
+  if (orgError || !organizationId) {
+    return (
+      <div className="mx-auto max-w-lg p-6">
+        <p className="text-sm text-[var(--ghost-danger)]">
+          {orgError ?? "Menú no disponible."}
+        </p>
       </div>
     );
   }

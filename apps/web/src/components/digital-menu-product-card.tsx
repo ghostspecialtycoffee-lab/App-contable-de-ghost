@@ -24,9 +24,17 @@ import { Button } from "@ghost/ui";
 
 interface DigitalMenuProductCardProps {
   product: MenuProduct;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  onMove?: (direction: "up" | "down") => void;
 }
 
-export function DigitalMenuProductCard({ product }: DigitalMenuProductCardProps) {
+export function DigitalMenuProductCard({
+  product,
+  canMoveUp = false,
+  canMoveDown = false,
+  onMove,
+}: DigitalMenuProductCardProps) {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
@@ -248,6 +256,30 @@ export function DigitalMenuProductCard({ product }: DigitalMenuProductCardProps)
         />
 
         <div className="flex flex-wrap gap-2">
+          {onMove ? (
+            <>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={!canMoveUp}
+                onClick={() => onMove("up")}
+                aria-label="Subir en el menú"
+              >
+                ↑
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={!canMoveDown}
+                onClick={() => onMove("down")}
+                aria-label="Bajar en el menú"
+              >
+                ↓
+              </Button>
+            </>
+          ) : null}
           <Button
             type="button"
             size="sm"

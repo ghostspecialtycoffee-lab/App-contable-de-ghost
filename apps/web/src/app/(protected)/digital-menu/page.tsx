@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DigitalMenuProductCard } from "@/components/digital-menu-product-card";
 import { useBrandAssets } from "@/hooks/use-brand-assets";
-import { useDigitalMenuSettings } from "@/hooks/use-digital-menu-settings";
+import { useDigitalMenuSettings, usePublicDigitalMenu } from "@/hooks/use-digital-menu-settings";
 import { useMenuProducts } from "@/hooks/use-menu-products";
 import { getCallableErrorMessage } from "@/lib/auth/errors";
 import { saveDigitalMenuSettingsClient } from "@/lib/digital-menu/digital-menu-settings-client";
@@ -36,6 +36,7 @@ export default function DigitalMenuDashboardPage() {
     includeInactive: true,
   });
   const { primaryLogo } = useBrandAssets();
+  const { config: publicConfig } = usePublicDigitalMenu(membershipOrgId);
 
   const [heroTitle, setHeroTitle] = useState(settings.heroTitle);
   const [heroSubtitle, setHeroSubtitle] = useState(settings.heroSubtitle);
@@ -66,7 +67,34 @@ export default function DigitalMenuDashboardPage() {
     setShowSearch(settings.showSearch);
   }, [settings]);
 
-  const guestMenuUrl = membershipOrgId ? buildGuestMenuUrl(membershipOrgId) : null;
+  const guestMenuUrl = membershipOrgId
+    ? buildGuestMenuUrl(membershipOrgId, organization?.slug)
+    : null;
+
+  useEffect(() => {
+    if (!membershipOrgId || !organization?.name || settingsLoading || publicConfig) {
+      return;
+    }
+
+    void saveDigitalMenuSettingsClient({
+      organizationId: membershipOrgId,
+      organizationName: organization.name,
+      slug: organization.slug,
+      settings,
+      logoDataUrl: primaryLogo?.dataUrl,
+      logoMimeType: primaryLogo?.mimeType,
+    }).catch(() => undefined);
+  }, [
+    membershipOrgId,
+    organization?.name,
+    organization?.slug,
+    settingsLoading,
+    publicConfig,
+    settings,
+    primaryLogo?.dataUrl,
+    primaryLogo?.mimeType,
+  ]);
+
   const activeCount = products.filter((product) => product.status === "active").length;
 
   const filteredProducts = useMemo(() => {
@@ -97,6 +125,7 @@ export default function DigitalMenuDashboardPage() {
       await saveDigitalMenuSettingsClient({
         organizationId: membershipOrgId,
         organizationName: organization.name,
+        slug: organization.slug,
         settings: {
           heroTitle: heroTitle.trim(),
           heroSubtitle: heroSubtitle.trim(),
@@ -121,6 +150,9 @@ export default function DigitalMenuDashboardPage() {
     setCreating(true);
 
     try {
+      const nextSortOrder =
+        products.reduce((max, item) => Math.max(max, item.sortOrder), 0) + 10;
+
       const result = await createMenuProduct({
         name: newName.trim(),
         description: newDescription.trim() || undefined,
@@ -128,6 +160,7 @@ export default function DigitalMenuDashboardPage() {
         category: newCategory,
         station: newCategory === "beverage" ? "bar" : "kitchen",
         status: "inactive",
+        sortOrder: nextSortOrder,
         beverageGroup:
           newCategory === "beverage" && newBeverageGroup ? newBeverageGroup : undefined,
       });
@@ -188,7 +221,14 @@ export default function DigitalMenuDashboardPage() {
                 {guestMenuUrl}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Link href={`/menu?o=${encodeURIComponent(membershipOrgId!)}`} target="_blank">
+                <Link
+              href={
+                organization?.slug
+                  ? `/menu?s=${encodeURIComponent(organization.slug)}`
+                  : `/menu?o=${encodeURIComponent(membershipOrgId!)}`
+              }
+              target="_blank"
+            >
                   <Button variant="secondary" type="button">
                     Vista previa
                   </Button>
@@ -448,8 +488,41 @@ export default function DigitalMenuDashboardPage() {
             </Card>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
-              {filteredProducts.map((product) => (
-                <DigitalMenuProductCard key={product.id} product={product} />
+              {filteredProducts.map((product, index) => (
+                <DigitalMenuProductCard
+                  key={product.id}
+                  product={product}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < filteredProducts.length - 1}
+                  onMove={(direction) => {
+                    const swapIndex = direction === "up" ? index - 1 : index + 1;
+                    if (swapIndex < 0 || swapIndex >= filteredProducts.length) {
+                      return;
+                    }
+
+                    const reordered = [...filteredProducts];
+                    const current = reordered[index];
+                    const neighbor = reordered[swapIndex];
+                    if (!current || !neighbor) {
+                      return;
+                    }
+
+                    reordered[index] = neighbor;
+                    reordered[swapIndex] = current;
+
+                    void (async () => {
+                      const { updateMenuProduct } = await import("@/lib/pos/pos");
+                      await Promise.all(
+                        reordered.map((item, itemIndex) =>
+                          updateMenuProduct({
+                            productId: item.id,
+                            sortOrder: (itemIndex + 1) * 10,
+                          }),
+                        ),
+                      );
+                    })();
+                  }}
+                />
               ))}
             </div>
           )}

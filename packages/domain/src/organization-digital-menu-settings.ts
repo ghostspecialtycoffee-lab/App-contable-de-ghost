@@ -19,6 +19,7 @@ export interface OrganizationDigitalMenuSettings {
 export interface PublicDigitalMenuConfig extends OrganizationDigitalMenuSettings {
   organizationId: string;
   organizationName: string;
+  slug?: string;
   logoDataUrl?: string;
   logoMimeType?: string;
 }

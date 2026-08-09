@@ -227,6 +227,24 @@ export const PLATFORM_KNOWLEDGE_ENTRIES: PlatformKnowledgeEntry[] = [
     ].join("\n"),
   },
   {
+    id: "digital-menu",
+    questions: [
+      "menu digital",
+      "qr menu",
+      "configurar menu cliente",
+      "menu publico",
+    ],
+    tags: ["menu", "pos"],
+    answer: [
+      "**Admin:** `/digital-menu` — fotos, descripciones, precios, activar/desactivar, QR y apariencia.",
+      "**Cliente (solo ver):** `/menu?s={slug}` o `/menu?o={orgId}` — sin login ni pedidos.",
+      "",
+      "Publica cambios en **Apariencia** para sincronizar `publicDigitalMenu/config`.",
+      "Logo se sincroniza al subir en `/brand`.",
+      "Catálogo con recetas: `/pos/menu`.",
+    ].join("\n"),
+  },
+  {
     id: "web-search-agent",
     questions: [
       "busqueda web",
