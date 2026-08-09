@@ -4,13 +4,22 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 import { GuestMenuCatalog } from "@/components/guest-menu-catalog";
+import { usePublicDigitalMenu } from "@/hooks/use-digital-menu-settings";
 import { useGuestMenuProducts } from "@/hooks/use-guest-menu-products";
 import { MENU_CATEGORIES, MENU_CATEGORY_LABELS, MENU_CATEGORY_META } from "@ghost/domain";
 
 function PublicMenuContent() {
   const searchParams = useSearchParams();
   const organizationId = searchParams.get("o") ?? "";
-  const { products, loading, error } = useGuestMenuProducts(organizationId || null);
+  const { products, loading: productsLoading, error: productsError } = useGuestMenuProducts(
+    organizationId || null,
+  );
+  const { config, loading: configLoading, error: configError } = usePublicDigitalMenu(
+    organizationId || null,
+  );
+
+  const loading = productsLoading || configLoading;
+  const accentStyle = config?.accentStyle ?? "warm";
 
   const categoryCount = MENU_CATEGORIES.filter((category) =>
     products.some((product) => product.category === category),
@@ -33,16 +42,30 @@ function PublicMenuContent() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-4 pb-16">
+    <div
+      className={[
+        "ghost-menu-public mx-auto max-w-3xl space-y-6 p-4 pb-20",
+        `ghost-menu-theme-${accentStyle}`,
+      ].join(" ")}
+    >
       <div className="ghost-menu-hero">
-        <div className="ghost-menu-hero-content space-y-3">
+        <div className="ghost-menu-hero-content space-y-4">
+          {config?.logoDataUrl ? (
+            <img
+              src={config.logoDataUrl}
+              alt={config.organizationName}
+              className="mx-auto h-16 w-auto max-w-[200px] object-contain"
+            />
+          ) : null}
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-[var(--ghost-text-muted)]">
-            Menú digital
+            {config?.organizationName ?? "Menú digital"}
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Nuestro menú</h1>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            {config?.heroTitle ?? "Nuestro menú"}
+          </h1>
           <p className="mx-auto max-w-md text-sm leading-relaxed text-[var(--ghost-text-muted)]">
-            Explora bebidas, comida y repostería organizados por categoría. Toca una sección para
-            ir directo a lo que buscas.
+            {config?.heroSubtitle ??
+              "Explora bebidas, comida y repostería organizados por categoría."}
           </p>
           {categoryCount > 0 ? (
             <div className="flex flex-wrap justify-center gap-2 pt-1">
@@ -62,17 +85,23 @@ function PublicMenuContent() {
         </div>
       </div>
 
-      {error ? (
+      {productsError || configError ? (
         <p className="text-sm text-[var(--ghost-danger)]">
-          {error}
+          {productsError ?? configError}
           <span className="mt-1 block text-xs text-[var(--ghost-text-muted)]">
             Si eres staff, inicia sesión. Si eres cliente, pide al equipo que active productos en el
-            catálogo.
+            menú digital.
           </span>
         </p>
       ) : null}
 
-      <GuestMenuCatalog products={products} />
+      <GuestMenuCatalog products={products} showSearch={config?.showSearch ?? true} />
+
+      {config?.footerNote ? (
+        <footer className="border-t border-[var(--ghost-border)] pt-6 text-center text-xs text-[var(--ghost-text-muted)]">
+          {config.footerNote}
+        </footer>
+      ) : null}
     </div>
   );
 }

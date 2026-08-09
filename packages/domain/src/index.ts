@@ -17,6 +17,7 @@ export * from "./member.js";
 export * from "./operations/index.js";
 export * from "./organization-cost-matrix.js";
 export * from "./organization-costing-settings.js";
+export * from "./organization-digital-menu-settings.js";
 export * from "./organization-workflow-settings.js";
 export * from "./organization-email-delivery.js";
 export * from "./organization-fiscal.js";

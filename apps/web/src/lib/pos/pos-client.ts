@@ -11,6 +11,8 @@ import {
   type KitchenOrderStatus,
   type KitchenStation,
   type MenuCategory,
+  type MenuProductStatus,
+  type BeverageGroup,
   type PaymentMethod,
 } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -86,7 +88,8 @@ export async function createMenuProductClient(input: {
   description?: string;
   sortOrder?: number;
   saleTaxCategory?: CoTaxCategory;
-  status?: "active" | "inactive";
+  status?: MenuProductStatus;
+  beverageGroup?: BeverageGroup;
 }): Promise<{ productId: string }> {
   const userId = requireUserId();
   const { organizationId } = await getActiveContext();
@@ -119,6 +122,7 @@ export async function createMenuProductClient(input: {
       input.saleTaxCategory ??
       inferMenuProductTaxCategory({ name, category: input.category }),
     recipeCost: 0,
+    ...(input.beverageGroup ? { beverageGroup: input.beverageGroup } : {}),
     createdAt: now,
     updatedAt: now,
     createdBy: userId,
@@ -136,7 +140,9 @@ export async function updateMenuProductClient(input: {
   saleTaxCategory?: CoTaxCategory;
   category?: MenuCategory;
   station?: KitchenStation;
-  status?: "active" | "inactive";
+  status?: MenuProductStatus;
+  beverageGroup?: BeverageGroup | null;
+  sortOrder?: number;
 }): Promise<void> {
   const userId = requireUserId();
   const { organizationId } = await getActiveContext();
@@ -180,6 +186,18 @@ export async function updateMenuProductClient(input: {
 
   if (input.status !== undefined) {
     patch.status = input.status;
+  }
+
+  if (input.beverageGroup !== undefined) {
+    if (input.beverageGroup === null) {
+      patch.beverageGroup = null;
+    } else {
+      patch.beverageGroup = input.beverageGroup;
+    }
+  }
+
+  if (input.sortOrder !== undefined) {
+    patch.sortOrder = input.sortOrder;
   }
 
   const productRef = doc(

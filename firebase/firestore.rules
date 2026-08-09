@@ -207,6 +207,17 @@ service cloud.firestore {
           && resource.data.organizationId == organizationId;
       }
 
+      match /publicDigitalMenu/{docId} {
+        allow read: if true;
+        allow create, update: if canAccessOrg(organizationId)
+          && request.resource.data.organizationId == organizationId
+          && (
+            !('logoDataUrl' in request.resource.data)
+            || request.resource.data.logoDataUrl.size() <= 500000
+          );
+        allow delete: if canAccessOrg(organizationId);
+      }
+
       match /sales/{saleId} {
         allow read: if canAccessOrg(organizationId);
         allow create: if canAccessOrg(organizationId)

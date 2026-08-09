@@ -42,6 +42,32 @@ export const MENU_CATEGORY_META: Record<MenuCategory, MenuCategoryMeta> = {
   },
 };
 
+export const BEVERAGE_GROUPS = [
+  "espresso",
+  "filter",
+  "cold",
+  "tea",
+  "other",
+] as const;
+
+export type BeverageGroup = (typeof BEVERAGE_GROUPS)[number];
+
+export const BEVERAGE_GROUP_LABELS: Record<BeverageGroup, string> = {
+  espresso: "Espresso",
+  filter: "Filtrados",
+  cold: "Frías",
+  tea: "Tés e infusiones",
+  other: "Otras bebidas",
+};
+
+export const BEVERAGE_GROUP_EMOJI: Record<BeverageGroup, string> = {
+  espresso: "☕",
+  filter: "💧",
+  cold: "🧊",
+  tea: "🍵",
+  other: "🥤",
+};
+
 export const KITCHEN_STATIONS = ["counter", "bar", "kitchen"] as const;
 
 export type KitchenStation = (typeof KITCHEN_STATIONS)[number];
@@ -73,6 +99,7 @@ export interface MenuProduct extends AuditMetadata {
   recipeCost?: number;
   imageDataUrl?: string;
   imageMimeType?: string;
+  beverageGroup?: BeverageGroup;
 }
 
 export interface CreateMenuProductInput {

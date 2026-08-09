@@ -47,6 +47,7 @@ export function useGuestMenuProducts(organizationId: string | null) {
               recipeCost: data.recipeCost ?? 0,
               imageDataUrl: data.imageDataUrl,
               imageMimeType: data.imageMimeType,
+              beverageGroup: data.beverageGroup,
               createdAt: "",
               updatedAt: "",
               createdBy: "",
