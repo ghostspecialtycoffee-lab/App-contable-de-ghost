@@ -79,6 +79,22 @@ jobs:
         if: steps.deploy_gate.outputs.skip != 'true'
         run: pnpm build
 
+      - name: Setup Firebase infrastructure (Blaze APIs + Storage)
+        if: steps.deploy_gate.outputs.skip != 'true'
+        continue-on-error: true
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GCP_BILLING_ACCOUNT_ID: ${{ secrets.GCP_BILLING_ACCOUNT_ID }}
+          GOOGLE_CLOUD_PROJECT: ghost-contable
+        run: |
+          set -uo pipefail
+          if [ -z "${FIREBASE_SERVICE_ACCOUNT:-}" ]; then
+            echo "::warning::Sin FIREBASE_SERVICE_ACCOUNT — omitiendo setup Blaze/Storage"
+            exit 0
+          fi
+          ARGS=(--project ghost-contable --link-billing)
+          node scripts/setup-firebase-infrastructure.mjs "${ARGS[@]}" || true
+
       - name: Deploy to Firebase
         if: steps.deploy_gate.outputs.skip != 'true'
         env:
