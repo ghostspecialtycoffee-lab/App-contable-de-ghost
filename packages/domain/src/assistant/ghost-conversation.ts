@@ -26,6 +26,7 @@ import {
   buildMenuCatalogReply,
   buildTablesStatusReply,
   buildDailyBriefingReply,
+  buildOrgStatusReply,
   buildPlatformGuideReply,
 } from "./brain-responses.js";
 import {
@@ -356,7 +357,7 @@ const REQUIRED_FIELDS: Record<string, string[]> = {
   "create-counter-sale": ["productId"],
   "open-table": ["tableId"],
   "add-table-order": ["productId"],
-  "checkout-table": ["sessionId", "documentType", "paymentMethod", "customerEmail"],
+  "checkout-table": ["sessionId", "paymentMethod"],
   "send-kitchen": ["sessionId"],
   "update-kitchen-order": ["orderId", "status"],
   "build-recipe-cost": ["productId"],
@@ -387,7 +388,9 @@ const FIELD_PROMPTS: Record<string, string> = {
   orderId: "¿Qué comanda actualizamos?",
   status: "¿La marco como preparando, lista o entregada?",
   documentType:
-    "¿Lo emito como **factura de venta** o como **cuenta de cobro**?",
+    "¿Lo emito como **factura de venta** o como **cuenta de cobro**? (Si no dices nada, uso factura de venta.)",
+  paymentMethod:
+    "¿Cómo paga? **Efectivo**, **tarjeta** o **transferencia**.",
   customerEmail:
     "¿A qué correo envío el comprobante en PDF? Si no hace falta, di **no**.",
   recipeLines:
@@ -467,9 +470,20 @@ function isTableCheckoutMessage(normalized: string, message: string): boolean {
     return false;
   }
 
-  return /(cuenta|cobrar|cerrar cuenta|la cuenta|pagar mesa|factura de venta|cuenta de cobro)/.test(
+  return /(cuenta|cobrar|cerrar cuenta|la cuenta|pagar mesa|factura de venta|cuenta de cobro|liquidar mesa|cierra la mesa|cierrame la mesa|cobrar mesa|cobrar la mesa)/.test(
     normalized,
   );
+}
+
+function applyCheckoutDefaults(draft: Record<string, string>): Record<string, string> {
+  const next = { ...draft };
+  if (!String(next.documentType ?? "").trim()) {
+    next.documentType = "factura";
+  }
+  if (!String(next.customerEmail ?? "").trim()) {
+    next.customerEmail = "skip";
+  }
+  return next;
 }
 
 function isTableOrderMessage(
@@ -881,6 +895,9 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
   }
   if (/(estado de mesas|mesas abiertas|como estan las mesas)/.test(normalized)) {
     return "query-tables-status";
+  }
+  if (/(cobrar mesa|cobrar la mesa|liquidar mesa|cierra la mesa|cierrame la mesa)/.test(normalized)) {
+    return "checkout-table";
   }
 
   return "agent-query";
@@ -1333,18 +1350,13 @@ function missingFields(intent: string, draft: Record<string, string>): string[] 
   }
 
   if (intent === "checkout-table") {
+    const normalizedDraft = applyCheckoutDefaults(draft);
     const missing: string[] = [];
-    if (!String(draft.sessionId ?? "").trim()) {
+    if (!String(normalizedDraft.sessionId ?? "").trim()) {
       missing.push("sessionId");
     }
-    if (!String(draft.documentType ?? "").trim()) {
-      missing.push("documentType");
-    }
-    if (!String(draft.paymentMethod ?? "").trim()) {
+    if (!String(normalizedDraft.paymentMethod ?? "").trim()) {
       missing.push("paymentMethod");
-    }
-    if (!String(draft.customerEmail ?? "").trim()) {
-      missing.push("customerEmail");
     }
     return missing;
   }
@@ -1414,24 +1426,7 @@ function followUpForField(intent: string, field: string, context: GhostConversat
 }
 
 function buildOrgStatus(context: GhostConversationContext): string {
-  const openTables =
-    context.openTableSessions.length > 0
-      ? context.openTableSessions.map((session) => `Mesa ${session.tableNumber}`).join(", ")
-      : "ninguna";
-  const lowStockCount = context.inventoryStockSnapshot.filter(
-    (entry) => entry.minStock > 0 && entry.quantity < entry.minStock,
-  ).length;
-
-  return (
-    `Así va **${context.organizationName ?? "tu operación"}**:\n` +
-    `· **${context.inventoryCount}** insumos · **${context.invoiceCount}** facturas de compra` +
-    (lowStockCount > 0 ? ` · **${lowStockCount}** bajo mínimo` : "") +
-    `\n` +
-    `· **${context.menuProducts.length}** productos en carta (${context.ghostBeverageCount} bebidas Ghost)\n` +
-    `· Caja: **${context.cashSessionOpen ? "abierta" : "cerrada"}**\n` +
-    `· Mesas abiertas: ${openTables}\n` +
-    `· Comandas activas: **${context.kitchenOrders.length}**`
-  );
+  return buildOrgStatusReply(context);
 }
 
 function acknowledgeExecution(intent: GhostConversationIntent, draft: Record<string, string>): string {
@@ -1635,10 +1630,14 @@ export function processConversationTurn(input: {
 
   if (session.pendingIntent) {
     const intent = session.pendingIntent as GhostConversationIntent;
-    const draft = extractDraftForIntent(intent, trimmed, context, {
+    let draft = extractDraftForIntent(intent, trimmed, context, {
       ...session.draft,
       ...extractDraftForIntent(intent, trimmed, context, session.draft),
     });
+
+    if (intent === "checkout-table") {
+      draft = applyCheckoutDefaults(draft);
+    }
 
     if (intent === "checkout-table" && !context.cashSessionOpen) {
       return {
@@ -1858,7 +1857,10 @@ export function processConversationTurn(input: {
     };
   }
 
-  const draft = extractDraftForIntent(intent, trimmed, context, {});
+  let draft = extractDraftForIntent(intent, trimmed, context, {});
+  if (intent === "checkout-table") {
+    draft = applyCheckoutDefaults(draft);
+  }
   const missing = missingFields(intent, draft);
 
   if (intent === "close-cash-session" && !context.cashSessionOpen) {

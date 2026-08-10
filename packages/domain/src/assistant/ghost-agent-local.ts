@@ -2,12 +2,14 @@ import { findBestPlatformKnowledge } from "../ai/platform-knowledge.js";
 import {
   buildCashSummaryReply,
   buildCostMatrixOverviewReply,
+  buildDailyBriefingReply,
   buildFinancialOverviewReply,
   buildFixedExpensesReply,
   buildInventoryCatalogReply,
   buildInventoryLowStockReply,
   buildKitchenStatusReply,
   buildMenuCatalogReply,
+  buildOrgStatusReply,
   buildPlatformGuideReply,
   buildPurchaseSuggestionsReply,
   buildPurchasesReportReply,
@@ -41,6 +43,33 @@ function findProductByName(query: string, context: GhostConversationContext) {
 const ANALYSIS_PATTERN =
   /(analiza|analizar|revisa|revisar|muestrame|mostrar|dime|cuanto|cuantos|informe|reporte|estadistica|resumen de|como van|como va|que tal|evalua|panorama|detalle de|status de)/;
 
+const VAGUE_STATUS_PATTERN =
+  /^(como va|como vamos|como estamos|como esta|como estan|que tal|estado|status)(\s|\?|$)|^(como va todo|como esta la operacion|como vamos hoy)/;
+
+function buildContextAwareFallback(
+  message: string,
+  context: GhostConversationContext,
+): string | null {
+  const normalized = normalizeText(message);
+
+  if (
+    /^(hola|buenas|hey|buenos dias|buenas tardes|buenas noches)(\s|,|\.|$)/.test(normalized) &&
+    normalized.length <= 40
+  ) {
+    return `Hola. ${buildOrgStatusReply(context)}`;
+  }
+
+  if (/^(gracias|ok|listo|perfecto|vale|entendido)(\.|\s|$)/.test(normalized)) {
+    return "¿Necesitas algo más? Puedo revisar ventas, inventario, mesas o registrar operaciones.";
+  }
+
+  if (/(novedades|que paso|que hay de nuevo|briefing)/.test(normalized)) {
+    return buildDailyBriefingReply(context);
+  }
+
+  return null;
+}
+
 /**
  * Resuelve mensajes libres con datos operativos locales antes de llamar al agente en la nube.
  * Evita respuestas genéricas cuando el usuario pide análisis o consultas de la operación.
@@ -50,6 +79,10 @@ export function resolveLocalAgentMessage(
   context: GhostConversationContext,
 ): string | null {
   const normalized = normalizeText(message);
+
+  if (VAGUE_STATUS_PATTERN.test(normalized)) {
+    return buildOrgStatusReply(context);
+  }
 
   if (ANALYSIS_PATTERN.test(normalized)) {
     if (/(venta|vendimos|ticket|facturacion|mostrador)/.test(normalized)) {
@@ -125,5 +158,5 @@ export function resolveLocalAgentMessage(
     return buildPlatformGuideReply(message);
   }
 
-  return null;
+  return buildContextAwareFallback(message, context);
 }

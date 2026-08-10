@@ -759,6 +759,27 @@ export function buildTablesStatusReply(context: GhostConversationContext): strin
   );
 }
 
+export function buildOrgStatusReply(context: GhostConversationContext): string {
+  const openTables =
+    context.openTableSessions.length > 0
+      ? context.openTableSessions.map((session) => `Mesa ${session.tableNumber}`).join(", ")
+      : "ninguna";
+  const lowStockCount = context.inventoryStockSnapshot.filter(
+    (entry) => entry.minStock > 0 && entry.quantity < entry.minStock,
+  ).length;
+
+  return (
+    `Así va **${context.organizationName ?? "tu operación"}**:\n` +
+    `· **${context.inventoryCount}** insumos · **${context.invoiceCount}** facturas de compra` +
+    (lowStockCount > 0 ? ` · **${lowStockCount}** bajo mínimo` : "") +
+    `\n` +
+    `· **${context.menuProducts.length}** productos en carta (${context.ghostBeverageCount} bebidas Ghost)\n` +
+    `· Caja: **${context.cashSessionOpen ? "abierta" : "cerrada"}**\n` +
+    `· Mesas abiertas: ${openTables}\n` +
+    `· Comandas activas: **${context.kitchenOrders.length}**`
+  );
+}
+
 export function buildDailyBriefingReply(context: GhostConversationContext): string {
   const briefing = buildDailyOperationsBriefing(
     briefingInputFromGhostContext(context, {
