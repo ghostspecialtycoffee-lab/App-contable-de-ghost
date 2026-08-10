@@ -21,6 +21,7 @@ const DEFAULT_BUCKET = "ghost-contable.firebasestorage.app";
 const DEFAULT_LOCATION = "us-central1";
 
 const REQUIRED_SERVICES = [
+  "cloudbilling.googleapis.com",
   "cloudfunctions.googleapis.com",
   "cloudbuild.googleapis.com",
   "artifactregistry.googleapis.com",
@@ -255,6 +256,16 @@ Variables:
 
   console.log(`\n🔧 Setup infraestructura Firebase — ${args.project}\n`);
 
+  let servicesOk = 0;
+  for (const service of REQUIRED_SERVICES) {
+    const enabled = await enableService(args.project, service, token, args.dryRun);
+    if (enabled) {
+      servicesOk += 1;
+    }
+  }
+
+  console.log(`\nAPIs: ${servicesOk}/${REQUIRED_SERVICES.length} listas\n`);
+
   const billing = await getBillingInfo(args.project, token);
   const billingEnabled = billing.ok && Boolean(billing.body?.billingAccountName);
 
@@ -273,16 +284,6 @@ Variables:
       }
     }
   }
-
-  let servicesOk = 0;
-  for (const service of REQUIRED_SERVICES) {
-    const enabled = await enableService(args.project, service, token, args.dryRun);
-    if (enabled) {
-      servicesOk += 1;
-    }
-  }
-
-  console.log(`\nAPIs: ${servicesOk}/${REQUIRED_SERVICES.length} listas\n`);
 
   const exists = args.dryRun ? false : await bucketExists(args.project, args.bucket, token);
   if (!exists) {
