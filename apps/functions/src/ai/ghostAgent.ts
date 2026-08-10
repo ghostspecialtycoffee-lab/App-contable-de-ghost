@@ -7,15 +7,12 @@ import {
   type GhostAgentResponse,
 } from "@ghost/domain";
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
-import { defineSecret } from "firebase-functions/params";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 import { planGhostAgentWithLlm } from "./llmClient.js";
 import { searchWeb } from "./webSearch.js";
 import { getDb } from "../shared/db.js";
 import { assertOrgPermission, getActiveOrganizationId } from "../shared/permissions.js";
-
-const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
 const GHOST_AGENT_SYSTEM_CONTEXT = [
   "Eres Ghost, asistente operativo de Ghost Specialty Coffee y experto en la plataforma Ghost ERP.",
@@ -25,7 +22,7 @@ const GHOST_AGENT_SYSTEM_CONTEXT = [
   "Si usas información web, cita las fuentes y marca incertidumbre cuando aplique.",
 ].join(" ");
 
-export const ghostAgent = onCall({ secrets: [geminiApiKey] }, async (request) => {
+export const ghostAgent = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Debes iniciar sesión.");
   }
@@ -115,7 +112,7 @@ export const ghostAgent = onCall({ secrets: [geminiApiKey] }, async (request) =>
     return response;
   }
 
-  const geminiKey = (geminiApiKey.value() || process.env.GEMINI_API_KEY || "").trim();
+  const geminiKey = (process.env.GEMINI_API_KEY || "").trim();
   if (geminiKey) {
     try {
       const llmPlan = await planGhostAgentWithLlm({
