@@ -90,6 +90,34 @@ Si compartiste la clave privada en chat o capturas:
 
 ---
 
+## Agente LLM (Gemini + tool calling)
+
+Para que Ghost ejecute acciones libres («sube el precio del latte», «cobra mesa 2»):
+
+### Paso 1 — Obtener API key
+
+1. https://aistudio.google.com/apikey
+2. Crea una API key (proyecto **ghost-contable** o tu cuenta Google)
+
+### Paso 2 — Guardar en GitHub (recomendado)
+
+1. https://github.com/ghostspecialtycoffee-lab/App-contable-de-ghost/settings/secrets/actions
+2. **New repository secret** → Name: `GEMINI_API_KEY` → pega la key
+3. Ejecuta **Deploy Firebase** en Actions (branch `main`)
+
+El workflow guarda el secret en Firebase y despliega `ghostAgent` con Gemini.
+
+### Alternativa manual (Firebase CLI)
+
+```bash
+firebase functions:secrets:set GEMINI_API_KEY --project ghost-contable
+firebase deploy --only functions:ghostAgent --project ghost-contable
+```
+
+Sin `GEMINI_API_KEY`, el chat sigue con reglas locales + conocimiento + búsqueda web.
+
+---
+
 ## Errores comunes
 
 | Error | Solución |
