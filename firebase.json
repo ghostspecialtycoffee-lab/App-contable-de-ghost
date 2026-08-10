@@ -8,16 +8,20 @@
   },
   "functions": [
     {
-      "source": "apps/functions",
+      "source": "apps/functions-bundle",
       "codebase": "default",
       "ignore": [
         "node_modules",
         ".git",
         "firebase-debug.log",
         "firebase-debug.*.log",
-        "*.local"
+        "*.local",
+        "src"
       ],
-      "predeploy": ["pnpm --filter @ghost/functions build"]
+      "predeploy": [
+        "pnpm --filter @ghost/functions build",
+        "node scripts/prepare-functions-bundle.mjs"
+      ]
     }
   ],
   "hosting": {

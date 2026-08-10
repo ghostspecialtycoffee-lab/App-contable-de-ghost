@@ -6,6 +6,7 @@ out
 build
 /lib
 /apps/functions/lib
+/apps/functions-bundle
 *.log
 .env
 .env.*
