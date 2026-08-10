@@ -1,5 +1,6 @@
 import {
   buildGhostAgentFallbackAnswer,
+  findBestPlatformKnowledge,
   scoreKnowledgeMatch,
   type AgentKnowledgeSource,
   type GhostAgentHistoryMessage,
@@ -66,6 +67,15 @@ export async function resolveGhostAgentQuery(input: {
   history?: GhostAgentHistoryMessage[];
 }): Promise<GhostAgentResponse> {
   const history = input.history ?? [];
+
+  const platform = findBestPlatformKnowledge(input.message, 0.42);
+  if (platform) {
+    return {
+      answer: platform.entry.answer,
+      usedWebSearch: false,
+      sources: platform.entry.sources ?? [],
+    };
+  }
 
   try {
     const knowledge = await loadKnowledgeAnswer(input.organizationId, input.message);

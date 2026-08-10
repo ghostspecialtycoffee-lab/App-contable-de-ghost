@@ -466,6 +466,25 @@ export function classifyBrainQueryIntent(message: string): string | null {
     return "query-financial-overview";
   }
 
+  if (/(analiza|revisa|muestrame).*(venta|vendimos)/.test(normalized)) {
+    return "query-sales-report";
+  }
+  if (/(analiza|revisa|muestrame).*(compra|proveedor)/.test(normalized)) {
+    return "query-purchases-review";
+  }
+  if (/(analiza|revisa|muestrame).*(inventario|insumo|stock)/.test(normalized)) {
+    return "query-inventory-low-stock";
+  }
+  if (/(analiza|revisa|muestrame).*(caja|efectivo)/.test(normalized)) {
+    return "query-cash-summary";
+  }
+  if (/(analiza|revisa|muestrame).*(costo|margen|food)/.test(normalized)) {
+    return "query-cost-matrix";
+  }
+  if (/(analiza|revisa|muestrame).*(mesa|comanda)/.test(normalized)) {
+    return "query-tables-status";
+  }
+
   return null;
 }
 

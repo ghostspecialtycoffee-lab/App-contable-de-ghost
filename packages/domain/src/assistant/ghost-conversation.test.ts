@@ -62,6 +62,43 @@ describe("ghost-conversation", () => {
     }
   });
 
+  it("interpreta analisis de ventas sin agente en la nube", () => {
+    const result = processConversationTurn({
+      message: "analiza las ventas de hoy",
+      session: createEmptyGhostChatSession(),
+      context: {
+        ...baseContext,
+        salesSnapshot: [
+          {
+            soldAt: new Date().toISOString(),
+            soldOn: new Date().toISOString().slice(0, 10),
+            status: "paid",
+            subtotal: 12000,
+            taxAmount: 0,
+            total: 12000,
+            paymentMethod: "cash",
+            lines: [{ name: "Latte", quantity: 1, lineTotal: 12000 }],
+          },
+        ],
+      },
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.messages[0]).toContain("Ventas");
+    }
+  });
+
+  it("interpreta venta coloquial", () => {
+    const result = processConversationTurn({
+      message: "quiero vender un latte",
+      session: createEmptyGhostChatSession(),
+      context: baseContext,
+    });
+
+    expect(result.kind).not.toBe("agent");
+  });
+
   it("interpreta apertura de caja en una frase", () => {
     const result = processConversationTurn({
       message: "abre caja con 200000",
