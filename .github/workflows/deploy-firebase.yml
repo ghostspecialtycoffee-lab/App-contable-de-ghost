@@ -2,6 +2,12 @@ name: Deploy Firebase
 
 on:
   workflow_dispatch:
+    inputs:
+      force_redeploy:
+        description: "Forzar deploy aunque main no haya cambiado (útil tras activar Blaze)"
+        required: false
+        default: false
+        type: boolean
   push:
     branches:
       - main
@@ -39,7 +45,7 @@ jobs:
           git checkout FETCH_HEAD
 
       - name: Skip if main already deployed (scheduled only)
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' && inputs.force_redeploy != true
         id: deploy_gate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
