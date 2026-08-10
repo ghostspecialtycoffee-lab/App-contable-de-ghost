@@ -134,32 +134,35 @@ export const ghostAgent = onCall(async (request) => {
     answer = buildFallbackAnswer(message, contextSummary, history);
   }
 
-  const knowledgeRef = db
-    .collection("organizations")
-    .doc(organizationId)
-    .collection("agentKnowledge")
-    .doc();
-
-  const now = new Date().toISOString();
-  await knowledgeRef.set({
-    organizationId,
-    question: message,
-    answer,
-    sources,
-    confidence: usedWebSearch ? 0.7 : 0.5,
-    usageCount: 1,
-    createdAt: now,
-    updatedAt: now,
-    createdBy: request.auth.uid,
-  });
-
   const response: GhostAgentResponse = {
     answer,
     usedWebSearch,
     sources,
-    knowledgeEntryId: knowledgeRef.id,
     suggestedFollowUp: undefined,
   };
+
+  if (usedWebSearch) {
+    const knowledgeRef = db
+      .collection("organizations")
+      .doc(organizationId)
+      .collection("agentKnowledge")
+      .doc();
+
+    const now = new Date().toISOString();
+    await knowledgeRef.set({
+      organizationId,
+      question: message,
+      answer,
+      sources,
+      confidence: 0.7,
+      usageCount: 1,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: request.auth.uid,
+    });
+
+    response.knowledgeEntryId = knowledgeRef.id;
+  }
 
   await persistAgentSession(db, organizationId, sessionId, request.auth.uid, message, response);
   return response;

@@ -41,6 +41,7 @@ import {
   parseIngredientLinesFromMessage,
 } from "./cost-matrix-conversation.js";
 import { buildBrainHelpMessage, classifyBrainQueryIntent } from "./ghost-brain.js";
+import { resolveLocalAgentMessage } from "./ghost-agent-local.js";
 
 export type GhostConversationIntent =
   | "org-status"
@@ -866,6 +867,21 @@ function classifyIntent(message: string, context: GhostConversationContext): Gho
   if (/(comanda lista|preparando|entregad|actualiza comanda)/.test(normalized)) {
     return "update-kitchen-order";
   }
+  if (/(quiero vender|vender un|vender una|hazme un|hazme una|necesito vender)/.test(normalized)) {
+    return "create-counter-sale";
+  }
+  if (/(registrar compra|registra compra|necesito comprar|llego factura|anota compra)/.test(normalized)) {
+    return "create-purchase-invoice";
+  }
+  if (/(que productos|lista de productos|ver carta|que hay en el menu|productos del menu)/.test(normalized)) {
+    return "query-menu-catalog";
+  }
+  if (/(que insumos|lista inventario|ver inventario|catalogo de insumos)/.test(normalized)) {
+    return "query-inventory-catalog";
+  }
+  if (/(estado de mesas|mesas abiertas|como estan las mesas)/.test(normalized)) {
+    return "query-tables-status";
+  }
 
   return "agent-query";
 }
@@ -1512,13 +1528,23 @@ export function buildConversationContextSummary(context: GhostConversationContex
     .slice(0, 8)
     .map((product) => product.name)
     .join(", ");
+  const lowStockCount = context.inventoryStockSnapshot.filter(
+    (entry) => entry.minStock > 0 && entry.quantity < entry.minStock,
+  ).length;
+  const todaySales = context.salesSnapshot.filter((sale) => sale.status === "paid");
+  const todaySalesTotal = todaySales.reduce((sum, sale) => sum + sale.total, 0);
 
   return [
     `Organización: ${context.organizationName ?? "Ghost"}`,
-    `Insumos: ${context.inventoryCount}`,
+    `Insumos: ${context.inventoryCount}${lowStockCount > 0 ? ` (${lowStockCount} bajo mínimo)` : ""}`,
     `Facturas compra: ${context.invoiceCount}`,
     `Productos carta: ${context.menuProducts.length}${topProducts ? ` (${topProducts})` : ""}`,
-    `Caja: ${context.cashSessionOpen ? "abierta" : "cerrada"}`,
+    `Ventas hoy: ${todaySales.length} · ${todaySalesTotal.toLocaleString("es-CO")} COP`,
+    `Caja: ${context.cashSessionOpen ? "abierta" : "cerrada"}${
+      context.cashSnapshot
+        ? ` · esperado ${Math.round(context.cashSnapshot.expectedAmount).toLocaleString("es-CO")} COP`
+        : ""
+    }`,
     `Mesas abiertas: ${openTables}`,
     `Comandas activas: ${context.kitchenOrders.length}`,
   ].join("\n");
@@ -1812,6 +1838,15 @@ export function processConversationTurn(input: {
         kind: "reply",
         session: clearPending(session),
         messages: [buildBrainHelpMessage(context)],
+      };
+    }
+
+    const localAnswer = resolveLocalAgentMessage(trimmed, context);
+    if (localAnswer) {
+      return {
+        kind: "reply",
+        session: clearPending(session),
+        messages: [localAnswer],
       };
     }
 
