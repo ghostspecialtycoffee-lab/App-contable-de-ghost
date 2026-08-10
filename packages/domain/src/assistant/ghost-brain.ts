@@ -40,7 +40,7 @@ export const GHOST_BRAIN_SKILLS: GhostBrainSkill[] = [
     kind: "query",
     title: "Estado operativo",
     description: "Resumen de caja, mesas, comandas e inventario.",
-    keywords: /(como vamos|como va|que tal la operacion|estado general|resumen operativo|status)/,
+    keywords: /(como vamos|como va|que tal la operacion|estado general|resumen operativo|status|como va todo|como estamos|como esta la operacion)/,
     examples: ["¿cómo vamos?", "estado de la operación"],
   },
   {

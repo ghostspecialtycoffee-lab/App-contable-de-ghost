@@ -57,8 +57,15 @@ describe("resolveLocalAgentMessage", () => {
     expect(answer).toMatch(/venta|mostrador/i);
   });
 
-  it("devuelve null para mensajes operativos ambiguos", () => {
+  it("responde consultas vagas con estado operativo local", () => {
+    const answer = resolveLocalAgentMessage("cómo va todo", baseContext);
+    expect(answer).toContain("Así va");
+    expect(answer).toContain("Ghost Lab");
+  });
+
+  it("saluda con resumen operativo breve", () => {
     const answer = resolveLocalAgentMessage("hola qué tal", baseContext);
-    expect(answer).toBeNull();
+    expect(answer).toContain("Hola");
+    expect(answer).toContain("Ghost Lab");
   });
 });

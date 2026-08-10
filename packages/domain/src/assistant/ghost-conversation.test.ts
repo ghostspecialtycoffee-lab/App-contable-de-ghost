@@ -275,7 +275,7 @@ describe("ghost-conversation", () => {
     }
   });
 
-  it("muestra cuenta de mesa y pregunta tipo de comprobante", () => {
+  it("muestra cuenta de mesa y pregunta forma de pago", () => {
     const context = {
       ...baseContext,
       cashSessionOpen: true,
@@ -301,7 +301,38 @@ describe("ghost-conversation", () => {
     if (result.kind === "reply") {
       expect(result.session.pendingIntent).toBe("checkout-table");
       expect(result.messages[0]).toContain("Dirty Chai");
-      expect(result.messages[0]).toMatch(/factura|cuenta de cobro/i);
+      expect(result.messages[0]).toMatch(/efectivo|tarjeta|transferencia/i);
+    }
+  });
+
+  it("cobra mesa en un solo mensaje con pago y sin correo", () => {
+    const context = {
+      ...baseContext,
+      cashSessionOpen: true,
+      openTableSessions: [
+        {
+          sessionId: "session-1",
+          tableId: "table-1",
+          tableNumber: 1,
+          guestToken: "qr-1",
+          lines: [{ name: "Dirty Chai", quantity: 2, lineTotal: 18000 }],
+          total: 18000,
+        },
+      ],
+    };
+
+    const result = processConversationTurn({
+      message: "cobrar mesa 1 en efectivo",
+      session: createEmptyGhostChatSession(),
+      context,
+    });
+
+    expect(result.kind).toBe("execute");
+    if (result.kind === "execute") {
+      expect(result.intent).toBe("checkout-table");
+      expect(result.draft.paymentMethod).toBe("cash");
+      expect(result.draft.documentType).toBe("factura");
+      expect(result.draft.customerEmail).toBe("skip");
     }
   });
 
@@ -333,39 +364,71 @@ describe("ghost-conversation", () => {
     }
 
     const second = processConversationTurn({
-      message: "factura de venta",
+      message: "efectivo",
       session: first.session,
       context,
     });
 
-    expect(second.kind).toBe("reply");
-    if (second.kind !== "reply") {
-      return;
+    expect(second.kind).toBe("execute");
+    if (second.kind === "execute") {
+      expect(second.intent).toBe("checkout-table");
+      expect(second.draft.paymentMethod).toBe("cash");
+      expect(second.draft.documentType).toBe("factura");
+      expect(second.draft.customerEmail).toBe("skip");
     }
-    expect(second.session.draft.documentType).toBe("factura");
+  });
 
-    const third = processConversationTurn({
-      message: "efectivo",
-      session: second.session,
+  it("acepta correo opcional al cobrar mesa", () => {
+    const context = {
+      ...baseContext,
+      cashSessionOpen: true,
+      openTableSessions: [
+        {
+          sessionId: "session-1",
+          tableId: "table-1",
+          tableNumber: 1,
+          guestToken: "qr-1",
+          lines: [{ name: "Dirty Chai", quantity: 2, lineTotal: 18000 }],
+          total: 18000,
+        },
+      ],
+    };
+
+    const first = processConversationTurn({
+      message: "dame la cuenta de la mesa 1",
+      session: createEmptyGhostChatSession(),
       context,
     });
 
-    expect(third.kind).toBe("reply");
-    if (third.kind !== "reply") {
+    expect(first.kind).toBe("reply");
+    if (first.kind !== "reply") {
       return;
     }
 
-    const fourth = processConversationTurn({
-      message: "cliente@ejemplo.com",
-      session: third.session,
+    const second = processConversationTurn({
+      message: "tarjeta, envía a cliente@ejemplo.com",
+      session: first.session,
       context,
     });
 
-    expect(fourth.kind).toBe("execute");
-    if (fourth.kind === "execute") {
-      expect(fourth.intent).toBe("checkout-table");
-      expect(fourth.draft.paymentMethod).toBe("cash");
-      expect(fourth.draft.customerEmail).toBe("cliente@ejemplo.com");
+    expect(second.kind).toBe("execute");
+    if (second.kind === "execute") {
+      expect(second.draft.paymentMethod).toBe("card");
+      expect(second.draft.customerEmail).toBe("cliente@ejemplo.com");
+    }
+  });
+
+  it("responde estado operativo en consultas vagas sin ir a la nube", () => {
+    const result = processConversationTurn({
+      message: "cómo va todo",
+      session: createEmptyGhostChatSession(),
+      context: baseContext,
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.messages[0]).toContain("Así va");
+      expect(result.messages[0]).toContain("Ghost Lab");
     }
   });
 
