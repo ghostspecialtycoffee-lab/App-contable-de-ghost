@@ -33,7 +33,7 @@ export interface GhostChatMenuOption {
 
 export const GHOST_ASSISTANT_NAME = "Ghost";
 
-export const GHOST_CHAT_GLOBAL_COMMANDS = ["menu", "inicio", "cancelar"] as const;
+export const GHOST_CHAT_GLOBAL_COMMANDS = ["menu", "inicio", "cancelar", "reiniciar", "estado"] as const;
 
 export function createEmptyGhostChatSession(): GhostChatSession {
   return {
@@ -43,6 +43,24 @@ export function createEmptyGhostChatSession(): GhostChatSession {
     role: null,
     pendingIntent: null,
   };
+}
+
+export function sanitizeGhostChatSession(
+  session: GhostChatSession,
+  options?: { cashSessionOpen?: boolean },
+): GhostChatSession {
+  if (!session.pendingIntent) {
+    return session;
+  }
+
+  if (session.pendingIntent === "open-cash-session" && options?.cashSessionOpen) {
+    return {
+      ...createEmptyGhostChatSession(),
+      agentSessionId: session.agentSessionId,
+    };
+  }
+
+  return session;
 }
 
 export function isGhostChatGlobalCommand(input: string): boolean {

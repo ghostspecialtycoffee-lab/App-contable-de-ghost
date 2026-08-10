@@ -752,4 +752,24 @@ describe("ghost-conversation", () => {
       expect(result.session.pendingIntent).toBeNull();
     }
   });
+
+  it("comando global estado siempre muestra resumen operativo", () => {
+    const pendingSession = {
+      ...createEmptyGhostChatSession(),
+      pendingIntent: "open-cash-session",
+      draft: {},
+    };
+
+    const result = processConversationTurn({
+      message: "estado",
+      session: pendingSession,
+      context: { ...baseContext, cashSessionOpen: true },
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.messages[0]).toContain("Así va");
+      expect(result.session.pendingIntent).toBeNull();
+    }
+  });
 });

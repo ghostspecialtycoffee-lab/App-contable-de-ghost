@@ -1733,11 +1733,21 @@ export function processConversationTurn(input: {
   }
 
   if (isGhostChatGlobalCommand(trimmed)) {
-    if (trimmed.toLowerCase() === "cancelar") {
+    const normalizedCommand = normalizeText(trimmed);
+
+    if (normalizedCommand === "cancelar") {
       return {
         kind: "reply",
         session: clearPending(session),
         messages: ["De acuerdo, lo dejamos aquí. ¿En qué más te ayudo?"],
+      };
+    }
+
+    if (normalizedCommand === "estado") {
+      return {
+        kind: "reply",
+        session: clearPending(session),
+        messages: [buildOrgStatus(context)],
       };
     }
 
@@ -1746,6 +1756,25 @@ export function processConversationTurn(input: {
       session: clearPending(session),
       messages: [ghostChatGreeting(context.organizationName)],
     };
+  }
+
+  const priorityIntent = classifyIntent(trimmed, context);
+  if (
+    session.pendingIntent &&
+    (isPendingIntentInterruptMessage(trimmed) ||
+      priorityIntent === "org-status" ||
+      priorityIntent === "brain-help" ||
+      priorityIntent.startsWith("query-"))
+  ) {
+    session = clearPending(session);
+
+    if (priorityIntent === "org-status") {
+      return {
+        kind: "reply",
+        session,
+        messages: [buildOrgStatus(context)],
+      };
+    }
   }
 
   if (session.pendingIntent) {
@@ -2044,6 +2073,14 @@ export function processConversationTurn(input: {
   }
 
   if (missing.length > 0) {
+    if (intent === "open-cash-session" && context.cashSessionOpen) {
+      return {
+        kind: "reply",
+        session: clearPending(session),
+        messages: [buildOrgStatus(context)],
+      };
+    }
+
     return {
       kind: "reply",
       session: sessionWithPending(session, intent, draft),

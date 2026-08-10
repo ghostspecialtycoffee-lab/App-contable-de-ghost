@@ -36,17 +36,28 @@ import { useAuth, useActiveMembership } from "@/providers/auth-provider";
 import {
   calculateCashSessionBalance,
   createEmptyGhostChatSession,
+  sanitizeGhostChatSession,
   type GhostChatMessage,
   type GhostChatSession,
 } from "@ghost/domain";
 
 const STORAGE_PREFIX = "ghost-chat";
+const STORAGE_VERSION = 2;
+
+interface PersistedChatPayload {
+  version?: number;
+  messages: GhostChatMessage[];
+  session: GhostChatSession;
+}
 
 function storageKey(organizationId: string): string {
   return `${STORAGE_PREFIX}:${organizationId}`;
 }
 
-function loadPersistedChat(organizationId: string): {
+function loadPersistedChat(
+  organizationId: string,
+  options?: { cashSessionOpen?: boolean },
+): {
   messages: GhostChatMessage[];
   session: GhostChatSession;
 } | null {
@@ -59,10 +70,26 @@ function loadPersistedChat(organizationId: string): {
     if (!raw) {
       return null;
     }
-    return JSON.parse(raw) as { messages: GhostChatMessage[]; session: GhostChatSession };
+    const parsed = JSON.parse(raw) as PersistedChatPayload;
+    if (!parsed.version || parsed.version < STORAGE_VERSION) {
+      return null;
+    }
+    return {
+      messages: parsed.messages,
+      session: sanitizeGhostChatSession(parsed.session, {
+        cashSessionOpen: options?.cashSessionOpen,
+      }),
+    };
   } catch {
     return null;
   }
+}
+
+function clearPersistedChat(organizationId: string): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.localStorage.removeItem(storageKey(organizationId));
 }
 
 function persistChat(
@@ -76,7 +103,7 @@ function persistChat(
 
   window.localStorage.setItem(
     storageKey(organizationId),
-    JSON.stringify({ messages, session }),
+    JSON.stringify({ version: STORAGE_VERSION, messages, session }),
   );
 }
 
@@ -318,7 +345,9 @@ export function useGhostChat() {
       return;
     }
 
-    const persisted = loadPersistedChat(organizationId);
+    const persisted = loadPersistedChat(organizationId, {
+      cashSessionOpen: Boolean(cashSession),
+    });
     if (persisted && persisted.messages.length > 0) {
       setMessages(persisted.messages);
       setSession(persisted.session);
@@ -425,13 +454,19 @@ export function useGhostChat() {
   );
 
   const resetChat = useCallback(() => {
+    if (organizationId) {
+      clearPersistedChat(organizationId);
+    }
     const initial = createInitialGhostChatTurn(context);
     const initialMessages = initial.ghostMessages.map((text) =>
       createGhostChatMessage("ghost", text),
     );
     setMessages(initialMessages);
     setSession(initial.session);
-  }, [context]);
+    if (organizationId) {
+      persistChat(organizationId, initialMessages, initial.session);
+    }
+  }, [context, organizationId]);
 
   return {
     messages,
