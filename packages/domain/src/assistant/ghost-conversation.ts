@@ -43,6 +43,7 @@ import {
 } from "./cost-matrix-conversation.js";
 import { buildBrainHelpMessage, classifyBrainQueryIntent } from "./ghost-brain.js";
 import { resolveLocalAgentMessage } from "./ghost-agent-local.js";
+import { isInterpretiveNaturalLanguage } from "../ai/ghost-llm-tools.js";
 
 export type GhostConversationIntent =
   | "org-status"
@@ -1519,30 +1520,56 @@ function clearPending(session: GhostChatSession): GhostChatSession {
 
 export function buildConversationContextSummary(context: GhostConversationContext): string {
   const openTables = context.openTableSessions.map((s) => s.tableNumber).join(", ") || "ninguna";
-  const topProducts = context.menuProducts
-    .slice(0, 8)
-    .map((product) => product.name)
+  const productCatalog = context.menuProducts
+    .slice(0, 50)
+    .map((product) => `${product.name} $${product.price.toLocaleString("es-CO")}`)
+    .join(" · ");
+  const inventoryCatalog = context.inventoryItems
+    .slice(0, 40)
+    .map((item) => item.name)
     .join(", ");
+  const tableCatalog =
+    context.tables.map((table) => `Mesa ${table.number}${table.label ? ` (${table.label})` : ""}`).join(", ") ||
+    "ninguna";
+  const lowStock = context.inventoryStockSnapshot
+    .filter((entry) => entry.minStock > 0 && entry.quantity < entry.minStock)
+    .slice(0, 12)
+    .map((entry) => `${entry.name}: ${entry.quantity}/${entry.minStock} ${entry.baseUnit}`)
+    .join(" · ");
   const lowStockCount = context.inventoryStockSnapshot.filter(
     (entry) => entry.minStock > 0 && entry.quantity < entry.minStock,
   ).length;
   const todaySales = context.salesSnapshot.filter((sale) => sale.status === "paid");
   const todaySalesTotal = todaySales.reduce((sum, sale) => sum + sale.total, 0);
+  const kitchenSummary =
+    context.kitchenOrders.length > 0
+      ? context.kitchenOrders
+          .slice(0, 8)
+          .map(
+            (order) =>
+              `${order.saleNumber || order.id.slice(0, 6)} mesa ${order.tableNumber ?? "?"} ${order.status}`,
+          )
+          .join(" · ")
+      : "ninguna";
 
   return [
     `Organización: ${context.organizationName ?? "Ghost"}`,
-    `Insumos: ${context.inventoryCount}${lowStockCount > 0 ? ` (${lowStockCount} bajo mínimo)` : ""}`,
+    `Insumos: ${context.inventoryCount}${inventoryCatalog ? ` — ${inventoryCatalog}` : ""}`,
     `Facturas compra: ${context.invoiceCount}`,
-    `Productos carta: ${context.menuProducts.length}${topProducts ? ` (${topProducts})` : ""}`,
+    `Carta (${context.menuProducts.length}): ${productCatalog || "vacía"}`,
     `Ventas hoy: ${todaySales.length} · ${todaySalesTotal.toLocaleString("es-CO")} COP`,
     `Caja: ${context.cashSessionOpen ? "abierta" : "cerrada"}${
       context.cashSnapshot
         ? ` · esperado ${Math.round(context.cashSnapshot.expectedAmount).toLocaleString("es-CO")} COP`
         : ""
     }`,
+    `Mesas configuradas: ${tableCatalog}`,
     `Mesas abiertas: ${openTables}`,
-    `Comandas activas: ${context.kitchenOrders.length}`,
-  ].join("\n");
+    `Comandas: ${kitchenSummary}`,
+    lowStock ? `Bajo mínimo (${lowStockCount}): ${lowStock}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function buildPendingReply(
@@ -1841,7 +1868,7 @@ export function processConversationTurn(input: {
     }
 
     const localAnswer = resolveLocalAgentMessage(trimmed, context);
-    if (localAnswer) {
+    if (localAnswer && !isInterpretiveNaturalLanguage(trimmed)) {
       return {
         kind: "reply",
         session: clearPending(session),
@@ -1862,6 +1889,20 @@ export function processConversationTurn(input: {
     draft = applyCheckoutDefaults(draft);
   }
   const missing = missingFields(intent, draft);
+
+  if (
+    missing.length > 0 &&
+    isInterpretiveNaturalLanguage(trimmed) &&
+    intent !== "save-recipe-cost"
+  ) {
+    const agentSessionId = session.agentSessionId ?? `chat-${Date.now()}`;
+    return {
+      kind: "agent",
+      session: { ...clearPending(session), agentSessionId },
+      messages: ["Entendido, lo interpreto…"],
+      message: trimmed,
+    };
+  }
 
   if (intent === "close-cash-session" && !context.cashSessionOpen) {
     return {

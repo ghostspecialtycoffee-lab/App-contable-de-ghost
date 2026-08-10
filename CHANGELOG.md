@@ -5,7 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 ## [Unreleased]
 
 ### Added
-- App web optimizada para celular: bottom nav, PWA manifest, inputs táctiles 48px
+- Agente interpretativo LLM: 20 herramientas (caja, carta, mesas, inventario, compras, gastos, admin)
+- Routing de lenguaje natural compuesto al agente Gemini cuando hay `GEMINI_API_KEY`
+- Contexto enriquecido para el agente (productos, insumos, mesas, comandas, stock bajo)
 - Páginas `/inventory/warehouses` y `/inventory/movements` funcionales
 - [FIREBASE_SETUP.md](FIREBASE_SETUP.md) — guía completa Google/Firebase (sin Code.gs)
 - Iconos PWA en `apps/web/public/icons/`
