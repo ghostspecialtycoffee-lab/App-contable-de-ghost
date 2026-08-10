@@ -77,7 +77,7 @@ Activa **alertas de presupuesto** en Google Cloud para evitar sorpresas.
 
 ## Después de activar Blaze (checklist)
 
-1. **Storage en consola** — [Comenzar Storage](https://console.firebase.google.com/project/ghost-contable/storage) → ubicación `us-central1`
+1. **Storage en consola** — [Comenzar Storage](https://console.firebase.google.com/project/ghost-contable/storage) → ubicación `us-central1` (obligatorio una vez)
 2. **Redeploy backend** — GitHub → Actions → **Deploy Firebase** → Run workflow (o push a `main`)
 3. **Verificar** — En el log del workflow deben aparecer:
    - `✅ Backend desplegado (registro/onboarding listo)`
@@ -93,7 +93,8 @@ Si el deploy programado dice *"Sin cambios en main — omitiendo"*, ejecuta **De
 | Error | Solución |
 |-------|----------|
 | `Billing account is not open` | Reabrir cuenta de facturación en GCP o vincular una nueva |
-| `Storage has not been set up` | Paso 1 del checklist o re-ejecutar setup workflow |
+| `Cloud Billing API has not been used` | El setup lo habilita automáticamente; re-ejecutar deploy |
+| `Storage has not been set up` | Paso 1 del checklist (Comenzar en consola) |
 | `Permission denied` billing | Dar **Billing Account User** a la service account |
 | Functions deploy timeout | Normal la 1ª vez; esperar 3–5 min y reintentar |
 | Deploy omitido (schedule) | Ejecutar **Deploy Firebase** manual en Actions |
