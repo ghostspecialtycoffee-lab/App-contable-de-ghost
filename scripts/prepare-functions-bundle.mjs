@@ -5,6 +5,7 @@
  */
 
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -66,5 +67,10 @@ const bundlePackage = {
 };
 
 writeFileSync(join(BUNDLE_DIR, "package.json"), `${JSON.stringify(bundlePackage, null, 2)}\n`);
+
+execSync("npm install --omit=dev --no-audit --no-fund", {
+  cwd: BUNDLE_DIR,
+  stdio: "inherit",
+});
 
 console.log(`✅ Functions bundle listo en ${BUNDLE_DIR}`);
