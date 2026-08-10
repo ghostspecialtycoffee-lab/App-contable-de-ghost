@@ -42,8 +42,9 @@ import { createDiningTable } from "@/lib/tables/tables";
 import { findOpenTableSessionClient } from "@/lib/tables/table-sessions-client";
 import { callGhostAgent } from "@/lib/firebase/functions";
 import { resolveGhostAgentQuery } from "@/lib/assistant/ghost-agent-client";
+import { resolvePlannedActionsToChatActions } from "@/lib/assistant/ghost-planned-actions";
 import { sendSaleDocument } from "@/lib/sales/send-sale-document";
-import type { GhostChatAction } from "@/lib/assistant/ghost-chat-engine";
+import type { GhostChatAction, GhostChatContext } from "@/lib/assistant/ghost-chat-engine";
 
 type RecipeSnapshot = {
   menuProductId: string;
@@ -98,6 +99,7 @@ export async function executeGhostChatAction(
     recipes: RecipeSnapshot[];
     inventoryItems: Array<{ id: string; baseUnit: string }>;
     defaultWarehouseId?: string;
+    chatContext?: GhostChatContext;
   },
 ): Promise<GhostChatActionResult | undefined> {
   switch (action.type) {
@@ -617,12 +619,36 @@ export async function executeGhostChatAction(
           text: entry.text,
         })),
       });
+
+      const executionMessages: string[] = [response.answer];
+
+      if (response.plannedActions?.length && context.chatContext) {
+        const plannedChatActions = resolvePlannedActionsToChatActions(
+          response.plannedActions,
+          context.chatContext,
+        );
+
+        if (plannedChatActions.length === 0) {
+          executionMessages.push(
+            "No pude ejecutar las acciones porque faltan datos (producto, mesa o sesión). Revisa el contexto e inténtalo de nuevo.",
+          );
+        } else {
+          for (const plannedAction of plannedChatActions) {
+            const result = await executeGhostChatAction(plannedAction, context);
+            if (result?.message) {
+              executionMessages.push(result.message);
+            }
+          }
+        }
+      }
+
       const sources =
         response.sources.length > 0
           ? `\n\nFuentes:\n${response.sources.map((source) => `· ${source.title}: ${source.url}`).join("\n")}`
           : "";
+
       return {
-        message: `${response.answer}${sources}`,
+        message: `${executionMessages.join("\n\n")}${sources}`,
       };
     }
 

@@ -1,6 +1,7 @@
 /** Agente Ghost — conocimiento evolutivo y búsqueda web. */
 
 import { buildBrainHelpMessage } from "../assistant/ghost-brain.js";
+import type { GhostAgentPlannedAction } from "./ghost-llm-tools.js";
 
 export interface AgentKnowledgeEntry {
   id: string;
@@ -39,6 +40,7 @@ export interface GhostAgentResponse {
   sources: AgentKnowledgeSource[];
   knowledgeEntryId?: string;
   suggestedFollowUp?: string;
+  plannedActions?: GhostAgentPlannedAction[];
 }
 
 export function normalizeAgentQuestion(value: string): string {
