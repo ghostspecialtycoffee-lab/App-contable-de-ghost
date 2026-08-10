@@ -8,7 +8,7 @@ import {
 } from "./enqueue.js";
 import { getDb } from "../shared/db.js";
 
-export const onNotificationOutboxCreate = onDocumentCreated(
+export const dispatchNotificationOutbox = onDocumentCreated(
   "organizations/{organizationId}/notificationOutbox/{entryId}",
   async (event) => {
     const snapshot = event.data;

@@ -12,7 +12,7 @@ export { createWarehouse } from "./inventory/createWarehouse.js";
 export { registerInventoryMovement } from "./inventory/registerMovement.js";
 export { createOrganization } from "./organizations/createOrganization.js";
 export {
-  onNotificationOutboxCreate,
+  dispatchNotificationOutbox,
   onCashSessionWritten,
   onInventoryBalanceWritten,
   onWorkShiftWritten,

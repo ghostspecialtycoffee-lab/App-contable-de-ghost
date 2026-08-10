@@ -152,6 +152,7 @@ jobs:
 
           echo "=== 2/4 Functions (requiere Blaze) ==="
           STALE_FUNCTIONS=(
+            dispatchNotificationOutbox
             onNotificationOutboxCreate
             onCashSessionWritten
             onInventoryBalanceWritten
