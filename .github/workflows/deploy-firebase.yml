@@ -151,12 +151,42 @@ jobs:
           fi
 
           echo "=== 2/4 Functions (requiere Blaze) ==="
-          if "${FB[@]}" --only functions; then
+          STALE_FUNCTIONS=(
+            onNotificationOutboxCreate
+            onCashSessionWritten
+            onInventoryBalanceWritten
+            onWorkShiftWritten
+            onDomainEventOutboxCreate
+            onAuditLogCreate
+            onAuthUserCreate
+            sendSaleDocument
+            ghostAgent
+            createInventoryItem
+            createWarehouse
+            registerInventoryMovement
+            createOrganization
+            scheduledOperationsNotifications
+          )
+
+          deploy_functions() {
+            "${FB[@]}" --only functions
+          }
+
+          if deploy_functions; then
             BACKEND_OK=1
             echo "✅ Functions desplegadas (registro/onboarding listo)"
           else
-            echo "::warning::Functions no desplegadas. Verifica plan Blaze:"
-            echo "https://console.firebase.google.com/project/ghost-contable/usage/details"
+            echo "Reintentando deploy: eliminando funciones parciales de intentos anteriores..."
+            for fn in "${STALE_FUNCTIONS[@]}"; do
+              "${FB[@]}" functions:delete "$fn" --region us-central1 --force 2>/dev/null || true
+            done
+            if deploy_functions; then
+              BACKEND_OK=1
+              echo "✅ Functions desplegadas tras limpieza"
+            else
+              echo "::warning::Functions no desplegadas. Verifica plan Blaze:"
+              echo "https://console.firebase.google.com/project/ghost-contable/usage/details"
+            fi
           fi
 
           echo "=== 2b/4 Firestore indexes (opcional) ==="
