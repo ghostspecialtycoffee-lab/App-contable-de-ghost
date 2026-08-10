@@ -249,6 +249,21 @@ export function buildGhostLlmSystemInstruction(contextSummary: string): string {
   ].join("\n");
 }
 
+export function buildGhostLlmLoopContinuationInstruction(
+  contextSummary: string,
+  originalGoal: string,
+): string {
+  return [
+    buildGhostLlmSystemInstruction(contextSummary),
+    "",
+    "MODO CONTINUACIÓN:",
+    `- El usuario pidió: «${originalGoal}»`,
+    "- Ya ejecutaste pasos previos; revisa los resultados en el historial.",
+    "- Llama herramientas solo para lo que aún falte.",
+    "- Si la orden ya quedó completa, responde con resumen final sin herramientas.",
+  ].join("\n");
+}
+
 const OPERATIONAL_ACTION_PATTERN =
   /(registra|registro|cobra|cobrar|sube|subir|baja|bajar|abre|abrir|cierra|cerrar|elimina|quita|crea|crear|anade|añade|agrega|envia|envía|actualiza|ajusta|vende|vender|compra|comprar|liquida|anota|pon |poner|desactiva|activa|manda|envia)/;
 

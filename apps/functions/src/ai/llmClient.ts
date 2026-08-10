@@ -1,5 +1,6 @@
 import {
   GHOST_LLM_FUNCTION_DECLARATIONS,
+  buildGhostLlmLoopContinuationInstruction,
   buildGhostLlmSystemInstruction,
   mapGhostLlmToolCall,
   summarizePlannedActions,
@@ -38,11 +39,16 @@ export async function planGhostAgentWithLlm(input: {
   contextSummary: string;
   history: Array<{ role: "user" | "ghost"; text: string }>;
   apiKey: string;
+  originalGoal?: string;
 }): Promise<GhostLlmPlanResult | null> {
   const apiKey = input.apiKey.trim();
   if (!apiKey) {
     return null;
   }
+
+  const systemInstruction = input.originalGoal
+    ? buildGhostLlmLoopContinuationInstruction(input.contextSummary, input.originalGoal)
+    : buildGhostLlmSystemInstruction(input.contextSummary);
 
   const contents: GeminiContent[] = input.history.slice(-10).map((entry) => ({
     role: toGeminiRole(entry.role),
@@ -61,7 +67,7 @@ export async function planGhostAgentWithLlm(input: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         systemInstruction: {
-          parts: [{ text: buildGhostLlmSystemInstruction(input.contextSummary) }],
+          parts: [{ text: systemInstruction }],
         },
         contents,
         tools: [

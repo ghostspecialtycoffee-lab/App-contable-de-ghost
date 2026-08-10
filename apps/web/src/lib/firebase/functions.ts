@@ -5,7 +5,7 @@ import {
   httpsCallable,
 } from "firebase/functions";
 
-import type { BaseUnit, GhostAgentResponse, InventoryItemType } from "@ghost/domain";
+import type { GhostAgentLoopState, GhostAgentResponse, BaseUnit, InventoryItemType } from "@ghost/domain";
 
 let functionsConnectedToEmulator = false;
 
@@ -118,6 +118,7 @@ export async function callGhostAgent(input: {
   allowWebSearch?: boolean;
   contextSummary?: string;
   history?: Array<{ role: "user" | "ghost"; text: string }>;
+  agentLoop?: GhostAgentLoopState;
 }): Promise<GhostAgentResponse> {
   const callable = httpsCallable<
     {
@@ -126,6 +127,7 @@ export async function callGhostAgent(input: {
       allowWebSearch?: boolean;
       contextSummary?: string;
       history?: Array<{ role: "user" | "ghost"; text: string }>;
+      agentLoop?: GhostAgentLoopState;
     },
     GhostAgentResponse
   >(getFirebaseFunctions(), "ghostAgent");

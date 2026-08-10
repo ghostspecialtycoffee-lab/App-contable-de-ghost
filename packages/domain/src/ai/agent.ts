@@ -2,6 +2,7 @@
 
 import { buildBrainHelpMessage } from "../assistant/ghost-brain.js";
 import type { GhostAgentPlannedAction } from "./ghost-llm-tools.js";
+import type { GhostAgentLoopState } from "./ghost-agent-loop.js";
 
 export interface AgentKnowledgeEntry {
   id: string;
@@ -32,6 +33,7 @@ export interface GhostAgentRequest {
   allowWebSearch?: boolean;
   contextSummary?: string;
   history?: GhostAgentHistoryMessage[];
+  agentLoop?: GhostAgentLoopState;
 }
 
 export interface GhostAgentResponse {
