@@ -39,7 +39,7 @@ export const dispatchNotificationOutbox = onDocumentCreated(
   },
 );
 
-export const onCashSessionWritten = onDocumentWritten(
+export const onCashSessionChanged = onDocumentWritten(
   "organizations/{organizationId}/cashSessions/{sessionId}",
   async (event) => {
     const after = event.data?.after;
@@ -95,7 +95,7 @@ export const onCashSessionWritten = onDocumentWritten(
   },
 );
 
-export const onInventoryBalanceWritten = onDocumentWritten(
+export const onInventoryBalanceChanged = onDocumentWritten(
   "organizations/{organizationId}/inventoryBalances/{balanceId}",
   async (event) => {
     const after = event.data?.after;
@@ -160,7 +160,7 @@ export const onInventoryBalanceWritten = onDocumentWritten(
   },
 );
 
-export const onWorkShiftWritten = onDocumentWritten(
+export const onWorkShiftChanged = onDocumentWritten(
   "organizations/{organizationId}/workShifts/{shiftId}",
   async (event) => {
     const after = event.data?.after;

@@ -2,7 +2,7 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 
 import { processDomainEventOutboxEntry } from "./processDomainEvent.js";
 
-export const onDomainEventOutboxCreate = onDocumentCreated(
+export const onDomainEventOutboxDispatch = onDocumentCreated(
   "organizations/{organizationId}/domainEventOutbox/{entryId}",
   async (event) => {
     const snapshot = event.data;

@@ -13,14 +13,14 @@ export { registerInventoryMovement } from "./inventory/registerMovement.js";
 export { createOrganization } from "./organizations/createOrganization.js";
 export {
   dispatchNotificationOutbox,
-  onCashSessionWritten,
-  onInventoryBalanceWritten,
-  onWorkShiftWritten,
+  onCashSessionChanged,
+  onInventoryBalanceChanged,
+  onWorkShiftChanged,
 } from "./notifications/triggers.js";
-export { onDomainEventOutboxCreate } from "./events/triggers.js";
+export { onDomainEventOutboxDispatch } from "./events/triggers.js";
 export { scheduledOperationsNotifications } from "./notifications/scheduled.js";
 
-export const onAuditLogCreate = onDocumentCreated(
+export const onAuditLogRecorded = onDocumentCreated(
   "organizations/{organizationId}/auditLogs/{logId}",
   async (event) => {
     const snapshot = event.data;

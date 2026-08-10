@@ -154,10 +154,15 @@ jobs:
           STALE_FUNCTIONS=(
             dispatchNotificationOutbox
             onNotificationOutboxCreate
+            onCashSessionChanged
             onCashSessionWritten
+            onInventoryBalanceChanged
             onInventoryBalanceWritten
+            onWorkShiftChanged
             onWorkShiftWritten
+            onDomainEventOutboxDispatch
             onDomainEventOutboxCreate
+            onAuditLogRecorded
             onAuditLogCreate
             onAuthUserCreate
             sendSaleDocument
