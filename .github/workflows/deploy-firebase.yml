@@ -106,6 +106,7 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           set -uo pipefail
           FB=(npx firebase-tools@13 deploy --project ghost-contable --non-interactive)
@@ -132,6 +133,14 @@ jobs:
           }
 
           setup_auth
+
+          if [ -n "${GEMINI_API_KEY:-}" ]; then
+            echo "=== Configurando GEMINI_API_KEY en Secret Manager ==="
+            printf '%s' "$GEMINI_API_KEY" | "${FB[@]}" functions:secrets:set GEMINI_API_KEY --data-file=- --force || \
+              echo "::warning::No se pudo guardar GEMINI_API_KEY — configúrala manualmente en Firebase"
+          else
+            echo "::notice title=Agente LLM::Agrega secret GEMINI_API_KEY en GitHub para habilitar tool calling con Gemini"
+          fi
 
           echo "=== 0/4 Firestore rules (funciona en plan Spark) ==="
           if ! "${FB[@]}" --only firestore:rules; then
