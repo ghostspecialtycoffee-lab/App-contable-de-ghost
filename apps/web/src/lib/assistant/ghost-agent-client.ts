@@ -4,6 +4,7 @@ import {
   scoreKnowledgeMatch,
   type AgentKnowledgeSource,
   type GhostAgentHistoryMessage,
+  type GhostAgentLoopState,
   type GhostAgentResponse,
 } from "@ghost/domain";
 import { firestorePaths } from "@ghost/infrastructure";
@@ -65,38 +66,43 @@ export async function resolveGhostAgentQuery(input: {
   sessionId: string;
   contextSummary?: string;
   history?: GhostAgentHistoryMessage[];
+  agentLoop?: GhostAgentLoopState;
+  skipKnowledge?: boolean;
 }): Promise<GhostAgentResponse> {
   const history = input.history ?? [];
 
-  const platform = findBestPlatformKnowledge(input.message, 0.42);
-  if (platform) {
-    return {
-      answer: platform.entry.answer,
-      usedWebSearch: false,
-      sources: platform.entry.sources ?? [],
-    };
-  }
-
-  try {
-    const knowledge = await loadKnowledgeAnswer(input.organizationId, input.message);
-    if (knowledge) {
+  if (!input.skipKnowledge && !input.agentLoop) {
+    const platform = findBestPlatformKnowledge(input.message, 0.42);
+    if (platform) {
       return {
-        answer: knowledge.answer,
+        answer: platform.entry.answer,
         usedWebSearch: false,
-        sources: knowledge.sources,
+        sources: platform.entry.sources ?? [],
       };
     }
-  } catch {
-    // Sin acceso a conocimiento guardado — seguimos con fallback.
+
+    try {
+      const knowledge = await loadKnowledgeAnswer(input.organizationId, input.message);
+      if (knowledge) {
+        return {
+          answer: knowledge.answer,
+          usedWebSearch: false,
+          sources: knowledge.sources,
+        };
+      }
+    } catch {
+      // Sin acceso a conocimiento guardado — seguimos con fallback.
+    }
   }
 
   try {
     return await callGhostAgent({
       message: input.message,
       sessionId: input.sessionId,
-      allowWebSearch: true,
+      allowWebSearch: !input.agentLoop,
       contextSummary: input.contextSummary,
       history,
+      agentLoop: input.agentLoop,
     });
   } catch (error) {
     if (!isCallableUnavailable(error)) {

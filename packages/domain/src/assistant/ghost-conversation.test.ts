@@ -705,4 +705,51 @@ describe("ghost-conversation", () => {
       expect(result.messages[1]).toContain("novedad");
     }
   });
+
+  it("libera pending de caja y responde estado operativo", () => {
+    const context = { ...baseContext, cashSessionOpen: true };
+    const pendingSession = {
+      ...createEmptyGhostChatSession(),
+      pendingIntent: "open-cash-session",
+      draft: {},
+    };
+
+    const estado = processConversationTurn({
+      message: "estado",
+      session: pendingSession,
+      context,
+    });
+
+    expect(estado.kind).toBe("reply");
+    if (estado.kind === "reply") {
+      expect(estado.session.pendingIntent).toBeNull();
+      expect(estado.messages[0]).toContain("Así va");
+    }
+
+    const hola = processConversationTurn({
+      message: "hola",
+      session: pendingSession,
+      context,
+    });
+
+    expect(hola.kind).toBe("reply");
+    if (hola.kind === "reply") {
+      expect(hola.session.pendingIntent).toBeNull();
+      expect(hola.messages[0]).not.toContain("La caja ya está abierta hoy");
+    }
+  });
+
+  it("abrir caja con caja ya abierta muestra resumen operativo", () => {
+    const result = processConversationTurn({
+      message: "abre caja con 200000",
+      session: createEmptyGhostChatSession(),
+      context: { ...baseContext, cashSessionOpen: true },
+    });
+
+    expect(result.kind).toBe("reply");
+    if (result.kind === "reply") {
+      expect(result.messages[0]).toContain("Así va");
+      expect(result.session.pendingIntent).toBeNull();
+    }
+  });
 });

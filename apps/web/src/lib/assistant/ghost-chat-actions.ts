@@ -40,9 +40,7 @@ import {
 } from "@/lib/tables/table-sessions";
 import { createDiningTable } from "@/lib/tables/tables";
 import { findOpenTableSessionClient } from "@/lib/tables/table-sessions-client";
-import { callGhostAgent } from "@/lib/firebase/functions";
-import { resolveGhostAgentQuery } from "@/lib/assistant/ghost-agent-client";
-import { resolvePlannedActionsToChatActions } from "@/lib/assistant/ghost-planned-actions";
+import { runAutonomousAgentLoop } from "@/lib/assistant/ghost-agent-loop";
 import { sendSaleDocument } from "@/lib/sales/send-sale-document";
 import type { GhostChatAction, GhostChatContext } from "@/lib/assistant/ghost-chat-engine";
 
@@ -609,47 +607,30 @@ export async function executeGhostChatAction(
     }
 
     case "ghost-agent-query": {
-      const response = await resolveGhostAgentQuery({
+      if (!context.chatContext) {
+        return { message: "No tengo contexto operativo para ejecutar acciones." };
+      }
+
+      return runAutonomousAgentLoop({
         organizationId: context.organizationId,
-        message: action.payload.message,
         sessionId: action.payload.sessionId,
-        contextSummary: action.payload.contextSummary,
+        message: action.payload.message,
+        contextSummary: action.payload.contextSummary ?? "",
         history: action.payload.history?.map((entry) => ({
           role: entry.speaker === "user" ? "user" : "ghost",
           text: entry.text,
         })),
+        executionContext: {
+          organizationId: context.organizationId,
+          branchId: context.branchId,
+          userId: context.userId,
+          recipes: context.recipes,
+          inventoryItems: context.inventoryItems,
+          defaultWarehouseId: context.defaultWarehouseId,
+          chatContext: context.chatContext,
+        },
+        executeAction: (plannedAction) => executeGhostChatAction(plannedAction, context),
       });
-
-      const executionMessages: string[] = [response.answer];
-
-      if (response.plannedActions?.length && context.chatContext) {
-        const plannedChatActions = resolvePlannedActionsToChatActions(
-          response.plannedActions,
-          context.chatContext,
-        );
-
-        if (plannedChatActions.length === 0) {
-          executionMessages.push(
-            "No pude ejecutar las acciones porque faltan datos (producto, mesa o sesión). Revisa el contexto e inténtalo de nuevo.",
-          );
-        } else {
-          for (const plannedAction of plannedChatActions) {
-            const result = await executeGhostChatAction(plannedAction, context);
-            if (result?.message) {
-              executionMessages.push(result.message);
-            }
-          }
-        }
-      }
-
-      const sources =
-        response.sources.length > 0
-          ? `\n\nFuentes:\n${response.sources.map((source) => `· ${source.title}: ${source.url}`).join("\n")}`
-          : "";
-
-      return {
-        message: `${executionMessages.join("\n\n")}${sources}`,
-      };
     }
 
     default:

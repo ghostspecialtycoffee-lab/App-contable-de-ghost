@@ -43,6 +43,7 @@ import {
 } from "./cost-matrix-conversation.js";
 import { buildBrainHelpMessage, classifyBrainQueryIntent } from "./ghost-brain.js";
 import { resolveLocalAgentMessage } from "./ghost-agent-local.js";
+import { shouldPreferAgentRoute } from "../ai/ghost-llm-tools.js";
 
 export type GhostConversationIntent =
   | "org-status"
@@ -1407,7 +1408,7 @@ function followUpForField(intent: string, field: string, context: GhostConversat
     return "No hay mesas configuradas en el sistema.";
   }
   if (intent === "open-cash-session" && context.cashSessionOpen) {
-    return "La caja ya está abierta hoy. ¿Quieres registrar una venta o ver el estado?";
+    return "La caja ya está abierta. Puedes decir «estado» para ver el resumen operativo o registrar una venta.";
   }
   if (intent === "close-cash-session" && !context.cashSessionOpen) {
     return "No hay caja abierta para cerrar. Primero abre caja.";
@@ -1517,32 +1518,151 @@ function clearPending(session: GhostChatSession): GhostChatSession {
   };
 }
 
+const PENDING_INTERRUPT_QUERY_INTENTS = new Set<GhostConversationIntent>([
+  "org-status",
+  "brain-help",
+  "query-sales-report",
+  "query-purchases-review",
+  "query-purchases-report",
+  "query-purchase-suggestions",
+  "query-cash-summary",
+  "query-financial-overview",
+  "query-inventory-low-stock",
+  "query-fixed-expenses",
+  "query-work-shifts",
+  "query-kitchen-status",
+  "query-cost-matrix",
+  "query-menu-catalog",
+  "query-inventory-catalog",
+  "query-tables-status",
+  "query-daily-briefing",
+  "query-platform-guide",
+]);
+
+function isPendingIntentInterruptMessage(message: string): boolean {
+  const normalized = normalizeText(message);
+
+  if (/^(hola|buenas|buenos|hey|gracias|ok|listo|vale)(\.|\s|,|$)/.test(normalized)) {
+    return true;
+  }
+
+  if (/^(el\s+)?estado(\s+general|\s+operativo)?$/.test(normalized)) {
+    return true;
+  }
+
+  if (/^(como va|como vamos|que tal|status)$/.test(normalized)) {
+    return true;
+  }
+
+  return false;
+}
+
+function shouldAbandonPendingIntent(
+  message: string,
+  pendingIntent: GhostConversationIntent,
+  context: GhostConversationContext,
+): boolean {
+  if (isPendingIntentInterruptMessage(message)) {
+    return true;
+  }
+
+  if (pendingIntent === "open-cash-session" && context.cashSessionOpen) {
+    return true;
+  }
+
+  const nextIntent = classifyIntent(message, context);
+  if (nextIntent !== pendingIntent && PENDING_INTERRUPT_QUERY_INTENTS.has(nextIntent)) {
+    return true;
+  }
+
+  return false;
+}
+
 export function buildConversationContextSummary(context: GhostConversationContext): string {
   const openTables = context.openTableSessions.map((s) => s.tableNumber).join(", ") || "ninguna";
-  const topProducts = context.menuProducts
-    .slice(0, 8)
-    .map((product) => product.name)
+  const productCatalog = context.menuProducts
+    .slice(0, 50)
+    .map((product) => `${product.name} $${product.price.toLocaleString("es-CO")}`)
+    .join(" · ");
+  const inventoryCatalog = context.inventoryItems
+    .slice(0, 40)
+    .map((item) => item.name)
     .join(", ");
+  const tableCatalog =
+    context.tables.map((table) => `Mesa ${table.number}${table.label ? ` (${table.label})` : ""}`).join(", ") ||
+    "ninguna";
+  const lowStock = context.inventoryStockSnapshot
+    .filter((entry) => entry.minStock > 0 && entry.quantity < entry.minStock)
+    .slice(0, 12)
+    .map((entry) => `${entry.name}: ${entry.quantity}/${entry.minStock} ${entry.baseUnit}`)
+    .join(" · ");
   const lowStockCount = context.inventoryStockSnapshot.filter(
     (entry) => entry.minStock > 0 && entry.quantity < entry.minStock,
   ).length;
   const todaySales = context.salesSnapshot.filter((sale) => sale.status === "paid");
   const todaySalesTotal = todaySales.reduce((sum, sale) => sum + sale.total, 0);
+  const kitchenSummary =
+    context.kitchenOrders.length > 0
+      ? context.kitchenOrders
+          .slice(0, 8)
+          .map(
+            (order) =>
+              `${order.saleNumber || order.id.slice(0, 6)} mesa ${order.tableNumber ?? "?"} ${order.status}`,
+          )
+          .join(" · ")
+      : "ninguna";
+  const openTableDetails =
+    context.openTableSessions.length > 0
+      ? context.openTableSessions
+          .slice(0, 8)
+          .map((session) => {
+            const lines = (session.lines ?? [])
+              .map((line) => `${line.name} x${line.quantity}`)
+              .join(", ");
+            const total = session.total ?? 0;
+            return `Mesa ${session.tableNumber}: ${lines || "sin pedidos"} — $${total.toLocaleString("es-CO")}`;
+          })
+          .join(" · ")
+      : "";
+  const marginSummary = context.menuProducts
+    .filter((product) => product.recipeCost && product.price > 0)
+    .slice(0, 20)
+    .map((product) => {
+      const marginPct = Math.round(
+        ((product.price - (product.recipeCost ?? 0)) / product.price) * 100,
+      );
+      return `${product.name} costo $${Math.round(product.recipeCost ?? 0).toLocaleString("es-CO")} precio $${product.price.toLocaleString("es-CO")} (${marginPct}%)`;
+    })
+    .join(" · ");
+  const lastPurchaseSummary = (context.purchasePriceHistorySnapshot ?? [])
+    .slice(0, 12)
+    .map(
+      (entry) =>
+        `${entry.supplierName}: $${Math.round(entry.unitPriceNet).toLocaleString("es-CO")}`,
+    )
+    .join(" · ");
 
   return [
     `Organización: ${context.organizationName ?? "Ghost"}`,
-    `Insumos: ${context.inventoryCount}${lowStockCount > 0 ? ` (${lowStockCount} bajo mínimo)` : ""}`,
+    `Insumos: ${context.inventoryCount}${inventoryCatalog ? ` — ${inventoryCatalog}` : ""}`,
     `Facturas compra: ${context.invoiceCount}`,
-    `Productos carta: ${context.menuProducts.length}${topProducts ? ` (${topProducts})` : ""}`,
+    `Carta (${context.menuProducts.length}): ${productCatalog || "vacía"}`,
+    marginSummary ? `Márgenes: ${marginSummary}` : "",
     `Ventas hoy: ${todaySales.length} · ${todaySalesTotal.toLocaleString("es-CO")} COP`,
     `Caja: ${context.cashSessionOpen ? "abierta" : "cerrada"}${
       context.cashSnapshot
         ? ` · esperado ${Math.round(context.cashSnapshot.expectedAmount).toLocaleString("es-CO")} COP`
         : ""
     }`,
+    `Mesas configuradas: ${tableCatalog}`,
     `Mesas abiertas: ${openTables}`,
-    `Comandas activas: ${context.kitchenOrders.length}`,
-  ].join("\n");
+    openTableDetails ? `Detalle mesas abiertas: ${openTableDetails}` : "",
+    `Comandas: ${kitchenSummary}`,
+    lastPurchaseSummary ? `Últimos precios compra: ${lastPurchaseSummary}` : "",
+    lowStock ? `Bajo mínimo (${lowStockCount}): ${lowStock}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function buildPendingReply(
@@ -1601,7 +1721,7 @@ export function processConversationTurn(input: {
   history?: GhostConversationHistoryMessage[];
 }): GhostConversationResult {
   const trimmed = input.message.trim();
-  const session = input.session;
+  let session = input.session;
   const context = input.context;
 
   if (!trimmed) {
@@ -1629,7 +1749,12 @@ export function processConversationTurn(input: {
   }
 
   if (session.pendingIntent) {
-    const intent = session.pendingIntent as GhostConversationIntent;
+    const pendingIntent = session.pendingIntent as GhostConversationIntent;
+
+    if (shouldAbandonPendingIntent(trimmed, pendingIntent, context)) {
+      session = clearPending(session);
+    } else {
+    const intent = pendingIntent;
     let draft = extractDraftForIntent(intent, trimmed, context, {
       ...session.draft,
       ...extractDraftForIntent(intent, trimmed, context, session.draft),
@@ -1665,9 +1790,18 @@ export function processConversationTurn(input: {
       intent,
       draft,
     };
+    }
   }
 
   const intent = classifyIntent(trimmed, context);
+
+  if (intent === "open-cash-session" && context.cashSessionOpen) {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildOrgStatus(context)],
+    };
+  }
 
   if (intent === "org-status") {
     return {
@@ -1841,7 +1975,7 @@ export function processConversationTurn(input: {
     }
 
     const localAnswer = resolveLocalAgentMessage(trimmed, context);
-    if (localAnswer) {
+    if (localAnswer && !shouldPreferAgentRoute(trimmed)) {
       return {
         kind: "reply",
         session: clearPending(session),
@@ -1862,6 +1996,20 @@ export function processConversationTurn(input: {
     draft = applyCheckoutDefaults(draft);
   }
   const missing = missingFields(intent, draft);
+
+  if (
+    missing.length > 0 &&
+    shouldPreferAgentRoute(trimmed) &&
+    intent !== "save-recipe-cost"
+  ) {
+    const agentSessionId = session.agentSessionId ?? `chat-${Date.now()}`;
+    return {
+      kind: "agent",
+      session: { ...clearPending(session), agentSessionId },
+      messages: ["Entendido, lo interpreto…"],
+      message: trimmed,
+    };
+  }
 
   if (intent === "close-cash-session" && !context.cashSessionOpen) {
     return {

@@ -5,3 +5,4 @@ export * from "./cost-matrix-conversation.js";
 export * from "./ghost-conversation.js";
 export * from "./ghost-agent-local.js";
 export * from "./daily-briefing.js";
+export * from "./fuzzy-match.js";
