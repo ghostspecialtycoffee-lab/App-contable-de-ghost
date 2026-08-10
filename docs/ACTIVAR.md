@@ -107,6 +107,8 @@ Para que Ghost ejecute acciones libres («sube el precio del latte», «cobra me
 
 El workflow guarda el secret en Firebase y despliega `ghostAgent` con Gemini.
 
+**Nota:** el deploy incluye `GEMINI_API_KEY` en el bundle de Functions (`.env`) automáticamente desde el secret de GitHub.
+
 ### Alternativa manual (Firebase CLI)
 
 ```bash

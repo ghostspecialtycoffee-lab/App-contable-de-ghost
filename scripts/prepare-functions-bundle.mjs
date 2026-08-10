@@ -68,6 +68,12 @@ const bundlePackage = {
 
 writeFileSync(join(BUNDLE_DIR, "package.json"), `${JSON.stringify(bundlePackage, null, 2)}\n`);
 
+const geminiKey = process.env.GEMINI_API_KEY?.trim();
+if (geminiKey) {
+  writeFileSync(join(BUNDLE_DIR, ".env"), `GEMINI_API_KEY=${geminiKey}\n`);
+  console.log("✅ GEMINI_API_KEY incluida en bundle (.env)");
+}
+
 execSync("npm install --omit=dev --no-audit --no-fund", {
   cwd: BUNDLE_DIR,
   stdio: "inherit",

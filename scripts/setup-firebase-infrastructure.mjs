@@ -29,6 +29,7 @@ const REQUIRED_SERVICES = [
   "eventarc.googleapis.com",
   "firebasestorage.googleapis.com",
   "storage.googleapis.com",
+  "secretmanager.googleapis.com",
 ];
 
 function parseArgs(argv) {
