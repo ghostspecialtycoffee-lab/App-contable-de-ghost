@@ -1408,7 +1408,7 @@ function followUpForField(intent: string, field: string, context: GhostConversat
     return "No hay mesas configuradas en el sistema.";
   }
   if (intent === "open-cash-session" && context.cashSessionOpen) {
-    return "La caja ya está abierta hoy. ¿Quieres registrar una venta o ver el estado?";
+    return "La caja ya está abierta. Puedes decir «estado» para ver el resumen operativo o registrar una venta.";
   }
   if (intent === "close-cash-session" && !context.cashSessionOpen) {
     return "No hay caja abierta para cerrar. Primero abre caja.";
@@ -1516,6 +1516,66 @@ function clearPending(session: GhostChatSession): GhostChatSession {
     ...createEmptyGhostChatSession(),
     agentSessionId: session.agentSessionId,
   };
+}
+
+const PENDING_INTERRUPT_QUERY_INTENTS = new Set<GhostConversationIntent>([
+  "org-status",
+  "brain-help",
+  "query-sales-report",
+  "query-purchases-review",
+  "query-purchases-report",
+  "query-purchase-suggestions",
+  "query-cash-summary",
+  "query-financial-overview",
+  "query-inventory-low-stock",
+  "query-fixed-expenses",
+  "query-work-shifts",
+  "query-kitchen-status",
+  "query-cost-matrix",
+  "query-menu-catalog",
+  "query-inventory-catalog",
+  "query-tables-status",
+  "query-daily-briefing",
+  "query-platform-guide",
+]);
+
+function isPendingIntentInterruptMessage(message: string): boolean {
+  const normalized = normalizeText(message);
+
+  if (/^(hola|buenas|buenos|hey|gracias|ok|listo|vale)(\.|\s|,|$)/.test(normalized)) {
+    return true;
+  }
+
+  if (/^(el\s+)?estado(\s+general|\s+operativo)?$/.test(normalized)) {
+    return true;
+  }
+
+  if (/^(como va|como vamos|que tal|status)$/.test(normalized)) {
+    return true;
+  }
+
+  return false;
+}
+
+function shouldAbandonPendingIntent(
+  message: string,
+  pendingIntent: GhostConversationIntent,
+  context: GhostConversationContext,
+): boolean {
+  if (isPendingIntentInterruptMessage(message)) {
+    return true;
+  }
+
+  if (pendingIntent === "open-cash-session" && context.cashSessionOpen) {
+    return true;
+  }
+
+  const nextIntent = classifyIntent(message, context);
+  if (nextIntent !== pendingIntent && PENDING_INTERRUPT_QUERY_INTENTS.has(nextIntent)) {
+    return true;
+  }
+
+  return false;
 }
 
 export function buildConversationContextSummary(context: GhostConversationContext): string {
@@ -1661,7 +1721,7 @@ export function processConversationTurn(input: {
   history?: GhostConversationHistoryMessage[];
 }): GhostConversationResult {
   const trimmed = input.message.trim();
-  const session = input.session;
+  let session = input.session;
   const context = input.context;
 
   if (!trimmed) {
@@ -1689,7 +1749,12 @@ export function processConversationTurn(input: {
   }
 
   if (session.pendingIntent) {
-    const intent = session.pendingIntent as GhostConversationIntent;
+    const pendingIntent = session.pendingIntent as GhostConversationIntent;
+
+    if (shouldAbandonPendingIntent(trimmed, pendingIntent, context)) {
+      session = clearPending(session);
+    } else {
+    const intent = pendingIntent;
     let draft = extractDraftForIntent(intent, trimmed, context, {
       ...session.draft,
       ...extractDraftForIntent(intent, trimmed, context, session.draft),
@@ -1725,9 +1790,18 @@ export function processConversationTurn(input: {
       intent,
       draft,
     };
+    }
   }
 
   const intent = classifyIntent(trimmed, context);
+
+  if (intent === "open-cash-session" && context.cashSessionOpen) {
+    return {
+      kind: "reply",
+      session: clearPending(session),
+      messages: [buildOrgStatus(context)],
+    };
+  }
 
   if (intent === "org-status") {
     return {

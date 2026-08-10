@@ -11,6 +11,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 - Mayor autonomía: inferencia de mesa única abierta, fuzzy match de productos, acciones con campos faltantes van al LLM
 - Prioridad LLM para mensajes operativos antes de respuestas estáticas de plataforma
 - Loop multi-turno autónomo: el agente ejecuta, ve resultados y decide siguientes pasos (hasta 5 iteraciones)
+- Fix chat: «estado»/«hola» ya no quedan atrapados en flujo pendiente de apertura de caja
 - Páginas `/inventory/warehouses` y `/inventory/movements` funcionales
 - [FIREBASE_SETUP.md](FIREBASE_SETUP.md) — guía completa Google/Firebase (sin Code.gs)
 - Iconos PWA en `apps/web/public/icons/`
