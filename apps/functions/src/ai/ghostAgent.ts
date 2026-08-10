@@ -3,6 +3,7 @@ import {
   scoreKnowledgeMatch,
   findBestPlatformKnowledge,
   summarizePlannedActions,
+  isOperationalActionMessage,
   type AgentKnowledgeSource,
   type GhostAgentResponse,
 } from "@ghost/domain";
@@ -44,7 +45,7 @@ export const ghostAgent = onCall(async (request) => {
   const history = Array.isArray(request.data?.history)
     ? (request.data.history as Array<{ role?: string; text?: string }>)
         .filter((entry) => entry?.text?.trim())
-        .slice(-6)
+        .slice(-10)
         .map((entry) => ({
           role: entry.role === "ghost" ? "ghost" : "user",
           text: String(entry.text).trim(),
@@ -52,6 +53,20 @@ export const ghostAgent = onCall(async (request) => {
     : [];
 
   const db = getDb();
+
+  const geminiKey = (process.env.GEMINI_API_KEY || "").trim();
+  if (geminiKey && isOperationalActionMessage(message)) {
+    const llmResponse = await tryLlmPlanner({
+      message,
+      contextSummary,
+      history,
+      geminiKey,
+    });
+    if (llmResponse) {
+      await persistAgentSession(db, organizationId, sessionId, request.auth.uid, message, llmResponse);
+      return llmResponse;
+    }
+  }
 
   const platformMatch = findBestPlatformKnowledge(message);
   if (platformMatch && platformMatch.score >= 0.55) {
@@ -112,34 +127,16 @@ export const ghostAgent = onCall(async (request) => {
     return response;
   }
 
-  const geminiKey = (process.env.GEMINI_API_KEY || "").trim();
   if (geminiKey) {
-    try {
-      const llmPlan = await planGhostAgentWithLlm({
-        message,
-        contextSummary,
-        history: history.map((entry) => ({
-          role: entry.role === "ghost" ? "ghost" as const : "user" as const,
-          text: entry.text,
-        })),
-        apiKey: geminiKey,
-      });
-
-      if (llmPlan && (llmPlan.plannedActions.length > 0 || llmPlan.answer.trim())) {
-        const response: GhostAgentResponse = {
-          answer:
-            llmPlan.plannedActions.length > 0 && !llmPlan.answer.includes("Voy a ejecutar")
-              ? `${llmPlan.answer}\n\n${summarizePlannedActions(llmPlan.plannedActions)}`
-              : llmPlan.answer,
-          usedWebSearch: false,
-          sources: [{ title: "Ghost LLM", url: `models/${process.env.GEMINI_MODEL ?? "gemini-2.0-flash"}` }],
-          plannedActions: llmPlan.plannedActions,
-        };
-        await persistAgentSession(db, organizationId, sessionId, request.auth.uid, message, response);
-        return response;
-      }
-    } catch (error) {
-      console.warn("Ghost LLM planner error:", error);
+    const llmResponse = await tryLlmPlanner({
+      message,
+      contextSummary,
+      history,
+      geminiKey,
+    });
+    if (llmResponse) {
+      await persistAgentSession(db, organizationId, sessionId, request.auth.uid, message, llmResponse);
+      return llmResponse;
     }
   }
 
@@ -256,6 +253,47 @@ function buildFallbackAnswer(
     "o «vende un cappuccino en efectivo»." +
     hint
   );
+}
+
+async function tryLlmPlanner(input: {
+  message: string;
+  contextSummary: string;
+  history: Array<{ role: string; text: string }>;
+  geminiKey: string;
+}): Promise<GhostAgentResponse | null> {
+  try {
+    const llmPlan = await planGhostAgentWithLlm({
+      message: input.message,
+      contextSummary: input.contextSummary,
+      history: input.history.map((entry) => ({
+        role: entry.role === "ghost" ? ("ghost" as const) : ("user" as const),
+        text: entry.text,
+      })),
+      apiKey: input.geminiKey,
+    });
+
+    if (!llmPlan || (llmPlan.plannedActions.length === 0 && !llmPlan.answer.trim())) {
+      return null;
+    }
+
+    return {
+      answer:
+        llmPlan.plannedActions.length > 0 && !llmPlan.answer.includes("Voy a ejecutar")
+          ? `${llmPlan.answer}\n\n${summarizePlannedActions(llmPlan.plannedActions)}`
+          : llmPlan.answer,
+      usedWebSearch: false,
+      sources: [
+        {
+          title: "Ghost LLM",
+          url: `models/${process.env.GEMINI_MODEL ?? "gemini-2.0-flash"}`,
+        },
+      ],
+      plannedActions: llmPlan.plannedActions,
+    };
+  } catch (error) {
+    console.warn("Ghost LLM planner error:", error);
+    return null;
+  }
 }
 
 async function persistAgentSession(

@@ -1,4 +1,5 @@
 import { findBestPlatformKnowledge } from "../ai/platform-knowledge.js";
+import { shouldPreferAgentRoute } from "../ai/ghost-llm-tools.js";
 import {
   buildCashSummaryReply,
   buildCostMatrixOverviewReply,
@@ -79,6 +80,12 @@ export function resolveLocalAgentMessage(
   context: GhostConversationContext,
 ): string | null {
   const normalized = normalizeText(message);
+  const stripped = normalized.replace(/^[^a-z0-9]+/, "");
+  const isHelpQuestion = /^(como|donde|que es|para que|explica)/.test(stripped);
+
+  if (!isHelpQuestion && shouldPreferAgentRoute(message)) {
+    return null;
+  }
 
   if (VAGUE_STATUS_PATTERN.test(normalized)) {
     return buildOrgStatusReply(context);

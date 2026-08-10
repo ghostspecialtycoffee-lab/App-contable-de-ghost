@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   isInterpretiveNaturalLanguage,
+  isOperationalActionMessage,
   mapGhostLlmToolCall,
+  shouldPreferAgentRoute,
   summarizePlannedActions,
 } from "./ghost-llm-tools.js";
 
@@ -54,6 +56,23 @@ describe("isInterpretiveNaturalLanguage", () => {
     expect(isInterpretiveNaturalLanguage("necesito que subas el precio del latte")).toBe(true);
     expect(isInterpretiveNaturalLanguage("dame la cuenta de la mesa 1")).toBe(false);
     expect(isInterpretiveNaturalLanguage("hola")).toBe(false);
+  });
+});
+
+describe("shouldPreferAgentRoute", () => {
+  it("deriva al agente en órdenes interpretativas", () => {
+    expect(shouldPreferAgentRoute("necesito que subas el precio del latte")).toBe(true);
+  });
+
+  it("no deriva preguntas de ayuda simples", () => {
+    expect(shouldPreferAgentRoute("como registro una venta")).toBe(false);
+  });
+});
+
+describe("isOperationalActionMessage", () => {
+  it("distingue consultas de acciones", () => {
+    expect(isOperationalActionMessage("cuantas ventas hubo hoy")).toBe(false);
+    expect(isOperationalActionMessage("cobra la mesa 2 en efectivo")).toBe(true);
   });
 });
 

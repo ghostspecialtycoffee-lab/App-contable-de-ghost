@@ -44,7 +44,7 @@ export async function planGhostAgentWithLlm(input: {
     return null;
   }
 
-  const contents: GeminiContent[] = input.history.slice(-6).map((entry) => ({
+  const contents: GeminiContent[] = input.history.slice(-10).map((entry) => ({
     role: toGeminiRole(entry.role),
     parts: [{ text: entry.text }],
   }));

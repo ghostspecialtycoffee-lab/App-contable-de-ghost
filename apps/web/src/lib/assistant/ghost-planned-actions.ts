@@ -1,52 +1,66 @@
-import type { GhostAgentPlannedAction } from "@ghost/domain";
+import {
+  findBestNameMatch,
+  findTableByReference,
+  type GhostAgentPlannedAction,
+} from "@ghost/domain";
 
 import type { GhostChatAction, GhostChatContext } from "@/lib/assistant/ghost-chat-engine";
 
-function normalizeText(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+export interface PlannedActionSkip {
+  tool: string;
+  detail: string;
+  suggestions: string[];
 }
 
-function findByName<T extends { name: string }>(name: string, items: T[]): T | null {
-  const normalized = normalizeText(name);
-  for (const item of items) {
-    const itemName = normalizeText(item.name);
-    if (itemName === normalized || itemName.includes(normalized) || normalized.includes(itemName)) {
-      return item;
-    }
-  }
-  return null;
+export interface PlannedActionsResolution {
+  actions: GhostChatAction[];
+  skipped: PlannedActionSkip[];
 }
 
 function findProductByName(name: string, context: GhostChatContext) {
-  return findByName(name, context.menuProducts);
+  return findBestNameMatch(name, context.menuProducts);
 }
 
 function findInventoryByName(name: string, context: GhostChatContext) {
-  return findByName(name, context.inventoryItems);
+  return findBestNameMatch(name, context.inventoryItems);
 }
 
-function findTableByNumber(tableNumber: string, context: GhostChatContext) {
-  const number = Number(tableNumber);
-  if (!Number.isFinite(number)) {
-    return null;
+function resolveTableNumber(
+  reference: string | undefined,
+  context: GhostChatContext,
+): number | null {
+  if (reference) {
+    const table = findTableByReference(reference, context.tables);
+    if (table) {
+      return table.number;
+    }
+    const numeric = Number(reference.replace(/[^0-9]/g, ""));
+    if (Number.isFinite(numeric) && numeric > 0) {
+      return numeric;
+    }
   }
-  return context.tables.find((table) => table.number === number) ?? null;
+
+  if (context.openTableSessions.length === 1) {
+    return context.openTableSessions[0]!.tableNumber;
+  }
+
+  return null;
 }
 
-function findOpenSessionByTableNumber(tableNumber: string, context: GhostChatContext) {
-  const number = Number(tableNumber);
-  if (!Number.isFinite(number)) {
-    return null;
-  }
-  return context.openTableSessions.find((session) => session.tableNumber === number) ?? null;
+function findTableByNumber(tableNumber: number, context: GhostChatContext) {
+  return context.tables.find((table) => table.number === tableNumber) ?? null;
+}
+
+function findOpenSessionByTableNumber(tableNumber: number, context: GhostChatContext) {
+  return context.openTableSessions.find((session) => session.tableNumber === tableNumber) ?? null;
 }
 
 function slugSku(name: string): string {
-  const base = normalizeText(name)
+  const base = name
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 12);
@@ -57,17 +71,40 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function pushSkip(
+  skipped: PlannedActionSkip[],
+  tool: string,
+  detail: string,
+  suggestions: string[],
+): void {
+  skipped.push({ tool, detail, suggestions });
+}
+
 export function resolvePlannedActionsToChatActions(
   plannedActions: GhostAgentPlannedAction[],
   context: GhostChatContext,
 ): GhostChatAction[] {
+  return resolvePlannedActions(plannedActions, context).actions;
+}
+
+export function resolvePlannedActions(
+  plannedActions: GhostAgentPlannedAction[],
+  context: GhostChatContext,
+): PlannedActionsResolution {
   const actions: GhostChatAction[] = [];
+  const skipped: PlannedActionSkip[] = [];
 
   for (const planned of plannedActions) {
     switch (planned.tool) {
       case "update_product_price": {
         const product = findProductByName(String(planned.args.productName ?? ""), context);
         if (!product) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            `No encontré el producto «${planned.args.productName}»`,
+            context.menuProducts.slice(0, 6).map((entry) => entry.name),
+          );
           continue;
         }
         actions.push({
@@ -83,6 +120,12 @@ export function resolvePlannedActionsToChatActions(
       case "update_product_status": {
         const product = findProductByName(String(planned.args.productName ?? ""), context);
         if (!product) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            `No encontré el producto «${planned.args.productName}»`,
+            context.menuProducts.slice(0, 6).map((entry) => entry.name),
+          );
           continue;
         }
         actions.push({
@@ -98,6 +141,12 @@ export function resolvePlannedActionsToChatActions(
       case "delete_menu_product": {
         const product = findProductByName(String(planned.args.productName ?? ""), context);
         if (!product) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            `No encontré el producto «${planned.args.productName}»`,
+            context.menuProducts.slice(0, 6).map((entry) => entry.name),
+          );
           continue;
         }
         actions.push({
@@ -121,6 +170,12 @@ export function resolvePlannedActionsToChatActions(
       case "register_sale": {
         const product = findProductByName(String(planned.args.productName ?? ""), context);
         if (!product) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            `No encontré el producto «${planned.args.productName}»`,
+            context.menuProducts.slice(0, 6).map((entry) => entry.name),
+          );
           continue;
         }
         actions.push({
@@ -139,8 +194,24 @@ export function resolvePlannedActionsToChatActions(
         break;
       }
       case "checkout_table": {
-        const session = findOpenSessionByTableNumber(String(planned.args.tableNumber ?? ""), context);
+        const tableNumber = resolveTableNumber(String(planned.args.tableNumber ?? ""), context);
+        if (!tableNumber) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            "No pude identificar la mesa a cobrar",
+            context.openTableSessions.map((session) => `Mesa ${session.tableNumber}`),
+          );
+          continue;
+        }
+        const session = findOpenSessionByTableNumber(tableNumber, context);
         if (!session) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            `La mesa ${tableNumber} no tiene cuenta abierta`,
+            context.openTableSessions.map((entry) => `Mesa ${entry.tableNumber}`),
+          );
           continue;
         }
         actions.push({
@@ -149,7 +220,7 @@ export function resolvePlannedActionsToChatActions(
             sessionId: session.sessionId,
             tableNumber: String(session.tableNumber),
             paymentMethod: String(planned.args.paymentMethod ?? "cash"),
-            documentType: String(planned.args.documentType ?? "factura"),
+            documentType: String(planned.args.documentType ?? "cuenta_cobro"),
             customerEmail: String(planned.args.customerEmail ?? "skip"),
           },
         });
@@ -164,6 +235,7 @@ export function resolvePlannedActionsToChatActions(
       }
       case "close_cash_register": {
         if (!context.cashSnapshot?.sessionId) {
+          pushSkip(skipped, planned.tool, "No hay caja abierta para cerrar", []);
           continue;
         }
         actions.push({
@@ -178,6 +250,7 @@ export function resolvePlannedActionsToChatActions(
       }
       case "cash_movement": {
         if (!context.cashSnapshot?.sessionId) {
+          pushSkip(skipped, planned.tool, "No hay caja abierta para el movimiento", []);
           continue;
         }
         const direction = String(planned.args.direction ?? "inflow");
@@ -186,7 +259,7 @@ export function resolvePlannedActionsToChatActions(
           payload: {
             sessionId: context.cashSnapshot.sessionId,
             amount: Number(planned.args.amount ?? 0),
-            reason: String(planned.args.reason ?? ""),
+            reason: String(planned.args.reason ?? "Ajuste operativo"),
             movementType: direction,
           },
         });
@@ -194,9 +267,29 @@ export function resolvePlannedActionsToChatActions(
       }
       case "add_table_order": {
         const product = findProductByName(String(planned.args.productName ?? ""), context);
-        const table = findTableByNumber(String(planned.args.tableNumber ?? ""), context);
-        const session = findOpenSessionByTableNumber(String(planned.args.tableNumber ?? ""), context);
-        if (!product || !table) {
+        const tableNumber = resolveTableNumber(String(planned.args.tableNumber ?? ""), context);
+        if (!product) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            `No encontré el producto «${planned.args.productName}»`,
+            context.menuProducts.slice(0, 6).map((entry) => entry.name),
+          );
+          continue;
+        }
+        if (!tableNumber) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            "No pude identificar la mesa del pedido",
+            context.openTableSessions.map((session) => `Mesa ${session.tableNumber}`),
+          );
+          continue;
+        }
+        const table = findTableByNumber(tableNumber, context);
+        const session = findOpenSessionByTableNumber(tableNumber, context);
+        if (!table) {
+          pushSkip(skipped, planned.tool, `No existe la mesa ${tableNumber}`, []);
           continue;
         }
         actions.push({
@@ -217,8 +310,19 @@ export function resolvePlannedActionsToChatActions(
         break;
       }
       case "open_table": {
-        const table = findTableByNumber(String(planned.args.tableNumber ?? ""), context);
+        const tableNumber = resolveTableNumber(String(planned.args.tableNumber ?? ""), context);
+        if (!tableNumber) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            "No pude identificar qué mesa abrir",
+            context.tables.map((table) => `Mesa ${table.number}${table.label ? ` (${table.label})` : ""}`),
+          );
+          continue;
+        }
+        const table = findTableByNumber(tableNumber, context);
         if (!table) {
+          pushSkip(skipped, planned.tool, `No existe la mesa ${tableNumber}`, []);
           continue;
         }
         actions.push({
@@ -232,9 +336,16 @@ export function resolvePlannedActionsToChatActions(
         break;
       }
       case "cancel_table": {
-        const table = findTableByNumber(String(planned.args.tableNumber ?? ""), context);
-        const session = findOpenSessionByTableNumber(String(planned.args.tableNumber ?? ""), context);
+        const tableNumber = resolveTableNumber(String(planned.args.tableNumber ?? ""), context);
+        const session = tableNumber ? findOpenSessionByTableNumber(tableNumber, context) : null;
+        const table = tableNumber ? findTableByNumber(tableNumber, context) : null;
         if (!table && !session) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            "No pude identificar la mesa a cancelar",
+            context.openTableSessions.map((entry) => `Mesa ${entry.tableNumber}`),
+          );
           continue;
         }
         actions.push({
@@ -242,14 +353,21 @@ export function resolvePlannedActionsToChatActions(
           payload: {
             sessionId: session?.sessionId ?? "",
             tableId: table?.id ?? session?.tableId ?? "",
-            tableNumber: String(planned.args.tableNumber ?? table?.number ?? session?.tableNumber ?? ""),
+            tableNumber: String(tableNumber ?? table?.number ?? session?.tableNumber ?? ""),
           },
         });
         break;
       }
       case "send_kitchen_order": {
-        const session = findOpenSessionByTableNumber(String(planned.args.tableNumber ?? ""), context);
+        const tableNumber = resolveTableNumber(String(planned.args.tableNumber ?? ""), context);
+        const session = tableNumber ? findOpenSessionByTableNumber(tableNumber, context) : null;
         if (!session) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            "No hay mesa abierta con comanda pendiente",
+            context.openTableSessions.map((entry) => `Mesa ${entry.tableNumber}`),
+          );
           continue;
         }
         actions.push({
@@ -260,13 +378,14 @@ export function resolvePlannedActionsToChatActions(
       }
       case "update_kitchen_status": {
         const tableNumber = planned.args.tableNumber
-          ? Number(planned.args.tableNumber)
-          : undefined;
+          ? resolveTableNumber(String(planned.args.tableNumber), context)
+          : context.kitchenOrders[0]?.tableNumber ?? null;
         const order =
           (tableNumber
             ? context.kitchenOrders.find((entry) => entry.tableNumber === tableNumber)
             : null) ?? context.kitchenOrders[0];
         if (!order) {
+          pushSkip(skipped, planned.tool, "No hay comandas activas para actualizar", []);
           continue;
         }
         actions.push({
@@ -281,6 +400,12 @@ export function resolvePlannedActionsToChatActions(
       case "inventory_movement": {
         const item = findInventoryByName(String(planned.args.itemName ?? ""), context);
         if (!item) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            `No encontré el insumo «${planned.args.itemName}»`,
+            context.inventoryItems.slice(0, 6).map((entry) => entry.name),
+          );
           continue;
         }
         actions.push({
@@ -297,6 +422,7 @@ export function resolvePlannedActionsToChatActions(
       case "create_inventory_item": {
         const name = String(planned.args.name ?? "");
         if (!name) {
+          pushSkip(skipped, planned.tool, "Falta el nombre del insumo", []);
           continue;
         }
         actions.push({
@@ -313,6 +439,12 @@ export function resolvePlannedActionsToChatActions(
       case "register_purchase": {
         const item = findInventoryByName(String(planned.args.itemName ?? ""), context);
         if (!item) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            `No encontré el insumo «${planned.args.itemName}»`,
+            context.inventoryItems.slice(0, 6).map((entry) => entry.name),
+          );
           continue;
         }
         actions.push({
@@ -348,6 +480,12 @@ export function resolvePlannedActionsToChatActions(
       case "build_recipe_cost": {
         const product = findProductByName(String(planned.args.productName ?? ""), context);
         if (!product) {
+          pushSkip(
+            skipped,
+            planned.tool,
+            `No encontré el producto «${planned.args.productName}»`,
+            context.menuProducts.slice(0, 6).map((entry) => entry.name),
+          );
           continue;
         }
         actions.push({
@@ -361,5 +499,21 @@ export function resolvePlannedActionsToChatActions(
     }
   }
 
-  return actions;
+  return { actions, skipped };
+}
+
+export function formatPlannedActionSkips(skipped: PlannedActionSkip[]): string {
+  if (skipped.length === 0) {
+    return "";
+  }
+
+  return skipped
+    .map((entry) => {
+      const suggestions =
+        entry.suggestions.length > 0
+          ? `\nOpciones: ${entry.suggestions.join(", ")}`
+          : "";
+      return `· ${entry.detail}${suggestions}`;
+    })
+    .join("\n");
 }

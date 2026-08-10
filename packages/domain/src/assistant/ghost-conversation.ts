@@ -43,7 +43,7 @@ import {
 } from "./cost-matrix-conversation.js";
 import { buildBrainHelpMessage, classifyBrainQueryIntent } from "./ghost-brain.js";
 import { resolveLocalAgentMessage } from "./ghost-agent-local.js";
-import { isInterpretiveNaturalLanguage } from "../ai/ghost-llm-tools.js";
+import { shouldPreferAgentRoute } from "../ai/ghost-llm-tools.js";
 
 export type GhostConversationIntent =
   | "org-status"
@@ -1551,12 +1551,43 @@ export function buildConversationContextSummary(context: GhostConversationContex
           )
           .join(" · ")
       : "ninguna";
+  const openTableDetails =
+    context.openTableSessions.length > 0
+      ? context.openTableSessions
+          .slice(0, 8)
+          .map((session) => {
+            const lines = (session.lines ?? [])
+              .map((line) => `${line.name} x${line.quantity}`)
+              .join(", ");
+            const total = session.total ?? 0;
+            return `Mesa ${session.tableNumber}: ${lines || "sin pedidos"} — $${total.toLocaleString("es-CO")}`;
+          })
+          .join(" · ")
+      : "";
+  const marginSummary = context.menuProducts
+    .filter((product) => product.recipeCost && product.price > 0)
+    .slice(0, 20)
+    .map((product) => {
+      const marginPct = Math.round(
+        ((product.price - (product.recipeCost ?? 0)) / product.price) * 100,
+      );
+      return `${product.name} costo $${Math.round(product.recipeCost ?? 0).toLocaleString("es-CO")} precio $${product.price.toLocaleString("es-CO")} (${marginPct}%)`;
+    })
+    .join(" · ");
+  const lastPurchaseSummary = (context.purchasePriceHistorySnapshot ?? [])
+    .slice(0, 12)
+    .map(
+      (entry) =>
+        `${entry.supplierName}: $${Math.round(entry.unitPriceNet).toLocaleString("es-CO")}`,
+    )
+    .join(" · ");
 
   return [
     `Organización: ${context.organizationName ?? "Ghost"}`,
     `Insumos: ${context.inventoryCount}${inventoryCatalog ? ` — ${inventoryCatalog}` : ""}`,
     `Facturas compra: ${context.invoiceCount}`,
     `Carta (${context.menuProducts.length}): ${productCatalog || "vacía"}`,
+    marginSummary ? `Márgenes: ${marginSummary}` : "",
     `Ventas hoy: ${todaySales.length} · ${todaySalesTotal.toLocaleString("es-CO")} COP`,
     `Caja: ${context.cashSessionOpen ? "abierta" : "cerrada"}${
       context.cashSnapshot
@@ -1565,7 +1596,9 @@ export function buildConversationContextSummary(context: GhostConversationContex
     }`,
     `Mesas configuradas: ${tableCatalog}`,
     `Mesas abiertas: ${openTables}`,
+    openTableDetails ? `Detalle mesas abiertas: ${openTableDetails}` : "",
     `Comandas: ${kitchenSummary}`,
+    lastPurchaseSummary ? `Últimos precios compra: ${lastPurchaseSummary}` : "",
     lowStock ? `Bajo mínimo (${lowStockCount}): ${lowStock}` : "",
   ]
     .filter(Boolean)
@@ -1868,7 +1901,7 @@ export function processConversationTurn(input: {
     }
 
     const localAnswer = resolveLocalAgentMessage(trimmed, context);
-    if (localAnswer && !isInterpretiveNaturalLanguage(trimmed)) {
+    if (localAnswer && !shouldPreferAgentRoute(trimmed)) {
       return {
         kind: "reply",
         session: clearPending(session),
@@ -1892,7 +1925,7 @@ export function processConversationTurn(input: {
 
   if (
     missing.length > 0 &&
-    isInterpretiveNaturalLanguage(trimmed) &&
+    shouldPreferAgentRoute(trimmed) &&
     intent !== "save-recipe-cost"
   ) {
     const agentSessionId = session.agentSessionId ?? `chat-${Date.now()}`;

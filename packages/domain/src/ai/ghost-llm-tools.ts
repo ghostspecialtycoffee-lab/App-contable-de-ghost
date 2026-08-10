@@ -126,9 +126,9 @@ export const GHOST_LLM_FUNCTION_DECLARATIONS: GhostLlmFunctionDeclaration[] = [
     {
       direction: { type: "STRING", description: "inflow o outflow" },
       amount: { type: "NUMBER", description: "Monto en COP" },
-      reason: { type: "STRING", description: "Motivo" },
+      reason: { type: "STRING", description: "Motivo (opcional)" },
     },
-    ["direction", "amount", "reason"],
+    ["direction", "amount"],
   ),
   tool(
     "add_table_order",
@@ -225,17 +225,23 @@ const KNOWN_TOOLS = new Set<string>(GHOST_LLM_FUNCTION_DECLARATIONS.map((entry) 
 
 export function buildGhostLlmSystemInstruction(contextSummary: string): string {
   return [
-    "Eres Ghost, asistente operativo de una cafetería en Ghost ERP.",
-    "Interpretas lenguaje natural coloquial y ejecutas operaciones con las herramientas disponibles.",
-    "Responde en español, directo y útil, como un compañero de turno.",
+    "Eres Ghost, asistente operativo autónomo de una cafetería en Ghost ERP.",
+    "Interpretas lenguaje natural coloquial y ejecutas operaciones sin pedir confirmaciones innecesarias.",
+    "Responde en español, directo y útil, como un compañero de turno que ya conoce la operación.",
     "",
+    "AUTONOMÍA:",
+    "- Infiere datos faltantes del contexto (mesa por etiqueta, producto por nombre parcial, costo del último precio de compra).",
+    "- Si hay una sola mesa abierta y piden cobrar, usa esa mesa.",
+    "- Si no dicen forma de pago, usa efectivo (cash).",
+    "- Si no dicen tipo de documento al cobrar, usa cuenta_cobro.",
+    "- Encadena varias herramientas en un solo turno cuando la orden lo pide (analizar + actuar).",
+    "- Para análisis (ventas, márgenes, stock): responde en texto con cifras del contexto; luego ejecuta acciones si lo piden.",
+    "- Solo pregunta si falta un dato crítico que no puedas inferir del contexto.",
+  "",
     "REGLAS:",
-    "- Para análisis (ventas, márgenes, stock): responde en texto usando el contexto. No inventes cifras.",
     "- Para acciones (vender, cobrar, comprar, ajustar): llama la herramienta correcta.",
-    "- Puedes encadenar varias herramientas si la orden lo pide.",
     "- Usa solo productos, insumos y mesas que aparezcan en el contexto.",
     "- Precios y montos en COP enteros.",
-    "- Si falta un dato crítico, pregunta una sola cosa concreta antes de actuar.",
     "- Sinónimos: cobrar=cerrar cuenta, vender=facturar mostrador, egreso=salida de caja.",
     "",
     "Contexto operativo:",
@@ -243,12 +249,22 @@ export function buildGhostLlmSystemInstruction(contextSummary: string): string {
   ].join("\n");
 }
 
-export function isInterpretiveNaturalLanguage(message: string): boolean {
-  const normalized = message
+const OPERATIONAL_ACTION_PATTERN =
+  /(registra|registro|cobra|cobrar|sube|subir|baja|bajar|abre|abrir|cierra|cerrar|elimina|quita|crea|crear|anade|añade|agrega|envia|envía|actualiza|ajusta|vende|vender|compra|comprar|liquida|anota|pon |poner|desactiva|activa|manda|envia)/;
+
+const COMPOUND_ANALYSIS_ACTION_PATTERN =
+  /(analiza|revisa|evalua|mira|chequea).*(y |luego|ademas|despues|sube|baja|registra|cobra|ajusta|crea)/;
+
+function normalizeAgentText(message: string): string {
+  return message
     .trim()
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+export function isInterpretiveNaturalLanguage(message: string): boolean {
+  const normalized = normalizeAgentText(message);
 
   if (normalized.length < 15) {
     return false;
@@ -270,6 +286,36 @@ export function isInterpretiveNaturalLanguage(message: string): boolean {
   }
 
   return false;
+}
+
+export function isOperationalActionMessage(message: string): boolean {
+  const normalized = normalizeAgentText(message);
+
+  if (/^(cuanto|cuantos|como va|que tal|informe|reporte|muestrame|lista|dime cu)/.test(normalized)) {
+    return false;
+  }
+
+  return (
+    isInterpretiveNaturalLanguage(message) ||
+    COMPOUND_ANALYSIS_ACTION_PATTERN.test(normalized) ||
+    OPERATIONAL_ACTION_PATTERN.test(normalized)
+  );
+}
+
+export function shouldPreferAgentRoute(message: string): boolean {
+  const normalized = normalizeAgentText(message);
+  const stripped = normalized.replace(/^[^a-z0-9]+/, "");
+  const isHelpQuestion = /^(como|donde|que es|para que|explica)/.test(stripped);
+
+  if (isHelpQuestion) {
+    return (
+      isInterpretiveNaturalLanguage(message) || COMPOUND_ANALYSIS_ACTION_PATTERN.test(normalized)
+    );
+  }
+
+  return (
+    isInterpretiveNaturalLanguage(message) || COMPOUND_ANALYSIS_ACTION_PATTERN.test(normalized)
+  );
 }
 
 function asString(value: unknown): string {
@@ -436,10 +482,11 @@ export function mapGhostLlmToolCall(
     }
     case "open_cash_register": {
       const openingAmount = asNumber(args.openingAmount);
-      if (openingAmount === null || openingAmount < 0) {
-        return null;
-      }
-      return { tool: toolName, rationale, args: { openingAmount: String(Math.round(openingAmount)) } };
+      return {
+        tool: toolName,
+        rationale,
+        args: { openingAmount: String(Math.round(openingAmount !== null && openingAmount >= 0 ? openingAmount : 0)) },
+      };
     }
     case "close_cash_register": {
       const countedAmount = asNumber(args.countedAmount);
@@ -450,8 +497,7 @@ export function mapGhostLlmToolCall(
     }
     case "cash_movement": {
       const amount = asNumber(args.amount);
-      const reason = asString(args.reason);
-      if (amount === null || amount <= 0 || !reason) {
+      if (amount === null || amount <= 0) {
         return null;
       }
       return {
@@ -460,7 +506,7 @@ export function mapGhostLlmToolCall(
         args: {
           direction: normalizeCashDirection(args.direction),
           amount: String(Math.round(amount)),
-          reason,
+          reason: asString(args.reason) || "Ajuste operativo",
         },
       };
     }

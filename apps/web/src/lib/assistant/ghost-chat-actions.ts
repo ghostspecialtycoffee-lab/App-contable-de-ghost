@@ -42,7 +42,7 @@ import { createDiningTable } from "@/lib/tables/tables";
 import { findOpenTableSessionClient } from "@/lib/tables/table-sessions-client";
 import { callGhostAgent } from "@/lib/firebase/functions";
 import { resolveGhostAgentQuery } from "@/lib/assistant/ghost-agent-client";
-import { resolvePlannedActionsToChatActions } from "@/lib/assistant/ghost-planned-actions";
+import { resolvePlannedActions, formatPlannedActionSkips } from "@/lib/assistant/ghost-planned-actions";
 import { sendSaleDocument } from "@/lib/sales/send-sale-document";
 import type { GhostChatAction, GhostChatContext } from "@/lib/assistant/ghost-chat-engine";
 
@@ -623,21 +623,27 @@ export async function executeGhostChatAction(
       const executionMessages: string[] = [response.answer];
 
       if (response.plannedActions?.length && context.chatContext) {
-        const plannedChatActions = resolvePlannedActionsToChatActions(
+        const resolution = resolvePlannedActions(
           response.plannedActions,
           context.chatContext,
         );
 
-        if (plannedChatActions.length === 0) {
+        if (resolution.actions.length === 0) {
           executionMessages.push(
-            "No pude ejecutar las acciones porque faltan datos (producto, mesa o sesión). Revisa el contexto e inténtalo de nuevo.",
+            "No pude ejecutar las acciones planificadas.",
+            formatPlannedActionSkips(resolution.skipped),
           );
         } else {
-          for (const plannedAction of plannedChatActions) {
+          for (const plannedAction of resolution.actions) {
             const result = await executeGhostChatAction(plannedAction, context);
             if (result?.message) {
               executionMessages.push(result.message);
             }
+          }
+          if (resolution.skipped.length > 0) {
+            executionMessages.push(
+              `Algunas acciones no se ejecutaron:\n${formatPlannedActionSkips(resolution.skipped)}`,
+            );
           }
         }
       }
