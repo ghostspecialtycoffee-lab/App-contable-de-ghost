@@ -1,11 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "organizations",
-      "queryScope": "COLLECTION",
-      "fields": [{ "fieldPath": "slug", "order": "ASCENDING" }]
-    },
-    {
       "collectionGroup": "inventoryItems",
       "queryScope": "COLLECTION",
       "fields": [
@@ -115,20 +110,6 @@
       "fields": [
         { "fieldPath": "warehouseId", "order": "ASCENDING" },
         { "fieldPath": "itemId", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "analyticsDaily",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "date", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "workflowOutbox",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }
   ],

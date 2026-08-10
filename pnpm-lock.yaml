@@ -14,6 +14,9 @@ importers:
       firebase-tools:
         specifier: '13'
         version: 13.35.1(@types/node@22.20.1)
+      google-auth-library:
+        specifier: ^9.15.1
+        version: 9.15.1
       turbo:
         specifier: ^2.5.0
         version: 2.10.8

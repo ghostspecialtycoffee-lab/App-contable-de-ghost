@@ -150,14 +150,17 @@ jobs:
             exit 1
           fi
 
-          echo "=== 2/4 Firestore + Functions (requiere Blaze) ==="
-          if "${FB[@]}" --only firestore:rules,firestore:indexes,functions; then
+          echo "=== 2/4 Functions (requiere Blaze) ==="
+          if "${FB[@]}" --only functions; then
             BACKEND_OK=1
-            echo "✅ Backend desplegado (registro/onboarding listo)"
+            echo "✅ Functions desplegadas (registro/onboarding listo)"
           else
-            echo "::warning::Firestore/Functions no desplegados. Verifica plan Blaze:"
+            echo "::warning::Functions no desplegadas. Verifica plan Blaze:"
             echo "https://console.firebase.google.com/project/ghost-contable/usage/details"
           fi
+
+          echo "=== 2b/4 Firestore indexes (opcional) ==="
+          "${FB[@]}" --only firestore:indexes || echo "::warning::Índices omitidos — revisa firestore.indexes.json"
 
           echo "=== 3/4 Storage (opcional) ==="
           if "${FB[@]}" --only storage; then
