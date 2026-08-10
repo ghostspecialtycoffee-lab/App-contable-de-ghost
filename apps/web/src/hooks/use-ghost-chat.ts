@@ -379,6 +379,7 @@ export function useGhostChat() {
               organizationId,
               branchId,
               userId: firebaseUser.uid,
+              chatContext: context,
               recipes: recipes.map((recipe) => ({
                 menuProductId: recipe.menuProductId,
                 lines: recipe.lines,

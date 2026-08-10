@@ -14,6 +14,12 @@ Sin `RESEND_API_KEY`, las notificaciones se encolan en Firestore y quedan regist
 - `TAVILY_API_KEY` (opcional) — búsqueda web ampliada
 - Sin Tavily: DuckDuckGo Instant Answer API (limitada)
 
+## Agente LLM con herramientas (tool calling)
+
+- `GEMINI_API_KEY` (opcional) — habilita razonamiento con **Gemini 2.0 Flash** y ejecución de acciones (precios, ventas, mesas, caja)
+- Sin `GEMINI_API_KEY`: el chat sigue con reglas locales + conocimiento guardado + búsqueda web
+- Configúrala en Firebase Functions → Secret Manager o variables de entorno del runtime
+
 ## Eventos con correo automático
 
 | Evento | Disparador |

@@ -2,12 +2,14 @@ import {
   normalizeAgentQuestion,
   scoreKnowledgeMatch,
   findBestPlatformKnowledge,
+  summarizePlannedActions,
   type AgentKnowledgeSource,
   type GhostAgentResponse,
 } from "@ghost/domain";
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
+import { planGhostAgentWithLlm } from "./llmClient.js";
 import { searchWeb } from "./webSearch.js";
 import { getDb } from "../shared/db.js";
 import { assertOrgPermission, getActiveOrganizationId } from "../shared/permissions.js";
@@ -108,6 +110,37 @@ export const ghostAgent = onCall(async (request) => {
 
     await persistAgentSession(db, organizationId, sessionId, request.auth.uid, message, response);
     return response;
+  }
+
+  const geminiKey = process.env.GEMINI_API_KEY?.trim();
+  if (geminiKey) {
+    try {
+      const llmPlan = await planGhostAgentWithLlm({
+        message,
+        contextSummary,
+        history: history.map((entry) => ({
+          role: entry.role === "ghost" ? "ghost" as const : "user" as const,
+          text: entry.text,
+        })),
+        apiKey: geminiKey,
+      });
+
+      if (llmPlan && (llmPlan.plannedActions.length > 0 || llmPlan.answer.trim())) {
+        const response: GhostAgentResponse = {
+          answer:
+            llmPlan.plannedActions.length > 0 && !llmPlan.answer.includes("Voy a ejecutar")
+              ? `${llmPlan.answer}\n\n${summarizePlannedActions(llmPlan.plannedActions)}`
+              : llmPlan.answer,
+          usedWebSearch: false,
+          sources: [{ title: "Ghost LLM", url: `models/${process.env.GEMINI_MODEL ?? "gemini-2.0-flash"}` }],
+          plannedActions: llmPlan.plannedActions,
+        };
+        await persistAgentSession(db, organizationId, sessionId, request.auth.uid, message, response);
+        return response;
+      }
+    } catch (error) {
+      console.warn("Ghost LLM planner error:", error);
+    }
   }
 
   let answer = "";
