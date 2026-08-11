@@ -18,6 +18,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 - Documentación raíz: ARCHITECTURE, ROADMAP, TASKS, DATABASE, CODING_STANDARDS, SECURITY, CONTRIBUTING
 - Skills permanentes del agente en `.cursor/skills/`
 
+### Security
+- [SECURITY] Endurecimiento Firestore: bloqueo writes cliente en balances, lotes, analytics, outboxes y agentKnowledge; mesas solo lectura miembros; validación ventas y sesiones guest
+- [SECURITY] Storage rules: acceso restringido a miembros de la organización
+- [SECURITY] Cabeceras HTTP en Firebase Hosting (HSTS, X-Frame-Options, nosniff)
+- [SECURITY] Escape HTML en correos de venta
+- [SECURITY] Fix open redirect en login (`next` query validado)
+
 ## [0.3.0] — 2026-08-04
 
 ### Added

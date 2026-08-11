@@ -23,6 +23,15 @@ function formatMoney(value: number): string {
   return `$${Math.round(value).toLocaleString("es-CO")}`;
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function buildSaleDocumentHtml(input: {
   documentTitle: string;
   saleNumber: string;
@@ -39,25 +48,25 @@ function buildSaleDocumentHtml(input: {
   const lineRows = input.lines
     .map(
       (line) =>
-        `<tr><td>${line.quantity} × ${line.name}</td><td style="text-align:right">${formatMoney(line.lineTotal)}</td></tr>`,
+        `<tr><td>${line.quantity} × ${escapeHtml(line.name)}</td><td style="text-align:right">${formatMoney(line.lineTotal)}</td></tr>`,
     )
     .join("");
 
   return `<!DOCTYPE html>
 <html lang="es">
 <body style="font-family:Arial,sans-serif;color:#111;max-width:640px;margin:0 auto;padding:24px">
-  <h1 style="font-size:20px;margin-bottom:4px">${input.organizationName}</h1>
-  <h2 style="font-size:16px;font-weight:600;margin-top:0">${input.documentTitle}</h2>
-  <p style="font-size:13px;color:#444">N.º ${input.saleNumber}<br>${input.soldAt}</p>
+  <h1 style="font-size:20px;margin-bottom:4px">${escapeHtml(input.organizationName)}</h1>
+  <h2 style="font-size:16px;font-weight:600;margin-top:0">${escapeHtml(input.documentTitle)}</h2>
+  <p style="font-size:13px;color:#444">N.º ${escapeHtml(input.saleNumber)}<br>${escapeHtml(input.soldAt)}</p>
   ${input.tableNumber ? `<p style="font-size:13px">Mesa ${input.tableNumber}</p>` : ""}
-  ${input.customerName ? `<p style="font-size:13px">Cliente: ${input.customerName}</p>` : ""}
+  ${input.customerName ? `<p style="font-size:13px">Cliente: ${escapeHtml(input.customerName)}</p>` : ""}
   <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px">
     <tbody>${lineRows}</tbody>
   </table>
   <p style="font-size:14px">Base gravable: ${formatMoney(input.subtotal)}</p>
   <p style="font-size:14px">Impuestos: ${formatMoney(input.taxAmount)}</p>
   <p style="font-size:16px;font-weight:700">Total: ${formatMoney(input.total)}</p>
-  <p style="font-size:13px;color:#444">Medio de pago: ${input.paymentMethod}</p>
+  <p style="font-size:13px;color:#444">Medio de pago: ${escapeHtml(input.paymentMethod)}</p>
   <p style="font-size:12px;color:#666;margin-top:24px">Generado por Ghost Contable</p>
 </body>
 </html>`;

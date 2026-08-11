@@ -50,8 +50,12 @@ service cloud.firestore {
         && request.resource.data.guestToken == resource.data.guestToken
         && request.resource.data.tableId == resource.data.tableId
         && guestTokenMatchesTable(orgId, resource.data.tableId, resource.data.guestToken)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['lines', 'status', 'waiterRequestedAt', 'updatedAt', 'updatedBy'])
         && (
-          (resource.data.status == 'open' && request.resource.data.status == 'open')
+          (resource.data.status == 'open' && request.resource.data.status == 'open'
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['lines'])
+              || request.resource.data.lines.size() >= resource.data.lines.size()))
           || (resource.data.status == 'open' && request.resource.data.status == 'requested_bill')
           || (
             request.resource.data.status == resource.data.status
@@ -166,24 +170,12 @@ service cloud.firestore {
 
       match /inventoryBalances/{balanceId} {
         allow read: if canAccessOrg(organizationId);
-        allow create, update: if canAccessOrg(organizationId)
-          && request.resource.data.organizationId == organizationId;
-        allow delete: if false;
+        allow create, update, delete: if false;
       }
 
       match /inventoryLots/{lotId} {
         allow read: if canAccessOrg(organizationId);
-        allow create, update: if canAccessOrg(organizationId)
-          && request.resource.data.organizationId == organizationId;
-        allow delete: if false;
-      }
-
-      match /analyticsDaily/{dateId} {
-        allow read: if canAccessOrg(organizationId);
-        allow create, update: if canAccessOrg(organizationId)
-          && request.resource.data.organizationId == organizationId
-          && request.resource.data.date is string;
-        allow delete: if false;
+        allow create, update, delete: if false;
       }
 
       match /menuProducts/{productId} {
@@ -223,7 +215,14 @@ service cloud.firestore {
         allow create: if canAccessOrg(organizationId)
           && request.resource.data.organizationId == organizationId
           && request.resource.data.cashierUserId == request.auth.uid
-          && request.resource.data.status == 'paid';
+          && request.resource.data.status == 'paid'
+          && request.resource.data.total is number
+          && request.resource.data.total >= 0
+          && request.resource.data.subtotal is number
+          && request.resource.data.subtotal >= 0
+          && request.resource.data.lines is list
+          && request.resource.data.lines.size() > 0
+          && request.resource.data.lines.size() <= 100;
         allow update, delete: if false;
       }
 
@@ -277,7 +276,8 @@ service cloud.firestore {
           && request.resource.data.status == 'draft';
         allow update: if canAccessOrg(organizationId)
           && resource.data.organizationId == organizationId
-          && resource.data.status == 'draft';
+          && resource.data.status == 'draft'
+          && request.resource.data.status == 'draft';
         allow delete: if false;
       }
 
@@ -313,8 +313,7 @@ service cloud.firestore {
       }
 
       match /diningTables/{tableId} {
-        allow read: if canAccessOrg(organizationId)
-          || resource.data.status != 'closed';
+        allow read: if canAccessOrg(organizationId);
         allow create: if canAccessOrg(organizationId)
           && request.resource.data.organizationId == organizationId
           && request.resource.data.createdBy == request.auth.uid
@@ -375,9 +374,7 @@ service cloud.firestore {
 
       match /notificationOutbox/{entryId} {
         allow read: if canAccessOrg(organizationId);
-        allow create: if canAccessOrg(organizationId)
-          && request.resource.data.organizationId == organizationId;
-        allow update, delete: if false;
+        allow create, update, delete: if false;
       }
 
       match /domainEventOutbox/{entryId} {
@@ -391,13 +388,7 @@ service cloud.firestore {
 
       match /workflowOutbox/{entryId} {
         allow read: if canAccessOrg(organizationId);
-        allow create: if canAccessOrg(organizationId)
-          && request.resource.data.organizationId == organizationId
-          && request.resource.data.status == 'pending';
-        allow update: if canAccessOrg(organizationId)
-          && resource.data.status == 'pending'
-          && request.resource.data.status in ['ready', 'sent', 'failed', 'skipped'];
-        allow delete: if false;
+        allow create, update, delete: if false;
       }
 
       match /analyticsDaily/{dateId} {
@@ -423,9 +414,7 @@ service cloud.firestore {
 
       match /agentKnowledge/{entryId} {
         allow read: if canAccessOrg(organizationId);
-        allow create: if canAccessOrg(organizationId);
-        allow update: if canAccessOrg(organizationId);
-        allow delete: if false;
+        allow create, update, delete: if false;
       }
 
       match /agentSessions/{sessionId} {

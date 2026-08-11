@@ -6,9 +6,14 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    function isOrgMember(orgId) {
+      return isSignedIn()
+        && firestore.exists(/databases/(default)/documents/organizations/$(orgId)/members/$(request.auth.uid));
+    }
+
     match /organizations/{organizationId}/{allPaths=**} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn()
+      allow read: if isOrgMember(organizationId);
+      allow write: if isOrgMember(organizationId)
         && request.resource.size < 10 * 1024 * 1024;
     }
   }
