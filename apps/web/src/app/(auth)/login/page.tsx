@@ -6,13 +6,14 @@ import { Suspense, useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 import { getAuthErrorMessage } from "@/lib/auth/errors";
+import { resolveSafeRedirectPath } from "@/lib/auth/safe-redirect";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 import { Button, Card } from "@ghost/ui";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") ?? "/dashboard";
+  const nextPath = resolveSafeRedirectPath(searchParams.get("next"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
