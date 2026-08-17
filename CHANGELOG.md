@@ -5,6 +5,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Propuestas comerciales Ghost Specialty Coffee → Bit Hotels El Peñón (`docs/proposals/bit-hotels-el-penon/`)
 - Agente interpretativo LLM: 20 herramientas (caja, carta, mesas, inventario, compras, gastos, admin)
 - Routing de lenguaje natural compuesto al agente Gemini cuando hay `GEMINI_API_KEY`
 - Contexto enriquecido para el agente (productos, insumos, mesas, comandas, stock bajo)
