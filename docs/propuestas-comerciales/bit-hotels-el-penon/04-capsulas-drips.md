@@ -1,23 +1,14 @@
-# Propuesta 04 — Cápsulas y drips para habitaciones
+# Propuesta 04 — Cápsulas y drips
 
-**De:** Ghost Specialty Coffee  
-**Para:** Bit Hotels El Peñón / Hotel El Peñón  
-**Fecha:** Agosto 2026
+**De:** Ghost Specialty Coffee · **Para:** Bit Hotels El Peñón  
+**Versión:** 2
 
-## Productos
+| Producto | Precio hotel | Costo Ghost est. | Margen |
+|----------|--------------|------------------|--------|
+| Cápsula + etiqueta hotel | **$1.700** | $900–1.100 | $600–800 |
+| Drip + etiqueta hotel | **$2.000** | $1.100–1.300 | $700–900 |
+| Kit bienvenida (2+1) | **$5.400** | ~$3.100 | ~$2.300 |
 
-| Producto | Precio hotel | Descripción |
-|----------|--------------|-------------|
-| **Cápsula** | **$1.700 COP** c/u | Café de especialidad para máquina espresso de cápsulas, con etiqueta del hotel |
-| **Drip** | **$2.000 COP** c/u | Sobre drip / pour-over individual, etiqueta del hotel, listo para preparar en habitación |
+Café especialidad SCA 85+ · perfiles rotativos · co-branding Bit / El Peñón.
 
-## Detalle
-
-- Café de especialidad (estándar Ghost / SCA 85+)
-- Diseño / perfiles: distintos tipos de café según lote (espresso-oriented y filter)
-- Co-branding: etiqueta Bit Hotels / Hotel El Peñón + narrativa Ghost
-- Reposición vía housekeeping o kit de bienvenida (sugerido: 2 cápsulas + 1 drip)
-
-## Condiciones
-
-Pedidos mínimos, frecuencia de entrega y almacenamiento se acuerdan con A&B / ama de llaves del hotel.
+**Deducibilidad:** reposición facturada al hotel, compensable vs. costos cafetería→hotel.

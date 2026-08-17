@@ -1,0 +1,123 @@
+{
+  "source": {
+    "name": "Ghost Specialty Coffee — carta pública cafetería",
+    "sede": "Cl. 1 Oe. #2-61, Bit Hotels El Peñón, Cali",
+    "version": "2026-08",
+    "currency": "COP",
+    "notes": "Precios de menú al público. Tarifas B2B hotel (desayunos/amenities) van en propuestas comerciales, no aquí."
+  },
+  "categories": [
+    {
+      "id": "espresso",
+      "name": "Espresso bar",
+      "items": [
+        { "name": "Espresso sencillo", "price": 6500, "desc": "18 g · 30 ml · SCA" },
+        { "name": "Espresso doble", "price": 8500, "desc": "Doble shot" },
+        { "name": "Americano", "price": 6000, "desc": "Espresso + agua caliente" },
+        { "name": "Macchiato", "price": 9500, "desc": "Espresso marcado" },
+        { "name": "Cappuccino", "price": 14000, "desc": "Espresso · leche · espuma" },
+        { "name": "Latte", "price": 11500, "desc": "Espresso + leche sedosa" },
+        { "name": "Flat white", "price": 12000, "desc": "Doble espresso + microespuma" },
+        { "name": "Mocaccino", "price": 16000, "desc": "Espresso · leche · cacao" }
+      ]
+    },
+    {
+      "id": "metodos",
+      "name": "Métodos de filtrado",
+      "items": [
+        { "name": "V60", "price": 8000, "desc": "Golden Cup 1:16–1:18" },
+        { "name": "Aeropress", "price": 8000, "desc": "Inmersión controlada" },
+        { "name": "Prensa francesa", "price": 8500, "desc": "Cuerpo redondo" },
+        { "name": "Chemex", "price": 9000, "desc": "Taza limpia y dulce" },
+        { "name": "UFO", "price": 9000, "desc": "Método de barra" }
+      ]
+    },
+    {
+      "id": "frios",
+      "name": "Fríos & specialty",
+      "items": [
+        { "name": "Iced latte", "price": 15000, "desc": "Espresso · leche · hielo" },
+        { "name": "Cold brew", "price": 20000, "desc": "Infusión en frío Ghost" },
+        { "name": "Cold brew fusion", "price": 20000, "desc": "Cold brew + leche" },
+        { "name": "Espresso tonic", "price": 12000, "desc": "Espresso + tónica" },
+        { "name": "Granizado", "price": 16000, "desc": "Espresso · leche · hielo" },
+        { "name": "Frappuccino", "price": 14000, "desc": "Licuado de café" },
+        { "name": "Affogato", "price": 16000, "desc": "Espresso sobre helado" }
+      ]
+    },
+    {
+      "id": "otras-bebidas",
+      "name": "Chocolate, jugos y más",
+      "items": [
+        { "name": "Chocolate cacao puro", "price": 12000, "desc": "Cacao puro, sin relleno comercial" },
+        { "name": "Chocolate cacao puro grande", "price": 15000, "desc": "Porción generosa" },
+        { "name": "Jugo natural del día", "price": 10000, "desc": "Fruta de temporada" },
+        { "name": "Jugo natural premium", "price": 13000, "desc": "Mezclas (naranja, mango, etc.)" },
+        { "name": "Limonada", "price": 12000, "desc": "Natural" },
+        { "name": "Soda italiana", "price": 15000, "desc": "Soda + jarabe de casa" },
+        { "name": "Malteada", "price": 16000, "desc": "Leche + helado" },
+        { "name": "Dirty chai", "price": 9000, "desc": "Chai + espresso" },
+        { "name": "Carajillo", "price": 12000, "desc": "Espresso + licor" },
+        { "name": "Irlandés", "price": 14000, "desc": "Espresso · whiskey · crema" }
+      ]
+    },
+    {
+      "id": "panaderia",
+      "name": "Panadería & horneados",
+      "items": [
+        { "name": "Croissant de mantequilla", "price": 6500, "desc": "Hojaldre mantequilla" },
+        { "name": "Croissant de chocolate", "price": 7500, "desc": "Relleno de chocolate" },
+        { "name": "Pastel de pollo", "price": 8500, "desc": "Horneado del día" },
+        { "name": "Pastel de carne", "price": 8500, "desc": "Horneado del día" },
+        { "name": "Pastel hawaiano", "price": 9000, "desc": "Jamón · piña · queso" },
+        { "name": "Arepa", "price": 7000, "desc": "Según relleno del día" },
+        { "name": "Galleta de la casa", "price": 5500, "desc": "Rotación (avena, chocolate, etc.)" }
+      ]
+    },
+    {
+      "id": "huevos",
+      "name": "Huevos & desayuno",
+      "items": [
+        { "name": "Huevos revueltos", "price": 14000, "desc": "Con pan o arepa" },
+        { "name": "Huevos al sartén", "price": 14000, "desc": "Estrellados / fritos" },
+        { "name": "Huevos pericos", "price": 15000, "desc": "Tomate · cebolla" },
+        { "name": "Omelette", "price": 17000, "desc": "Relleno a elección (vegetales / jamón / queso)" },
+        { "name": "Combo desayuno Ghost", "price": 28000, "desc": "Huevos + panadería + bebida specialty o jugo + fruta" }
+      ]
+    },
+    {
+      "id": "sandwiches",
+      "name": "Sándwiches",
+      "items": [
+        { "name": "Sándwich jamón", "price": 18000, "desc": "Croissant o brioche · lechuga · tomate deshidratado" },
+        { "name": "Sándwich pollo", "price": 19000, "desc": "Croissant o brioche · vegetales" },
+        { "name": "Sándwich cerdo", "price": 19000, "desc": "Croissant o brioche · vegetales" },
+        { "name": "Sándwich al pastor", "price": 20000, "desc": "Croissant o brioche · vegetales" },
+        { "name": "Sándwich de huevo", "price": 17000, "desc": "Croissant o brioche · vegetales" },
+        { "name": "Sándwich vegetariano", "price": 16000, "desc": "Vegetales de temporada · queso" }
+      ]
+    },
+    {
+      "id": "fruta",
+      "name": "Fruta & extras",
+      "items": [
+        { "name": "Bowl de fruta picada", "price": 9000, "desc": "Temporada" },
+        { "name": "Extra proteína / queso", "price": 4000, "desc": "Adición" },
+        { "name": "Leche vegetal (extra)", "price": 2500, "desc": "En bebidas de espresso bar" }
+      ]
+    }
+  ],
+  "hotelBreakfastCosting": {
+    "precioHotelCop": 13500,
+    "costoEstimadoGhostCop": 6200,
+    "desgloseCosto": {
+      "bebidaPromedio": 1800,
+      "panaderiaOBase": 1700,
+      "proteinaHuevosOSandwich": 2000,
+      "fruta": 700
+    },
+    "margenBrutoGhostCop": 7300,
+    "foodCostPct": 0.46,
+    "nota": "Escandallo objetivo buffet; se ajusta con merma real a 30 días"
+  }
+}

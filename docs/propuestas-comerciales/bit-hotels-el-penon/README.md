@@ -1,32 +1,25 @@
-# Ghost Specialty Coffee → Bit Hotels El Peñón
+# Propuestas Ghost × Bit Hotels El Peñón — v2
 
-**Cinco propuestas comerciales · Agosto 2026**
+Documentación comercial profesional (español) con **costeo win-win**, **deducibilidad cafetería→hotel** y **menú público** de la cafetería.
 
-Emisor: **Ghost Specialty Coffee** (cafetería sede en Hotel El Peñón)  
-Destinatario: **Bit Hotels El Peñón / Hotel El Peñón**  
-Dirección compartida: Calle 1 Oeste #2-61, Barrio El Peñón, Cali
+## Entregables
 
-## Documentos
+| Archivo | Contenido |
+|---------|-----------|
+| [index.html](index.html) | Propuesta integrada v2 (presentación / PDF) |
+| [01-desayunos.md](01-desayunos.md) … [05-hoteles-aliados.md](05-hoteles-aliados.md) | Propuestas individuales |
+| [COSTEO.md](COSTEO.md) | Anexo de costeo y compensación |
+| [menu/](menu/) | Carta pública cafetería (HTML + MD + JSON) |
+| `Ghost_BitHotels_Cinco_Propuestas_2026.pdf` | PDF generado |
 
-| # | Propuesta | Archivo |
-|---|-----------|---------|
-| 01 | Venta de desayunos ($13.500 COP) | [01-desayunos.md](01-desayunos.md) |
-| 02 | Mejora del espacio e identidad | [02-mejora-espacio.md](02-mejora-espacio.md) |
-| 03 | Redes sociales del hotel | [03-redes-sociales.md](03-redes-sociales.md) |
-| 04 | Cápsulas y drips habitaciones | [04-capsulas-drips.md](04-capsulas-drips.md) |
-| 05 | Hoteles aliados Bit Hotels | [05-hoteles-aliados.md](05-hoteles-aliados.md) |
+## Cláusula clave
 
-**Versión presentable (HTML impresión / PDF):** [index.html](index.html)
+Los valores facturados por Ghost al hotel (desayunos, amenities, redes, mejoras acordadas) **pueden deducirse/compensarse** contra cánones o costos que la cafetería adeude al hotel, con conciliación mensual.
 
-## Fuentes de contexto usadas
+## Contexto F&B del edificio
 
-- Instagram [@Ghost_Specialty_Coffee](https://www.instagram.com/ghost_specialty_coffee/) — sede Cl. 1 Oe. #2-61, Cali
-- Propuesta comercial previa Ghost 2026 (SCA 85+, contacto 302 515 9900, marca Ghost Specialty Coffee)
-- Sitio Bit Hotels: [bithotels.co/hotel-el-penon](https://bithotels.co/hotel-el-penon/) y selector de hoteles/alianzas
-- Carta operativa Ghost en este repositorio (`data/initial-load/ghost-menu-catalog.json`)
+Turk House · Chef Burger · Baraka — Ghost es **coffee lab / brunch specialty**, complemento del ecosistema Bit.
 
-## Contacto Ghost
+## Agente Cursor
 
-- Tel: 302 515 9900  
-- Email: ghostspecialtycoffee@gmail.com  
-- Web (marca): ghostspecialtycoffee.co  
+Skill: `.cursor/skills/ghost-commercial-bit-hotels/SKILL.md`

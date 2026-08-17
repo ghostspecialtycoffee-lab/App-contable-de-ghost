@@ -3,25 +3,52 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ghost Specialty Coffee · Cinco propuestas comerciales · Bit Hotels El Peñón</title>
+  <title>Ghost Specialty Coffee · Propuesta comercial integrada · Bit Hotels El Peñón</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/propuesta.css" />
+  <style>
+    .callout-deduce {
+      background: linear-gradient(135deg, #1c1410, #3a2a20);
+      color: #f6f1e8;
+      border-radius: 18px;
+      padding: 1.25rem 1.4rem;
+      margin: 1.2rem 0 1.6rem;
+    }
+    .callout-deduce h3 { margin: 0 0 0.5rem; font-family: var(--font-display); font-size: 1.15rem; }
+    .callout-deduce p { margin: 0; opacity: 0.92; font-size: 0.95rem; }
+    .win { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-top: 0.9rem; }
+    .win .panel h3 { color: var(--ok); }
+    .ctx { font-size: 0.92rem; color: var(--muted); margin: 0.6rem 0 0; }
+    .metric {
+      display: flex; flex-direction: column; gap: 0.15rem;
+      background: #fffaf2; border: 1px solid var(--line); border-radius: 12px; padding: 0.85rem;
+    }
+    .metric b { font-family: var(--font-display); font-size: 1.35rem; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; margin: 0.9rem 0; }
+    @media (max-width: 900px) {
+      .win, .metrics { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
 </head>
 <body>
   <header class="topbar">
     <div class="wrap topbar-inner">
       <div class="brand">
         <strong>Ghost Specialty Coffee</strong>
-        <span>Propuestas comerciales · Agosto 2026</span>
+        <span>Propuesta comercial integrada · v2 · Agosto 2026</span>
       </div>
-      <nav class="nav" aria-label="Propuestas">
-        <a href="#p1">01 Desayunos</a>
-        <a href="#p2">02 Espacio</a>
-        <a href="#p3">03 Redes</a>
-        <a href="#p4">04 Cápsulas</a>
-        <a href="#p5">05 Aliados</a>
+      <nav class="nav" aria-label="Secciones">
+        <a href="#contexto">Contexto</a>
+        <a href="#deduccion">Deducibilidad</a>
+        <a href="#p1">01</a>
+        <a href="#p2">02</a>
+        <a href="#p3">03</a>
+        <a href="#p4">04</a>
+        <a href="#p5">05</a>
+        <a href="#costeo">Costeo</a>
+        <a href="menu/index.html">Menú</a>
       </nav>
     </div>
   </header>
@@ -29,12 +56,12 @@
   <main class="wrap">
     <section class="hero">
       <div>
-        <div class="kicker">De la cafetería sede · Hotel El Peñón</div>
-        <h1>Cinco propuestas para potenciar Bit Hotels El Peñón</h1>
+        <div class="kicker">Sede cafetería · Bit Hotels El Peñón · Cali</div>
+        <h1>Alianza operativa Ghost × Bit Hotels El Peñón</h1>
         <p class="lede">
-          Documento comercial de <strong>Ghost Specialty Coffee</strong> dirigido a
-          <strong>Bit Hotels El Peñón / Hotel El Peñón</strong>. Café de especialidad SCA 85+,
-          operación en el primer piso del hotel y alianza estratégica para huésped, marca y red Bit.
+          Cinco propuestas claras, con <strong>costeo positivo para el hotel y para Ghost</strong>,
+          menú de cafetería formalizado y mecanismo de <strong>compensación / deducción</strong>
+          de costos de la cafetería hacia el hotel.
         </p>
       </div>
       <aside class="meta-card">
@@ -42,401 +69,330 @@
         <dl>
           <div>
             <dt>Emisor</dt>
-            <dd>Ghost Specialty Coffee<br />Cl. 1 Oe. #2-61 · El Peñón, Cali<br />@Ghost_Specialty_Coffee · 302 515 9900</dd>
+            <dd>Ghost Specialty Coffee<br />Cl. 1 Oe. #2-61 · El Peñón, Cali<br />302 515 9900 · @Ghost_Specialty_Coffee</dd>
           </div>
           <div>
             <dt>Destinatario</dt>
-            <dd>Bit Hotels El Peñón<br />Calle 1 Oeste #2-61, Cali<br />+57 602 488 8860 · bithotels.co</dd>
+            <dd>Bit Hotels El Peñón / Hotel El Peñón<br />Calle 1 Oeste #2-61, Cali<br />+57 602 488 8860 · bithotels.co</dd>
           </div>
           <div>
-            <dt>Vigencia</dt>
-            <dd>Propuesta comercial · Agosto 2026 · Ajustable por volumen</dd>
+            <dt>Calidad</dt>
+            <dd>Café especialidad SCA 85+ · origen verificable · tostado artesanal en Cali</dd>
           </div>
         </dl>
       </aside>
     </section>
 
-    <section class="toc" aria-label="Índice de propuestas">
-      <a href="#p1"><span class="n">01</span><span class="t">Venta de desayunos buffet / a la carta para el hotel</span></a>
-      <a href="#p2"><span class="n">02</span><span class="t">Mejora del espacio, mobiliario e identidad de marca</span></a>
-      <a href="#p3"><span class="n">03</span><span class="t">Administración y creación de contenido para redes del hotel</span></a>
-      <a href="#p4"><span class="n">04</span><span class="t">Cápsulas y drips de especialidad para habitaciones</span></a>
-      <a href="#p5"><span class="n">05</span><span class="t">Expansión a hoteles aliados Bit Hotels</span></a>
+    <section class="proposal" id="contexto">
+      <header>
+        <div>
+          <span class="badge">Contexto del edificio</span>
+          <h2>Complemento specialty en el ecosistema F&amp;B del hotel</h2>
+          <p class="sub">Ghost no compite con la oferta gastronómica existente: la eleva en café y desayuno specialty</p>
+        </div>
+      </header>
+      <p>
+        Bit Hotels El Peñón opera en uno de los corredores gastronómicos más activos de Cali.
+        En el inmueble y su entorno inmediato han convivido conceptos como
+        <strong>Turk House</strong> (cocina turca / desayuno temprano),
+        <strong>Chef Burger</strong> (hamburguesas gourmet) y
+        <strong>Baraka</strong> (propuesta local / brunch familiar).
+        Ghost Specialty Coffee se posiciona como <strong>coffee lab + brunch café</strong> en el primer piso:
+        café de especialidad, panadería fina, huevos y sándwiches — con identidad alineada al coworking del piso 2.
+      </p>
+      <p class="ctx">
+        Fuentes de contexto hotel: bithotels.co, listados Expedia/Booking (desayuno incluido / restaurantes en propiedad),
+        fichas Turk House · Chef Burger · Baraka Peñón. Ghost: Instagram @Ghost_Specialty_Coffee, carta operativa SCA, sede en el hotel.
+      </p>
     </section>
 
-    <!-- PROPUESTA 1 -->
+    <div class="callout-deduce" id="deduccion">
+      <h3>Cláusula de deducibilidad / compensación</h3>
+      <p>
+        Los valores que Ghost facture al hotel por desayunos, cápsulas/drips, administración de redes,
+        o ítems de mejora acordados, <strong>podrán deducirse o compensarse</strong> contra los costos,
+        cánones o conceptos que la cafetería adeude al hotel (arriendo, servicios compartidos u otros),
+        mediante <strong>conciliación mensual firmada</strong> por ambas partes.
+        Así el flujo de caja del hotel mejora sin salir de efectivo innecesario, y Ghost mantiene operación sana.
+      </p>
+    </div>
+
+    <section class="toc" aria-label="Índice">
+      <a href="#p1"><span class="n">01</span><span class="t">Desayunos hotel · $13.500</span></a>
+      <a href="#p2"><span class="n">02</span><span class="t">Mejora de espacio e identidad</span></a>
+      <a href="#p3"><span class="n">03</span><span class="t">Redes sociales del hotel</span></a>
+      <a href="#p4"><span class="n">04</span><span class="t">Cápsulas y drips habitación</span></a>
+      <a href="#p5"><span class="n">05</span><span class="t">Hoteles aliados Bit</span></a>
+    </section>
+
+    <!-- P1 -->
     <article class="proposal" id="p1">
       <header>
         <div>
           <span class="badge">Propuesta 01</span>
-          <h2>Venta de desayunos para el hotel</h2>
-          <p class="sub">Modelo buffet / montaje flexible · Costo hotel por persona</p>
+          <h2>Venta de desayunos para huéspedes</h2>
+          <p class="sub">Buffet / estaciones · tarifa hotel · modelo mejorable</p>
         </div>
-        <div class="price">$13.500<small>COP / desayuno · tarifa hotel</small></div>
+        <div class="price">$13.500<small>COP / persona · tarifa B2B hotel</small></div>
       </header>
 
-      <p>
-        Ghost Specialty Coffee propone operar el desayuno de huéspedes desde la cafetería sede
-        en el Hotel El Peñón, con un menú completo, montaje tipo buffet y opción de mejora continua
-        según ocupación y feedback del front desk.
-      </p>
+      <div class="metrics">
+        <div class="metric"><span>Costo Ghost est.</span><b>$6.200</b></div>
+        <div class="metric"><span>Food cost objetivo</span><b>46%</b></div>
+        <div class="metric"><span>Margen bruto Ghost</span><b>$7.300</b></div>
+        <div class="metric"><span>Valor percibido huésped*</span><b>$28–38k</b></div>
+      </div>
+      <p class="ctx">*Referencia de mercado para desayuno incluido en hotel boutique 4★ Cali / cadena media-alta; no es precio de venta Ghost al público.</p>
 
       <div class="grid-2" style="margin-top:1rem">
         <div class="panel">
-          <h3>Bebidas (3 líneas)</h3>
+          <h3>Incluye por persona</h3>
           <ul>
-            <li><strong>Café de especialidad</strong> — espresso bar / métodos según operación del día</li>
-            <li><strong>Chocolate de cacao puro</strong></li>
-            <li><strong>Jugos naturales</strong></li>
+            <li><strong>Bebida:</strong> café especialidad · chocolate cacao puro · jugo natural</li>
+            <li><strong>Panadería:</strong> croissant mantequilla / chocolate, pasteles (pollo, carne, hawaiano), arepas</li>
+            <li><strong>Huevos:</strong> omelette, sartén, revueltos, pericos</li>
+            <li><strong>Sándwich:</strong> croissant o brioche · vegetales · jamón / pollo / cerdo / al pastor / huevo</li>
+            <li><strong>Fruta picada</strong> de temporada</li>
           </ul>
         </div>
         <div class="panel">
-          <h3>Fruta</h3>
+          <h3>Operación</h3>
           <ul>
-            <li>Fruta picada de temporada incluida en cada desayuno</li>
-            <li>Rotación semanal según disponibilidad local</li>
+            <li>Montaje buffet o por estación según ocupación</li>
+            <li>Corte semanal / quincenal · deducible vs. costos cafetería→hotel</li>
+            <li>Menú vivo: ajustes con recepción y A&amp;B</li>
+            <li>Complementa (no reemplaza) Turk House / Baraka en el relato del hotel</li>
           </ul>
         </div>
       </div>
 
-      <div class="grid-3" style="margin-top:1rem">
+      <div class="win">
         <div class="panel">
-          <h3>Panadería &amp; horneados</h3>
+          <h3>Para el hotel (+)</h3>
           <ul>
-            <li>Croissant de mantequilla</li>
-            <li>Croissant de chocolate</li>
-            <li>Pastel de pollo</li>
-            <li>Pastel de carne</li>
-            <li>Pastel hawaiano</li>
-            <li>Arepas</li>
+            <li>Desayuno diferencial specialty sin cocina pesada propia</li>
+            <li>Costo controlado ($13.500) vs. valor de reseña/Booking</li>
+            <li>Pago compensable vía deducción de cuentas con Ghost</li>
           </ul>
         </div>
         <div class="panel">
-          <h3>Proteína — huevos</h3>
+          <h3>Para Ghost (+)</h3>
           <ul>
-            <li>Omelette</li>
-            <li>Huevos al sartén</li>
-            <li>Huevos revueltos</li>
-            <li>Huevos pericos</li>
+            <li>Volumen predecible de desayunos</li>
+            <li>Margen bruto estimado ~54% a food cost 46%</li>
+            <li>Tráfico y calificación del POS de café</li>
           </ul>
         </div>
-        <div class="panel">
-          <h3>Sándwiches</h3>
-          <ul>
-            <li>Base: croissant o pan brioche</li>
-            <li>Lechuga, tomate deshidratado (vegetales intercambiables)</li>
-            <li>Carnes: cerdo, jamón, pollo, al pastor</li>
-            <li>Opción sándwich de huevo</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="note">
-        <strong>Formato:</strong> el mismo menú puede montarse en estilo buffet o por estación,
-        según flujo del lobby/cafetería. Es un modelo vivo: se puede mejorar con el hotel
-        (ocupación, dietas especiales, temporada).
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Concepto</th>
-              <th>Detalle</th>
-              <th>Condición</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Tarifa hotel</td>
-              <td>$13.500 COP por desayuno / persona</td>
-              <td>Incluye bebida + panadería/proteína o sándwich + fruta</td>
-            </tr>
-            <tr>
-              <td>Horario sugerido</td>
-              <td>Acorde a operación Bit Hotels El Peñón</td>
-              <td>Coordinación semanal con recepción</td>
-            </tr>
-            <tr>
-              <td>Facturación</td>
-              <td>Corte semanal o quincenal</td>
-              <td>Según política contable del hotel</td>
-            </tr>
-            <tr>
-              <td>Calidad</td>
-              <td>Café SCA 85+ en la línea de especialidad</td>
-              <td>Estándar Ghost Specialty Coffee</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="cta-row">
-        <span class="pill">Beneficio hotel: desayuno diferencial sin cocina propia pesada</span>
-        <span class="pill alt">Beneficio huésped: experiencia specialty en el mismo edificio</span>
       </div>
     </article>
 
-    <!-- PROPUESTA 2 -->
+    <!-- P2 -->
     <article class="proposal" id="p2">
       <header>
         <div>
           <span class="badge">Propuesta 02</span>
-          <h2>Mejora del espacio de la cafetería</h2>
-          <p class="sub">Mobiliario · capacidad · identidad visual alineada al coworking</p>
+          <h2>Mejora del espacio e identidad de tienda</h2>
+          <p class="sub">Mobiliario · capacidad sentada · marca ~80% lenguaje coworking Bit</p>
         </div>
-        <div class="price">Mes en curso<small>Implementación contemplada este mes</small></div>
+        <div class="price">Este mes<small>Inversión Ghost · ROI compartido</small></div>
       </header>
-
       <p>
-        Tras los inconvenientes operativos iniciales (incluyendo fricción con proveedores),
-        Ghost Specialty Coffee formaliza un plan de mejora del punto de venta ubicado en el hotel,
-        para elevar experiencia, capacidad sentada y coherencia de marca con el ecosistema Bit.
+        Tras inconvenientes iniciales (proveedores y operación), Ghost formaliza mejora de sillas y mesas,
+        aumento de capacidad totalmente sentada, orden visual del local y formalización de identidad de marca/tienda
+        alineada en ~80% a la estructura visual del coworking del hotel (piso 2).
       </p>
-
-      <div class="grid-2" style="margin-top:1rem">
+      <div class="win">
         <div class="panel">
-          <h3>Qué se mejora</h3>
+          <h3>Para el hotel (+)</h3>
           <ul>
-            <li>Renovación / refuerzo de <strong>sillas y mesas</strong></li>
-            <li><strong>Aumento de capacidad</strong> de personas totalmente sentadas</li>
-            <li>Mejora visual del espacio (orden, iluminación percibida, recorrido)</li>
-            <li>Formalización de la <strong>identidad de marca y tienda</strong> de la cafetería</li>
+            <li>Lobby/1.er piso más coherente con marca Bit</li>
+            <li>Mejor percepción en fotos de huésped y Google/Booking</li>
+            <li>Sin desembolso hotelario si la inversión la asume Ghost (salvo co-inversión opcional)</li>
           </ul>
         </div>
         <div class="panel">
-          <h3>Criterio de diseño</h3>
+          <h3>Para Ghost (+)</h3>
           <ul>
-            <li>Identidad visual de la cafetería <strong>~80% alineada</strong> a la estructura visual del <strong>coworking del hotel</strong> (piso 2)</li>
-            <li>Misma familia de materiales / proporciones / atmósfera Bit, con firma Ghost en barra y menú</li>
-            <li>Objetivo: que el primer piso se sienta continuación natural del lenguaje Bit, no un local ajeno</li>
+            <li>Más asientos = más ticket promedio</li>
+            <li>Identidad comercial clara frente a otros F&amp;B del edificio</li>
+            <li>Costos de mejora pueden entrar en conciliación deducible si se acuerda aporte hotel</li>
           </ul>
         </div>
-      </div>
-
-      <div class="note">
-        <strong>Compromiso:</strong> la mejora se contempla en el curso de este mes.
-        Se coordinará cronograma corto con administración del hotel para no interrumpir desayunos ni huéspedes.
-      </div>
-
-      <div class="cta-row">
-        <span class="pill">Más asientos = más ticket y mejor percepción Booking / Google</span>
-        <span class="pill alt">Marca unificada hotel + coffee lab</span>
       </div>
     </article>
 
-    <!-- PROPUESTA 3 -->
+    <!-- P3 -->
     <article class="proposal" id="p3">
       <header>
         <div>
           <span class="badge">Propuesta 03</span>
           <h2>Administración multimedia de redes del hotel</h2>
-          <p class="sub">Creación de contenido · community · cotización económica aliada</p>
+          <p class="sub">Contenido · community · tarifa aliada (no agencia)</p>
         </div>
-        <div class="price">$690.000<small>COP / mes · plan aliado económico</small></div>
+        <div class="price">$690.000<small>COP / mes · plan aliado</small></div>
       </header>
-
-      <p>
-        Ghost Specialty Coffee, a través de su capacidad multimedia, propone administrar las redes
-        sociales de Bit Hotels El Peñón. Nos conviene maximizar la visibilidad del hotel:
-        una experiencia más placentera y mejor contada mejora la calificación del punto de venta
-        de café dentro del hotel y del hotel mismo.
-      </p>
-
-      <div class="grid-2" style="margin-top:1rem">
+      <div class="metrics">
+        <div class="metric"><span>Referencia agencia</span><b>$1.5–2.5M</b></div>
+        <div class="metric"><span>Ahorro hotel/mes</span><b>~$1M+</b></div>
+        <div class="metric"><span>Feed / Reels</span><b>12 + 4</b></div>
+        <div class="metric"><span>Stories</span><b>5 d/sem</b></div>
+      </div>
+      <div class="grid-2">
         <div class="panel">
-          <h3>Alcance del servicio</h3>
+          <h3>Entregables</h3>
           <ul>
-            <li>Administración de canales (Instagram / Facebook hotel; extensible a TikTok)</li>
-            <li>Creación de contenido fotográfico y video corto en sitio</li>
-            <li>Community management (respuesta de bandeja en horario acordado)</li>
-            <li>Calendario editorial mensual alineado a ocupación y eventos Bit</li>
-            <li>Reporte mensual de métricas (alcance, interacciones, saves)</li>
+            <li>12 posts feed · 4 Reels · stories 5 días/semana</li>
+            <li>1 pieza destacada Ghost × Bit / temporada</li>
+            <li>Community en horario acordado · reporte mensual</li>
+            <li>Copy ES/EN en piezas clave</li>
           </ul>
         </div>
         <div class="panel">
-          <h3>Plan de contenido mensual (cotización)</h3>
+          <h3>Costeo win-win</h3>
           <ul>
-            <li><strong>12 publicaciones feed</strong> (carruseles / estáticos)</li>
-            <li><strong>4 Reels</strong> (habitaciones, barrio El Peñón, food, lifestyle Bit)</li>
-            <li><strong>Stories 5 días/semana</strong> (behind the scenes + CTA reserva)</li>
-            <li><strong>1 pieza destacada</strong> (collab Ghost × Bit o temporada)</li>
-            <li>Copy bilingüe ES/EN en piezas clave para viajero internacional</li>
+            <li>Setup opcional $250.000 una vez</li>
+            <li>Pauta no incluida (gestión +10% si aplica)</li>
+            <li>Honorarios <strong>deducibles</strong> en conciliación cafetería↔hotel</li>
+            <li>Ghost gana con mejor rating del hotel y del café</li>
           </ul>
         </div>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Ítem</th>
-              <th>Inclusión plan aliado</th>
-              <th>Valor de referencia mercado</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Plan mensual integrado</td>
-              <td>$690.000 COP</td>
-              <td>$1.500.000 – $2.500.000 COP tip. agencia</td>
-            </tr>
-            <tr>
-              <td>Setup inicial (brand kit + accesos + tono)</td>
-              <td>$250.000 COP una vez</td>
-              <td>Opcional si ya hay lineamientos Bit</td>
-            </tr>
-            <tr>
-              <td>Ads pagos</td>
-              <td>No incluidos (solo pauta neta del hotel)</td>
-              <td>Gestión +10% sobre pauta si se solicita</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="note">
-        <strong>Por qué es económico:</strong> Ghost gana con la reputación del hotel y del POS de café.
-        El precio refleja alianza de sede, no tarifa de agencia externa.
       </div>
     </article>
 
-    <!-- PROPUESTA 4 -->
+    <!-- P4 -->
     <article class="proposal" id="p4">
       <header>
         <div>
           <span class="badge">Propuesta 04</span>
           <h2>Cápsulas y drips para habitaciones</h2>
-          <p class="sub">Café de especialidad · etiqueta del hotel · espresso / filter</p>
+          <p class="sub">Amenity specialty · etiqueta Bit / El Peñón</p>
         </div>
-        <div class="price">Desde $1.700<small>COP por unidad · tarifa hotel</small></div>
+        <div class="price">$1.700 / $2.000<small>cápsula / drip · tarifa hotel</small></div>
       </header>
-
-      <p>
-        Propuesta de amenity de café de especialidad para habitaciones del Hotel El Peñón,
-        con etiqueta / co-branding Bit Hotels + Ghost, listo para máquina espresso de cápsulas
-        o preparación drip / pour-over de habitación.
-      </p>
-
-      <div class="grid-2" style="margin-top:1rem">
-        <div class="panel">
-          <h3>Cápsulas</h3>
-          <p class="price" style="font-size:1.5rem">$1.700<small>COP c/u para el hotel</small></p>
-          <ul>
-            <li>Café de especialidad compatible con preparación espresso en máquina de cápsulas</li>
-            <li>Etiqueta del hotel (marca Bit / El Peñón)</li>
-            <li>Perfiles rotativos (origen / proceso) según lote disponible</li>
-          </ul>
-        </div>
-        <div class="panel">
-          <h3>Drips (pour-over individual)</h3>
-          <p class="price" style="font-size:1.5rem">$2.000<small>COP c/u para el hotel</small></p>
-          <ul>
-            <li>Sobre drip listo para preparar en habitación</li>
-            <li>Etiqueta del hotel + narrativa de origen Ghost</li>
-            <li>Ideal para huésped que prefiere filter / métodos suaves</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="note">
-        <strong>Sugerencia operativa:</strong> kit de bienvenida (2 cápsulas + 1 drip) o replenishment
-        diario vía housekeeping. Pedidos mínimos y cronograma de reposición se acuerdan con A&amp;B / ama de llaves.
-      </div>
-
-      <div class="cta-row">
-        <span class="pill">Amenity diferencial vs. café commodity</span>
-        <span class="pill alt">Co-branding en cada habitación</span>
-      </div>
-    </article>
-
-    <!-- PROPUESTA 5 -->
-    <article class="proposal" id="p5">
-      <header>
-        <div>
-          <span class="badge">Propuesta 05</span>
-          <h2>Hoteles aliados Bit Hotels</h2>
-          <p class="sub">Réplica del modelo sede El Peñón en la red Bit</p>
-        </div>
-        <div class="price">Marco de alianza<small>Piloto desde El Peñón → red</small></div>
-      </header>
-
-      <p>
-        Bit Hotels opera y alía propiedades en Colombia. Ghost Specialty Coffee propone extender
-        el modelo validado en <strong>El Peñón (Cali)</strong> a los hoteles aliados de la marca,
-        con paquetes escalables de desayuno, amenity de habitación, corner de café y contenido.
-      </p>
-
-      <div class="grid-2" style="margin-top:1rem">
-        <div class="panel">
-          <h3>Red actual (sitio bithotels.co)</h3>
-          <ul>
-            <li><strong>El Peñón</strong> — Cali (sede Ghost / piloto)</li>
-            <li><strong>Blues Suites</strong> — Medellín (colab. Easyliving)</li>
-            <li><strong>Fenix Beach</strong> — Cartagena</li>
-          </ul>
-        </div>
-        <div class="panel">
-          <h3>Próximas aperturas publicadas</h3>
-          <ul>
-            <li>Bit Plaza · Bit Lilas · Bit Altio — Cali</li>
-            <li>Bit Ilama — Calima</li>
-            <li>Urbit · 30 Living — Medellín (alianza Easyliving)</li>
-          </ul>
-        </div>
-      </div>
-
       <div class="table-wrap">
         <table>
           <thead>
-            <tr>
-              <th>Módulo transferible</th>
-              <th>Qué recibe el hotel aliado</th>
-              <th>Base de precio</th>
-            </tr>
+            <tr><th>Producto</th><th>Precio hotel</th><th>Costo Ghost est.</th><th>Margen Ghost</th><th>Valor hotel</th></tr>
           </thead>
           <tbody>
             <tr>
-              <td>Desayunos Ghost</td>
-              <td>Menú buffet / estaciones según capacidad local</td>
-              <td>Desde $13.500 COP / pax (ajustable por ciudad)</td>
+              <td>Cápsula specialty + etiqueta</td>
+              <td>$1.700</td>
+              <td>~$900–1.100</td>
+              <td>~$600–800</td>
+              <td>Amenity ≠ commodity; foto de habitación</td>
             </tr>
             <tr>
-              <td>Amenity habitación</td>
-              <td>Cápsulas + drips co-branded</td>
-              <td>$1.700 cápsula · $2.000 drip</td>
+              <td>Drip individual + etiqueta</td>
+              <td>$2.000</td>
+              <td>~$1.100–1.300</td>
+              <td>~$700–900</td>
+              <td>Experiencia filter en room</td>
             </tr>
             <tr>
-              <td>Coffee corner / isla</td>
-              <td>Operación o suministro specialty SCA 85+</td>
-              <td>Cotización por propiedad</td>
-            </tr>
-            <tr>
-              <td>Contenido &amp; redes</td>
-              <td>Playbook Bit + Ghost; locales o centralizado</td>
-              <td>Desde plan aliado $690.000 COP / mes / propiedad</td>
+              <td>Kit bienvenida (2 cáps. + 1 drip)</td>
+              <td>$5.400</td>
+              <td>~$3.100</td>
+              <td>~$2.300</td>
+              <td>Costo bajo vs. mini-bar premium</td>
             </tr>
           </tbody>
         </table>
       </div>
+      <div class="note">Facturación por reposición housekeeping; montos <strong>deducibles</strong> en la cuenta cafetería–hotel.</div>
+    </article>
 
-      <div class="note">
-        <strong>Ruta sugerida:</strong> (1) cerrar paquetes 01–04 en El Peñón,
-        (2) piloto de amenity + contenido en Blues Suites o Fenix Beach,
-        (3) playbook de apertura para próximas sedes Bit.
+    <!-- P5 -->
+    <article class="proposal" id="p5">
+      <header>
+        <div>
+          <span class="badge">Propuesta 05</span>
+          <h2>Hoteles aliados de la red Bit</h2>
+          <p class="sub">Piloto El Peñón → Blues Suites · Fenix Beach · próximas aperturas</p>
+        </div>
+        <div class="price">Marco de red<small>Mismos módulos · precio por ciudad</small></div>
+      </header>
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Red actual</h3>
+          <ul>
+            <li>El Peñón — Cali (piloto)</li>
+            <li>Blues Suites — Medellín</li>
+            <li>Fenix Beach — Cartagena</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Próximamente (Bit)</h3>
+          <ul>
+            <li>Bit Plaza · Lilas · Altio — Cali</li>
+            <li>Bit Ilama — Calima</li>
+            <li>Urbit · 30 Living — Medellín</li>
+          </ul>
+        </div>
       </div>
+      <p class="ctx" style="margin-top:0.8rem">Cada propiedad replica desayuno / amenity / corner / contenido con deducibilidad local hotel↔Ghost.</p>
+    </article>
 
+    <!-- COSTEO -->
+    <article class="proposal" id="costeo">
+      <header>
+        <div>
+          <span class="badge">Anexo</span>
+          <h2>Costeo consolidado y deducibilidad</h2>
+          <p class="sub">Ejemplo a 30 desayunos/día · 30 días · ocupación media</p>
+        </div>
+      </header>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Concepto</th><th>Volumen mes</th><th>Facturación Ghost→Hotel</th><th>Costo Ghost est.</th><th>Resultado</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Desayunos ($13.500)</td>
+              <td>900 pax</td>
+              <td>$12.150.000</td>
+              <td>$5.580.000</td>
+              <td>Margen ~$6.57M Ghost · hotel recibe servicio ~$25–34M valor percibido</td>
+            </tr>
+            <tr>
+              <td>Kits amenity ($5.400)</td>
+              <td>200 kits</td>
+              <td>$1.080.000</td>
+              <td>$620.000</td>
+              <td>Diferenciación habitación</td>
+            </tr>
+            <tr>
+              <td>Redes plan aliado</td>
+              <td>1 mes</td>
+              <td>$690.000</td>
+              <td>Costo interno contenido</td>
+              <td>Hotel ahorra ~$1M+ vs agencia</td>
+            </tr>
+            <tr>
+              <td><strong>Total facturable mes</strong></td>
+              <td></td>
+              <td><strong>~$13.92M</strong></td>
+              <td></td>
+              <td>Compensable vs. cánones/costos que Ghost adeude al hotel</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        Cifras ilustrativas para negociación. Escandallos reales se cierran a 30 días de operación con merma medida.
+        Impuestos (IVA/INC) según régimen en cada factura / nota de compensación.
+      </div>
       <div class="cta-row">
-        <span class="pill">Una marca de café para toda la comunidad Bit</span>
-        <span class="pill alt">Menos fricción de proveedores · más coherencia de huésped</span>
+        <a class="pill" href="menu/index.html" style="text-decoration:none;color:inherit">Ver menú público de la cafetería →</a>
+        <span class="pill alt">Versión PDF adjunta en esta carpeta</span>
       </div>
     </article>
 
     <footer class="footer">
-      <div><strong>Ghost Specialty Coffee</strong> · Café de especialidad con origen verificable · SCA 85+ · Tostado artesanal en Cali</div>
-      <div>Sede operación: Cl. 1 Oe. #2-61, Barrio El Peñón, Cali · Dentro de Bit Hotels El Peñón</div>
-      <div>Contacto: 302 515 9900 · @Ghost_Specialty_Coffee · ghostspecialtycoffee@gmail.com · ghostspecialtycoffee.co</div>
-      <div>Documento interno comercial · Agosto 2026 · Precios en COP, IVA/INC según régimen aplicable a cotizar en orden de compra</div>
+      <div><strong>Ghost Specialty Coffee</strong> · brunch · lunch · coffee lab · SCA 85+</div>
+      <div>Cl. 1 Oe. #2-61, Bit Hotels El Peñón, Cali · 302 515 9900 · ghostspecialtycoffee@gmail.com</div>
+      <div>Documento comercial v2 · Agosto 2026 · Precios COP</div>
     </footer>
   </main>
 </body>

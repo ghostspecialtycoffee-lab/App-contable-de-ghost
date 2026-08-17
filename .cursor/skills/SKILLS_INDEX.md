@@ -12,6 +12,7 @@ Cargar **solo la skill del flujo actual**. No cargar `ghost-erp-master` para tar
 | [ghost-erp-docs](ghost-erp-docs/SKILL.md) | Actualizar documentación raíz |
 | [ghost-erp-security](ghost-erp-security/SKILL.md) | Checklist pre-PR seguridad |
 | [ghost-platform-expert](ghost-platform-expert/SKILL.md) | Memoria plataforma, chat Ghost, búsqueda web |
+| [ghost-commercial-bit-hotels](ghost-commercial-bit-hotels/SKILL.md) | Propuestas Bit Hotels, menú cafetería, costeo B2B, deducciones hotel |
 
 ## Docs canónicos (no duplicar en skills)
 

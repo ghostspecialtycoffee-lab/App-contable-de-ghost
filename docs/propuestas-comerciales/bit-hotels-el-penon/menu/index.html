@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Menú · Ghost Specialty Coffee · Bit Hotels El Peñón</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/propuesta.css" />
+  <style>
+    .menu-cat { margin-bottom: 1.4rem; }
+    .menu-cat h2 {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      margin: 0 0 0.7rem;
+      padding-bottom: 0.45rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.35rem 1rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px dashed rgba(28,20,16,0.08);
+    }
+    .item .name { font-weight: 700; }
+    .item .desc { grid-column: 1 / -1; color: var(--muted); font-size: 0.88rem; margin: 0; }
+    .item .price { font-family: var(--font-display); font-weight: 650; white-space: nowrap; }
+    .banner {
+      background: var(--espresso); color: var(--paper);
+      border-radius: 18px; padding: 1.2rem 1.35rem; margin-bottom: 1.4rem;
+    }
+    .banner a { color: #e8c9a8; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <div class="brand">
+        <strong>Ghost Specialty Coffee</strong>
+        <span>Carta pública · Cafetería sede El Peñón</span>
+      </div>
+      <nav class="nav">
+        <a href="../index.html">← Propuestas</a>
+        <a href="carta-cafeteria.md">Markdown</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap" style="padding-bottom:3rem">
+    <section class="hero" style="grid-template-columns:1fr; padding-bottom:1rem">
+      <div>
+        <div class="kicker">Brunch · Lunch · Coffee lab</div>
+        <h1>Menú Ghost Specialty Coffee</h1>
+        <p class="lede">Cl. 1 Oe. #2-61 · Bit Hotels El Peñón, Cali · Café SCA 85+</p>
+      </div>
+    </section>
+
+    <div class="banner">
+      <strong>Huéspedes Bit Hotels:</strong> el desayuno incluido / contratado por el hotel se rige por la
+      <a href="../index.html#p1">Propuesta 01 ($13.500 COP)</a>.
+      Esta carta es la <strong>tarifa al público</strong> de la cafetería.
+    </div>
+
+    <div class="proposal" id="menu-root">
+      <!-- filled by script from JSON for single source of truth; also static fallback below -->
+      <div id="static-menu">
+        <div class="menu-cat"><h2>Espresso bar</h2>
+          <div class="item"><span class="name">Espresso sencillo</span><span class="price">$6.500</span><p class="desc">18 g · 30 ml · SCA</p></div>
+          <div class="item"><span class="name">Espresso doble</span><span class="price">$8.500</span><p class="desc">Doble shot</p></div>
+          <div class="item"><span class="name">Americano</span><span class="price">$6.000</span><p class="desc">Espresso + agua caliente</p></div>
+          <div class="item"><span class="name">Macchiato</span><span class="price">$9.500</span><p class="desc">Espresso marcado</p></div>
+          <div class="item"><span class="name">Cappuccino</span><span class="price">$14.000</span><p class="desc">Espresso · leche · espuma</p></div>
+          <div class="item"><span class="name">Latte</span><span class="price">$11.500</span><p class="desc">Espresso + leche sedosa</p></div>
+          <div class="item"><span class="name">Flat white</span><span class="price">$12.000</span><p class="desc">Doble espresso + microespuma</p></div>
+          <div class="item"><span class="name">Mocaccino</span><span class="price">$16.000</span><p class="desc">Espresso · leche · cacao</p></div>
+        </div>
+        <div class="menu-cat"><h2>Métodos de filtrado</h2>
+          <div class="item"><span class="name">V60</span><span class="price">$8.000</span><p class="desc">Golden Cup</p></div>
+          <div class="item"><span class="name">Aeropress</span><span class="price">$8.000</span><p class="desc">Inmersión controlada</p></div>
+          <div class="item"><span class="name">Prensa francesa</span><span class="price">$8.500</span><p class="desc">Cuerpo redondo</p></div>
+          <div class="item"><span class="name">Chemex</span><span class="price">$9.000</span><p class="desc">Taza limpia</p></div>
+          <div class="item"><span class="name">UFO</span><span class="price">$9.000</span><p class="desc">Método de barra</p></div>
+        </div>
+        <div class="menu-cat"><h2>Fríos &amp; specialty</h2>
+          <div class="item"><span class="name">Iced latte</span><span class="price">$15.000</span><p class="desc">Espresso · leche · hielo</p></div>
+          <div class="item"><span class="name">Cold brew</span><span class="price">$20.000</span><p class="desc">Infusión en frío Ghost</p></div>
+          <div class="item"><span class="name">Cold brew fusion</span><span class="price">$20.000</span><p class="desc">Cold brew + leche</p></div>
+          <div class="item"><span class="name">Espresso tonic</span><span class="price">$12.000</span><p class="desc">Espresso + tónica</p></div>
+          <div class="item"><span class="name">Granizado</span><span class="price">$16.000</span><p class="desc">Espresso · leche · hielo</p></div>
+          <div class="item"><span class="name">Affogato</span><span class="price">$16.000</span><p class="desc">Espresso sobre helado</p></div>
+        </div>
+        <div class="menu-cat"><h2>Chocolate, jugos y más</h2>
+          <div class="item"><span class="name">Chocolate cacao puro</span><span class="price">$12.000</span><p class="desc">Sin relleno comercial</p></div>
+          <div class="item"><span class="name">Jugo natural del día</span><span class="price">$10.000</span><p class="desc">Temporada</p></div>
+          <div class="item"><span class="name">Jugo natural premium</span><span class="price">$13.000</span><p class="desc">Mezclas</p></div>
+          <div class="item"><span class="name">Limonada</span><span class="price">$12.000</span><p class="desc">Natural</p></div>
+          <div class="item"><span class="name">Soda italiana</span><span class="price">$15.000</span><p class="desc">Soda + jarabe de casa</p></div>
+        </div>
+        <div class="menu-cat"><h2>Panadería &amp; horneados</h2>
+          <div class="item"><span class="name">Croissant de mantequilla</span><span class="price">$6.500</span><p class="desc">Hojaldre</p></div>
+          <div class="item"><span class="name">Croissant de chocolate</span><span class="price">$7.500</span><p class="desc">Relleno chocolate</p></div>
+          <div class="item"><span class="name">Pastel de pollo</span><span class="price">$8.500</span><p class="desc">Del día</p></div>
+          <div class="item"><span class="name">Pastel de carne</span><span class="price">$8.500</span><p class="desc">Del día</p></div>
+          <div class="item"><span class="name">Pastel hawaiano</span><span class="price">$9.000</span><p class="desc">Jamón · piña · queso</p></div>
+          <div class="item"><span class="name">Arepa</span><span class="price">$7.000</span><p class="desc">Relleno del día</p></div>
+        </div>
+        <div class="menu-cat"><h2>Huevos &amp; desayuno</h2>
+          <div class="item"><span class="name">Huevos revueltos</span><span class="price">$14.000</span><p class="desc">Con pan o arepa</p></div>
+          <div class="item"><span class="name">Huevos al sartén</span><span class="price">$14.000</span><p class="desc">Estrellados / fritos</p></div>
+          <div class="item"><span class="name">Huevos pericos</span><span class="price">$15.000</span><p class="desc">Tomate · cebolla</p></div>
+          <div class="item"><span class="name">Omelette</span><span class="price">$17.000</span><p class="desc">Relleno a elección</p></div>
+          <div class="item"><span class="name">Combo desayuno Ghost</span><span class="price">$28.000</span><p class="desc">Huevos + panadería + bebida + fruta</p></div>
+        </div>
+        <div class="menu-cat"><h2>Sándwiches</h2>
+          <div class="item"><span class="name">Sándwich jamón</span><span class="price">$18.000</span><p class="desc">Croissant o brioche · vegetales</p></div>
+          <div class="item"><span class="name">Sándwich pollo</span><span class="price">$19.000</span><p class="desc">Croissant o brioche · vegetales</p></div>
+          <div class="item"><span class="name">Sándwich cerdo</span><span class="price">$19.000</span><p class="desc">Croissant o brioche · vegetales</p></div>
+          <div class="item"><span class="name">Sándwich al pastor</span><span class="price">$20.000</span><p class="desc">Croissant o brioche · vegetales</p></div>
+          <div class="item"><span class="name">Sándwich de huevo</span><span class="price">$17.000</span><p class="desc">Croissant o brioche · vegetales</p></div>
+          <div class="item"><span class="name">Sándwich vegetariano</span><span class="price">$16.000</span><p class="desc">Vegetales · queso</p></div>
+        </div>
+        <div class="menu-cat"><h2>Fruta &amp; extras</h2>
+          <div class="item"><span class="name">Bowl de fruta picada</span><span class="price">$9.000</span><p class="desc">Temporada</p></div>
+          <div class="item"><span class="name">Leche vegetal (extra)</span><span class="price">$2.500</span><p class="desc">En bebidas espresso bar</p></div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div>Ghost Specialty Coffee · 302 515 9900 · @Ghost_Specialty_Coffee</div>
+      <div>Precios COP · Agosto 2026 · Pueden variar según insumos</div>
+    </footer>
+  </main>
+</body>
+</html>

@@ -1,54 +1,35 @@
-# Propuesta 01 — Venta de desayunos para el hotel
+# Propuesta 01 — Desayunos para el hotel
 
-**De:** Ghost Specialty Coffee (cafetería sede, Hotel El Peñón)  
-**Para:** Bit Hotels El Peñón / Hotel El Peñón  
-**Tarifa hotel:** **$13.500 COP** por desayuno / persona  
-**Fecha:** Agosto 2026
+**De:** Ghost Specialty Coffee · **Para:** Bit Hotels El Peñón  
+**Tarifa B2B:** **$13.500 COP / persona**  
+**Versión:** 2 · Agosto 2026
 
-## Objetivo
+## Oferta
 
-Ofrecer al hotel un desayuno completo, diferencial y operable desde la cafetería Ghost en el primer piso, con montaje buffet o por estaciones, mejorable en el tiempo junto a la operación Bit.
+Desayuno completo operado desde la cafetería sede (1.er piso), montaje buffet o estaciones.
 
-## Incluye
+### Incluye
+- Bebidas: café especialidad · chocolate cacao puro · jugos naturales  
+- Panadería: croissants, pasteles (pollo, carne, hawaiano), arepas  
+- Huevos: omelette, sartén, revueltos, pericos  
+- Sándwiches: croissant o brioche · vegetales · jamón / pollo / cerdo / al pastor / huevo  
+- Fruta picada  
 
-### Bebidas (tres tipos)
-- Café de especialidad
-- Chocolate de cacao puro
-- Jugos naturales
+## Costeo (win-win)
 
-### Panadería / horneados
-- Croissant de mantequilla
-- Croissant de chocolate
-- Pastel de pollo
-- Pastel de carne
-- Pastel hawaiano
-- Arepas
+| | COP |
+|--|-----|
+| Precio hotel | 13.500 |
+| Costo Ghost est. | 6.200 (food cost 46%) |
+| Margen bruto Ghost | 7.300 |
+| Valor percibido huésped (ref.) | 28.000 – 38.000 |
 
-### Proteína — huevos
-- Omelette
-- Huevos al sartén
-- Huevos revueltos
-- Huevos pericos
+Detalle: [COSTEO.md](COSTEO.md)
 
-### Sándwiches
-- Base: croissant o pan brioche (“brochet”)
-- Vegetales: lechuga, tomate deshidratado (intercambiables)
-- Carnes: cerdo, jamón, pollo, al pastor
-- Opción: sándwich de huevo
+## Deducibilidad
 
-### Acompañamiento
-- Fruta picada de temporada
+El valor facturado por desayunos **puede compensarse** contra costos/cánones que la cafetería adeude al hotel (conciliación mensual).
 
-## Condiciones comerciales sugeridas
+## Rol en el edificio
 
-| Ítem | Condición |
-|------|-----------|
-| Precio | $13.500 COP / pax para el hotel |
-| Formato | Buffet o estaciones según flujo |
-| Calidad café | Línea specialty SCA 85+ (estándar Ghost) |
-| Facturación | Corte semanal o quincenal |
-| Ajustes | Menú vivo según ocupación / feedback recepción |
-
-## Beneficio para el hotel
-
-Desayuno con identidad de especialidad sin cargar una cocina pesada propia; coherencia con la experiencia urbana Bit en El Peñón.
+Complementa Turk House / Baraka / Chef Burger: Ghost aporta **specialty coffee + desayuno café**, no cocina turca ni burger.
