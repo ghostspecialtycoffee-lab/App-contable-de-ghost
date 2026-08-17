@@ -5,6 +5,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Propuesta 01 desayunos: opción vegetariana + waflebono en panadería
 - Propuesta 05: suministro café red Bit Hotels a $125.000 COP / paquete 5 lb (con costeo margen)
 - Manual de marca Ghost v1 (madera prensada, negro/blanco, grises cemento) en `docs/propuestas-comerciales/bit-hotels-el-penon/marca/`
 - Skill `ghost-commercial-bit-hotels` — propuestas Bit Hotels, menú cafetería, costeo B2B y deducciones
