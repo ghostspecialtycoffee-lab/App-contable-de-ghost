@@ -4,11 +4,11 @@
 
 ### Mejoramiento del espacio y consolidación de la identidad de la cafetería
 
-**Fecha:** 17 de agosto de 2026  
-**Presentada a:** Gerencia y Operaciones — Hotel El Peñón by bithotels  
-**Presentada por:** GHOST Specialty Coffee  
-**Punto de operación:** Calle 1 Oeste #2-61, barrio El Peñón, Cali  
-**Contacto:** ghostspecialtycoffee@gmail.com  
+**Fecha:** 17 de agosto de 2026<br>
+**Presentada a:** Gerencia y Operaciones — Hotel El Peñón by bithotels<br>
+**Presentada por:** GHOST Specialty Coffee<br>
+**Punto de operación:** Calle 1 Oeste #2-61, barrio El Peñón, Cali<br>
+**Contacto:** ghostspecialtycoffee@gmail.com<br>
 **Periodo objetivo de implementación:** agosto de 2026
 
 ---
@@ -111,5 +111,5 @@ Realizar una visita conjunta de medición y aprobar en una sola mesa de trabajo 
 
 ---
 
-**GHOST Specialty Coffee**  
+**GHOST Specialty Coffee**<br>
 Un punto de café coherente con la experiencia urbana de Hotel El Peñón.

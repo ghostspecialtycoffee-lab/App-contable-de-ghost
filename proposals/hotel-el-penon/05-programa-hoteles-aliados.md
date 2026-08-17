@@ -4,10 +4,10 @@
 
 ### Programa de café y hospitalidad para la red de hoteles y aliados de bithotels
 
-**Fecha:** 17 de agosto de 2026  
-**Presentada a:** Dirección de bithotels y Gerencia de Hotel El Peñón  
-**Presentada por:** GHOST Specialty Coffee  
-**Contacto:** ghostspecialtycoffee@gmail.com  
+**Fecha:** 17 de agosto de 2026<br>
+**Presentada a:** Dirección de bithotels y Gerencia de Hotel El Peñón<br>
+**Presentada por:** GHOST Specialty Coffee<br>
+**Contacto:** ghostspecialtycoffee@gmail.com<br>
 **Modalidad:** acuerdo marco con pilotos por propiedad
 
 ---
@@ -153,5 +153,5 @@ Celebrar una mesa de trabajo con dirección de bithotels para:
 
 ---
 
-**GHOST Specialty Coffee**  
+**GHOST Specialty Coffee**<br>
 Un estándar de café local, modular y replicable para la experiencia bithotels.

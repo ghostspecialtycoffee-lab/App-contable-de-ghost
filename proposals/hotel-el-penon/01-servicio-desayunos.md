@@ -4,11 +4,11 @@
 
 ### Servicio integral de desayunos para Hotel El Peñón by bithotels
 
-**Fecha:** 17 de agosto de 2026  
-**Presentada a:** Gerencia y Operaciones — Hotel El Peñón by bithotels  
-**Presentada por:** GHOST Specialty Coffee  
-**Punto de operación:** Calle 1 Oeste #2-61, barrio El Peñón, Cali  
-**Contacto:** ghostspecialtycoffee@gmail.com  
+**Fecha:** 17 de agosto de 2026<br>
+**Presentada a:** Gerencia y Operaciones — Hotel El Peñón by bithotels<br>
+**Presentada por:** GHOST Specialty Coffee<br>
+**Punto de operación:** Calle 1 Oeste #2-61, barrio El Peñón, Cali<br>
+**Contacto:** ghostspecialtycoffee@gmail.com<br>
 **Vigencia de la propuesta:** 30 días calendario
 
 ---
@@ -126,5 +126,5 @@ Se propone un piloto inicial de **30 días calendario**. Al cierre se revisarán
 
 ---
 
-**GHOST Specialty Coffee**  
+**GHOST Specialty Coffee**<br>
 Café de especialidad, hospitalidad y experiencias locales.

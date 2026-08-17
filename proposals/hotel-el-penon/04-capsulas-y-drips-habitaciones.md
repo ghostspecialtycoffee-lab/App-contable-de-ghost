@@ -4,11 +4,11 @@
 
 ### Cápsulas y drips de café de especialidad para habitaciones
 
-**Fecha:** 17 de agosto de 2026  
-**Presentada a:** Gerencia y Operaciones — Hotel El Peñón by bithotels  
-**Presentada por:** GHOST Specialty Coffee  
-**Punto de operación:** Calle 1 Oeste #2-61, barrio El Peñón, Cali  
-**Contacto:** ghostspecialtycoffee@gmail.com  
+**Fecha:** 17 de agosto de 2026<br>
+**Presentada a:** Gerencia y Operaciones — Hotel El Peñón by bithotels<br>
+**Presentada por:** GHOST Specialty Coffee<br>
+**Punto de operación:** Calle 1 Oeste #2-61, barrio El Peñón, Cali<br>
+**Contacto:** ghostspecialtycoffee@gmail.com<br>
 **Vigencia de la propuesta:** 30 días calendario
 
 ---
@@ -105,5 +105,5 @@ Realizar una prueba en las máquinas del hotel y seleccionar un perfil para cáp
 
 ---
 
-**GHOST Specialty Coffee**  
+**GHOST Specialty Coffee**<br>
 Café de especialidad en la habitación, con identidad local y preparación sencilla.

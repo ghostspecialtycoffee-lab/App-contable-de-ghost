@@ -4,10 +4,10 @@
 
 ### Administración de redes sociales y creación de contenido para Hotel El Peñón
 
-**Fecha:** 17 de agosto de 2026  
-**Presentada a:** Gerencia y Mercadeo — Hotel El Peñón by bithotels  
-**Presentada por:** GHOST Specialty Coffee  
-**Contacto:** ghostspecialtycoffee@gmail.com  
+**Fecha:** 17 de agosto de 2026<br>
+**Presentada a:** Gerencia y Mercadeo — Hotel El Peñón by bithotels<br>
+**Presentada por:** GHOST Specialty Coffee<br>
+**Contacto:** ghostspecialtycoffee@gmail.com<br>
 **Modalidad sugerida:** piloto de 3 meses
 
 ---
@@ -123,5 +123,5 @@ Realizar una sesión de inicio para definir administradores, objetivos del trime
 
 ---
 
-**GHOST Specialty Coffee**  
+**GHOST Specialty Coffee**<br>
 Contenido local para una experiencia hotelera más visible, cercana y memorable.
