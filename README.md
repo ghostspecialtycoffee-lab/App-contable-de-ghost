@@ -4,6 +4,8 @@ Sistema ERP y POS para cafeterías, restaurantes, panaderías y negocios gastron
 
 **Ghost Specialty Coffee Lab** — plataforma multi-tenant sobre Google Cloud / Firebase.
 
+Sitio web público de marca: `apps/site` → `pnpm --filter @ghost/site dev` (puerto **3001**).
+
 ## Documentación
 
 | Documento | Contenido |

@@ -9,6 +9,7 @@ Usar cuando el trabajo involucre:
 - Costeo B2B hotel, deducciones cafetería→hotel, redes del hotel
 - Identidad de sede en el 1.er piso del hotel
 - Manual de marca (madera prensada, negro/blanco, grises cemento) y logo
+- Sitio web público `apps/site` y métricas de redes (`social-stats.json`)
 
 ## Identidad
 

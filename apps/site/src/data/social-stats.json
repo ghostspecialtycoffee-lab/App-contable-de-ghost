@@ -1,0 +1,27 @@
+{
+  "platform": "instagram",
+  "handle": "@Ghost_Specialty_Coffee",
+  "url": "https://www.instagram.com/ghost_specialty_coffee/",
+  "snapshotDate": "2026-08-17",
+  "source": "Consulta pública Instagram / índices de búsqueda (Ago 2026)",
+  "metrics": {
+    "followers": 281,
+    "following": 105,
+    "posts": 50
+  },
+  "bioSignals": [
+    "brunch · lunch · coffee lab",
+    "Sede Cl. 1 Oe. #2-61 · Bit Hotels El Peñón, Cali",
+    "Café especialidad SCA 85+"
+  ],
+  "hotelPartner": {
+    "handle": "@bit.hotels",
+    "url": "https://www.instagram.com/bit.hotels/",
+    "note": "Marca hotelera aliada — propuesta de administración de redes (P03)"
+  },
+  "notes": [
+    "Métricas de crecimiento temprano: cuenta operativa de sede, no agencia.",
+    "Actualizar este archivo tras cada cierre mensual de community.",
+    "En propuestas al hotel, el valor de P03 es elevar métricas de @bit.hotels y del POS Ghost."
+  ]
+}

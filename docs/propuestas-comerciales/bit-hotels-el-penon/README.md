@@ -11,7 +11,10 @@ Documentación comercial profesional (español) con **costeo win-win**, **deduci
 | [COSTEO.md](COSTEO.md) | Anexo de costeo y compensación |
 | [menu/](menu/) | Carta pública cafetería (HTML + MD + JSON) |
 | [marca/](marca/) | Manual de marca (madera · cemento · B/N) |
+| [social-stats.json](social-stats.json) | Métricas Instagram Ghost (snapshot) |
 | `Ghost_BitHotels_Cinco_Propuestas_2026.pdf` | PDF generado |
+
+**Sitio web público:** `apps/site` (`pnpm --filter @ghost/site dev` → :3001)
 
 ## Cláusula clave
 
