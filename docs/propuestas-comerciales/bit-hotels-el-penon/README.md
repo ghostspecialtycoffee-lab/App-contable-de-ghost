@@ -10,6 +10,7 @@ Documentación comercial profesional (español) con **costeo win-win**, **deduci
 | [01-desayunos.md](01-desayunos.md) … [05-hoteles-aliados.md](05-hoteles-aliados.md) | Propuestas individuales |
 | [COSTEO.md](COSTEO.md) | Anexo de costeo y compensación |
 | [menu/](menu/) | Carta pública cafetería (HTML + MD + JSON) |
+| [marca/](marca/) | Manual de marca (madera · cemento · B/N) |
 | `Ghost_BitHotels_Cinco_Propuestas_2026.pdf` | PDF generado |
 
 ## Cláusula clave

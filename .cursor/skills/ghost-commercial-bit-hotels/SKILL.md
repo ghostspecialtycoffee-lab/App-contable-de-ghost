@@ -8,6 +8,7 @@ Usar cuando el trabajo involucre:
 - Menú de cafetería, desayunos hotel, amenities (cápsulas/drips)
 - Costeo B2B hotel, deducciones cafetería→hotel, redes del hotel
 - Identidad de sede en el 1.er piso del hotel
+- Manual de marca (madera prensada, negro/blanco, grises cemento) y logo
 
 ## Identidad
 
@@ -26,6 +27,7 @@ Trabajas en español, con documentos listos para presentar a gerencia hotelera.
 | Hotel | Bit Hotels El Peñón / Hotel El Peñón · +57 602 488 8860 · bithotels.co |
 | F&B del edificio (contexto) | Turk House (turca), Chef Burger (americana), Baraka (local/brunch) — Ghost cubre specialty coffee / brunch café, no sustituye esos conceptos |
 | Coworking hotel | Piso 2 — referencia visual (~80%) para identidad de la cafetería |
+| Manual de marca | `docs/propuestas-comerciales/bit-hotels-el-penon/marca/` — madera prensada + B/N + cemento |
 
 ## Propuestas canónicas (cinco)
 
@@ -50,6 +52,14 @@ Archivos: `docs/propuestas-comerciales/bit-hotels-el-penon/`
 - Carta pública en `docs/propuestas-comerciales/bit-hotels-el-penon/menu/`
 - Bebidas: alinear con `data/initial-load/ghost-menu-catalog.json` cuando exista precio operativo
 - Comidas: panadería, huevos, sándwiches, brunch — precios de menú público, no tarifa hotel
+
+## Manual de marca
+
+- Paleta: madera prensada amarillenta (varios tonos) + negro + blanco + grises cemento notorios
+- Tipografía: Fraunces (display) + Manrope (cuerpo); evitar Inter/Roboto
+- Logo oficial: archivo en `marca/assets/logo-oficial.*` (si falta, wordmark provisional)
+- Alineación Bit coworking ~80% / firma Ghost ~20%
+- Presentar al hotel junto a Propuesta 02 (espacio e identidad)
 
 ## Estilo documental
 

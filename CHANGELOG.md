@@ -5,6 +5,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Manual de marca Ghost v1 (madera prensada, negro/blanco, grises cemento) en `docs/propuestas-comerciales/bit-hotels-el-penon/marca/`
 - Skill `ghost-commercial-bit-hotels` — propuestas Bit Hotels, menú cafetería, costeo B2B y deducciones
 - Propuestas comerciales Ghost → Bit Hotels El Peñón v2 (costeo win-win, deducibilidad, menú público) en `docs/propuestas-comerciales/bit-hotels-el-penon/`
 - Agente interpretativo LLM: 20 herramientas (caja, carta, mesas, inventario, compras, gastos, admin)
