@@ -7,8 +7,8 @@ Cifras de trabajo para negociación; escandallo real a 30 días.
 
 | Parte | Qué gana |
 |-------|----------|
-| **Hotel** | Costo controlado, mejor reseña/desayuno/amenity, flujo compensable (menos salida de caja) |
-| **Ghost** | Volumen predecible, margen bruto positivo, tráfico al POS, marca alineada a Bit |
+| **Hotel** | Costo controlado, mejor reseña/desayuno/amenity, café unificado en la red, flujo compensable |
+| **Ghost** | Volumen multi-sede, margen bruto positivo (con costo tostado controlado), marca en Bit |
 
 ## 2. Desayuno hotel — $13.500 / pax
 
@@ -49,20 +49,40 @@ Si el food cost real supera 55% durante 30 días, se revisa porción, mermas o p
 | Referencia agencia externa | 1.500.000 – 2.500.000 |
 | Ahorro hotel vs agencia | ~1.000.000+ / mes |
 
-## 5. Ejemplo mensual (ilustrativo)
+## 5. Café red Bit — paquete 5 libras
 
-Supuesto: 30 desayunos/día × 30 días = 900 pax; 200 kits amenity; 1 mes de redes.
+| Concepto | COP |
+|----------|-----|
+| Precio B2B hotel / paquete **5 lb** | **125.000** |
+| Equivalente | **25.000 / libra** |
+| Costo objetivo Ghost (volumen / tostión) | 95.000 – 100.000 |
+| Margen objetivo | ~20–24% |
+| Costo compra ref. actual prorrateado (~2,5 kg a 145.000) | ~131.500 → **bajar costo antes de escalar** |
+
+### Ejemplo red (ilustrativo)
+
+| Supuesto | Cálculo |
+|----------|---------|
+| 3 sedes × 8 paquetes/mes | 24 paquetes |
+| Facturación | 24 × 125.000 = **$3.000.000** |
+| Costo @ $100.000 | $2.400.000 |
+| Margen Ghost | **$600.000 / mes** |
+
+## 6. Ejemplo mensual El Peñón (ilustrativo)
+
+Supuesto: 30 desayunos/día × 30 días = 900 pax; 200 kits amenity; 1 mes de redes; café sede.
 
 | Línea | Facturación Ghost→Hotel | Costo Ghost est. |
 |-------|-------------------------|------------------|
 | Desayunos | 12.150.000 | 5.580.000 |
 | Kits amenity | 1.080.000 | 620.000 |
 | Redes | 690.000 | (interno contenido) |
-| **Total** | **~13.920.000** | |
+| Café 5 lb (ej. 6 paquetes sede) | 750.000 | 600.000 (@100k) |
+| **Total** | **~$14.67M** | |
 
-## 6. Deducibilidad / compensación
+## 7. Deducibilidad / compensación
 
-1. Ghost emite factura o cuenta de cobro al hotel por servicios del mes.  
+1. Ghost emite factura o cuenta de cobro al hotel por servicios / café del mes.  
 2. Se listan cánones / arriendos / costos que Ghost adeuda al hotel.  
 3. **Nota de compensación** o cruce contable: se deduce el menor entre ambas deudas.  
 4. Saldo neto se paga en efectivo o se arrastra al mes siguiente.  
@@ -70,7 +90,7 @@ Supuesto: 30 desayunos/día × 30 días = 900 pax; 200 kits amenity; 1 mes de re
 
 Impuestos (IVA/INC) según régimen aplicable en cada documento.
 
-## 7. Menú público vs B2B
+## 8. Menú público vs B2B
 
-- **B2B hotel:** tarifas de este anexo / propuestas.  
-- **Público:** `menu/carta-cafeteria.md` (ej. combo desayuno Ghost $28.000).  
+- **B2B hotel:** desayunos, amenities, redes, **café 5 lb a $125.000**.  
+- **Público:** `menu/carta-cafeteria.md`.  

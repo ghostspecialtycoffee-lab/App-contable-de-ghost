@@ -35,7 +35,7 @@ Trabajas en español, con documentos listos para presentar a gerencia hotelera.
 2. Mejora espacio + identidad marca/tienda
 3. Administración redes hotel (plan económico)
 4. Cápsulas **$1.700** / drips **$2.000** (etiqueta hotel)
-5. Expansión hoteles aliados Bit
+5. Café a toda la red Bit — **$125.000 COP / paquete 5 libras**
 
 Archivos: `docs/propuestas-comerciales/bit-hotels-el-penon/`
 
