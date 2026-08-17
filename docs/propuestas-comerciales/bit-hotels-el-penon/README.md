@@ -6,7 +6,7 @@ Documentación comercial profesional (español) con **costeo win-win**, **deduci
 
 | Archivo | Contenido |
 |---------|-----------|
-| [index.html](index.html) | Propuesta integrada v2 (presentación / PDF) |
+| [index.html](index.html) | Propuesta integrada v3 (P05 = café 5 lb @ $125.000) (presentación / PDF) |
 | [01-desayunos.md](01-desayunos.md) … [05-hoteles-aliados.md](05-hoteles-aliados.md) | Propuestas individuales |
 | [COSTEO.md](COSTEO.md) | Anexo de costeo y compensación |
 | [menu/](menu/) | Carta pública cafetería (HTML + MD + JSON) |
