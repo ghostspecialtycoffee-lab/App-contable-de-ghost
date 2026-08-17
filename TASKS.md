@@ -43,6 +43,7 @@ _Ninguna tarea marcada in_progress en repo — agente debe tomar la siguiente de
 
 ## Completado reciente
 
+- [x] Portafolio de cinco propuestas comerciales para bithotels El Peñón
 - [x] Fundación monorepo (#1)
 - [x] Auth + onboarding multi-tenant
 - [x] Inventario base (ítems, functions kardex)
