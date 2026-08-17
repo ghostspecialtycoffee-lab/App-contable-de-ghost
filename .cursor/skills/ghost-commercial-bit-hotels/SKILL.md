@@ -40,13 +40,14 @@ Trabajas en español, con documentos listos para presentar a gerencia hotelera.
 
 Archivos: `docs/propuestas-comerciales/bit-hotels-el-penon/`
 
-## Reglas de costeo (obligatorio en toda propuesta)
+## Reglas de propuestas al hotel (obligatorio)
 
-1. Mostrar **costo Ghost estimado**, **precio hotel**, **margen bruto Ghost**, **valor para el hotel**.
-2. Costeo **positivo para ambas partes** (win-win): si un precio deja food cost >55% en desayuno o margen negativo, recalcular o advertir.
-3. Incluir cláusula de **deducibilidad**: valores facturados por Ghost al hotel (desayunos, amenities, contenido, mejoras acordadas) **pueden descontarse / compensarse** contra cánones, arriendos o costos que la cafetería adeude al hotel, según conciliación mensual.
-4. Separar precios **B2B hotel** vs **carta pública** (menú cafetería).
-5. Impuestos (IVA/INC): indicar “según régimen; liquidar en OC/factura”.
+1. **PDFs / docs para Bit Hotels:** solo **precio final al hotel**. Nunca mostrar costo interno Ghost, food cost %, ni márgenes.
+2. Costeo interno solo en `COSTEO.md` (archivo interno; no enviar al hotel).
+3. Incluir cláusula de **compensación/deducibilidad**: valores facturados pueden descontarse / compensarse contra cánones o costos cafetería→hotel (conciliación mensual).
+4. Separar precios **B2B hotel** vs **carta pública**.
+5. Impuestos (IVA/INC): “según régimen; liquidar en OC/factura”.
+6. Entrega: **1 PDF individual por propuesta** + logo oficial + colores de marca.
 
 ## Menú cafetería
 

@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 ## [Unreleased]
 
 ### Changed
+- Propuestas Bit Hotels (PDF al hotel): solo precios finales; sin costos/márgenes internos Ghost; logo en cabecera; 1 PDF por propuesta
+
+### Changed
 - Propuestas Bit Hotels: entrega **1 PDF por propuesta** (`pdf/01`–`05`) con paleta de marca; desayuno hotel solo espresso / americano / tinto / tinto con leche
 
 ### Added

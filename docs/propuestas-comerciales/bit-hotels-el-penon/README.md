@@ -1,39 +1,22 @@
-# Propuestas Ghost × Bit Hotels El Peñón — v2
+# Propuestas Ghost Specialty Coffee × Bit Hotels El Peñón
 
-Documentación comercial profesional (español) con **costeo win-win**, **deducibilidad cafetería→hotel** y **menú público** de la cafetería.
+Entrega al hotel: **1 PDF por propuesta**, solo con **precios finales para Bit Hotels** (sin costos internos Ghost).
 
-## Entregables
+## PDFs (descarga / entrega)
 
-| Archivo | Contenido |
-|---------|-----------|
-| [index.html](index.html) | Vista integrada (referencia interna) |
-| [01-desayunos.md](01-desayunos.md) … [05-hoteles-aliados.md](05-hoteles-aliados.md) | Propuestas individuales (Markdown) |
-| [pdf/](pdf/) | **Entrega hotel:** HTML + **1 PDF por propuesta** (colores de marca) |
-| [COSTEO.md](COSTEO.md) | Anexo de costeo y compensación |
-| [menu/](menu/) | Carta pública cafetería (HTML + MD + JSON) |
-| [marca/](marca/) | Manual de marca (madera · cemento · B/N) |
-| [social-stats.json](social-stats.json) | Métricas Instagram Ghost (snapshot) |
+| PDF | Precio al hotel |
+|-----|-----------------|
+| [pdf/01-desayunos.pdf](pdf/01-desayunos.pdf) | Desayunos **$13.500** / pax |
+| [pdf/02-espacio.pdf](pdf/02-espacio.pdf) | Espacio e identidad **$0** (invierte Ghost) |
+| [pdf/03-redes.pdf](pdf/03-redes.pdf) | Redes **$690.000** / mes (+ setup opcional $250.000) |
+| [pdf/04-capsulas-drips.pdf](pdf/04-capsulas-drips.pdf) | Cápsula **$1.700** · drip **$2.000** · kit **$5.400** |
+| [pdf/05-cafe-red.pdf](pdf/05-cafe-red.pdf) | Café red **$125.000** / 5 lb |
 
-### PDFs individuales (entrega)
+## Notas
+- Marca: **Ghost Specialty Coffee**
+- Bebidas desayuno: espresso, americano, tinto, tinto con leche
+- Colores de marca en `assets/propuesta.css`
+- Costeo interno Ghost: solo en [COSTEO.md](COSTEO.md) (uso interno, no enviar al hotel)
 
-| PDF | Propuesta |
-|-----|-----------|
-| `pdf/01-desayunos.pdf` | Desayunos · bebidas: espresso, americano, tinto, tinto con leche |
-| `pdf/02-espacio.pdf` | Espacio e identidad |
-| `pdf/03-redes.pdf` | Redes sociales hotel |
-| `pdf/04-capsulas-drips.pdf` | Cápsulas y drips |
-| `pdf/05-cafe-red.pdf` | Café red Bit ($125.000 / 5 lb) |
-
-**Sitio web público:** `apps/site` (`pnpm --filter @ghost/site dev` → :3001)
-
-## Cláusula clave
-
-Los valores facturados por Ghost al hotel (desayunos, amenities, redes, mejoras acordadas) **pueden deducirse/compensarse** contra cánones o costos que la cafetería adeude al hotel, con conciliación mensual.
-
-## Contexto F&B del edificio
-
-Turk House · Chef Burger · Baraka — Ghost es **coffee lab / brunch specialty**, complemento del ecosistema Bit.
-
-## Agente Cursor
-
-Skill: `.cursor/skills/ghost-commercial-bit-hotels/SKILL.md`
+## Compensación
+Valores facturados por Ghost al hotel pueden descontarse / compensarse contra cánones o costos de la cafetería (conciliación mensual).

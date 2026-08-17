@@ -1,103 +1,84 @@
 :root {
-  /* Manual de marca Ghost Specialty Coffee */
   --wood-1: #E8DCC8;
   --wood-2: #D4C0A0;
   --wood-3: #C9B08A;
   --wood-4: #A89070;
   --wood-5: #7A6348;
-  --wood-deep: #3D2914;
   --ink: #111111;
-  --ink-soft: #2A2A2A;
   --paper: #FAFAFA;
   --paper-warm: #F4F1EC;
   --cement-1: #D9D6D0;
-  --cement-2: #B8B5B0;
   --cement-3: #8A8680;
   --cement-4: #6E6B66;
-  --cement-5: #4A4845;
   --line: rgba(17, 17, 17, 0.12);
-  --ok: #2f5d3a;
-  --shadow: 0 14px 40px rgba(17, 17, 17, 0.07);
-  --radius: 16px;
+  --radius: 14px;
   --font-display: "Fraunces", Georgia, serif;
   --font-body: "Manrope", "Segoe UI", sans-serif;
 }
-
 * { box-sizing: border-box; }
 body {
   margin: 0;
   color: var(--ink);
-  background:
-    linear-gradient(90deg, rgba(168,144,112,0.08) 0 10px, transparent 10px),
-    linear-gradient(180deg, var(--paper-warm), var(--cement-1) 140%);
+  background: linear-gradient(180deg, var(--paper-warm), var(--cement-1) 160%);
   font-family: var(--font-body);
-  line-height: 1.55;
+  line-height: 1.5;
+  font-size: 15px;
 }
-.wrap { width: min(920px, calc(100% - 2rem)); margin: 0 auto; padding: 1.5rem 0 2.5rem; }
-
+.wrap { width: min(880px, calc(100% - 2rem)); margin: 0 auto; padding: 1.25rem 0 2rem; }
 .doc-head {
-  display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start;
-  padding-bottom: 1.1rem; margin-bottom: 1.2rem;
-  border-bottom: 2px solid var(--ink);
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  padding-bottom: 0.9rem; margin-bottom: 1rem; border-bottom: 2px solid var(--ink);
 }
-.doc-head .brand { font-family: var(--font-display); font-size: 1.35rem; letter-spacing: 0.04em; }
-.doc-head .meta { text-align: right; font-size: 0.82rem; color: var(--cement-4); }
-.doc-head .meta strong { display: block; color: var(--ink); font-size: 0.9rem; }
-
+.doc-head .logo { height: 52px; width: auto; display: block; }
+.doc-head .meta { text-align: right; font-size: 0.8rem; color: var(--cement-4); }
+.doc-head .meta strong { display: block; color: var(--ink); font-size: 0.88rem; }
 .badge {
-  display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--wood-5);
-  background: var(--wood-1); border: 1px solid var(--wood-3);
-  padding: 0.3rem 0.55rem; border-radius: 999px;
+  display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--wood-5); background: var(--wood-1);
+  border: 1px solid var(--wood-3); padding: 0.28rem 0.5rem; border-radius: 999px;
 }
 h1 {
-  font-family: var(--font-display); font-size: clamp(1.7rem, 3vw, 2.2rem);
-  margin: 0.5rem 0 0.35rem; line-height: 1.15;
+  font-family: var(--font-display); font-size: clamp(1.55rem, 3vw, 2rem);
+  margin: 0.45rem 0 0.25rem; line-height: 1.15;
 }
-.sub { margin: 0; color: var(--cement-4); }
+.lead { margin: 0 0 1rem; color: var(--cement-4); }
 .price-box {
-  margin: 1.1rem 0; padding: 1rem 1.15rem; border-radius: var(--radius);
+  margin: 0.9rem 0 1rem; padding: 0.95rem 1.1rem; border-radius: var(--radius);
   background: var(--ink); color: var(--paper);
   display: flex; justify-content: space-between; gap: 1rem; align-items: center;
 }
-.price-box .n { font-family: var(--font-display); font-size: 1.85rem; }
-.price-box small { display: block; color: var(--cement-2); font-size: 0.78rem; margin-top: 0.15rem; }
-
+.price-box .n { font-family: var(--font-display); font-size: 1.75rem; white-space: nowrap; }
+.price-box small { display: block; color: var(--cement-1); font-size: 0.78rem; margin-top: 0.15rem; }
 .panel {
-  background: var(--paper); border: 1px solid var(--line); border-radius: 14px;
-  padding: 1rem 1.1rem; margin: 0.75rem 0;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+  padding: 0.9rem 1rem; margin: 0.65rem 0;
 }
 .panel h2, .panel h3 {
-  font-family: var(--font-display); margin: 0 0 0.55rem; font-size: 1.05rem;
+  font-family: var(--font-display); margin: 0 0 0.45rem; font-size: 1.02rem;
 }
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.65rem; }
-ul { margin: 0.2rem 0 0; padding-left: 1.1rem; }
-li { margin: 0.28rem 0; }
-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
-th, td { text-align: left; padding: 0.55rem 0.45rem; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cement-4); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.55rem; }
+ul { margin: 0.15rem 0 0; padding-left: 1.05rem; }
+li { margin: 0.22rem 0; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin-top: 0.35rem; }
+th, td { text-align: left; padding: 0.5rem 0.4rem; border-bottom: 1px solid var(--line); }
+th { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cement-4); }
+td.price { font-weight: 700; white-space: nowrap; }
 .note {
-  margin-top: 0.9rem; padding: 0.8rem 1rem; border-left: 3px solid var(--wood-4);
-  background: rgba(201,176,138,0.18); border-radius: 0 10px 10px 0; font-size: 0.92rem;
+  margin-top: 0.85rem; padding: 0.75rem 0.95rem; border-left: 3px solid var(--wood-4);
+  background: rgba(201,176,138,0.18); border-radius: 0 10px 10px 0; font-size: 0.9rem;
 }
-.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.55rem; margin: 0.9rem 0; }
-.metric {
-  background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 0.75rem;
-}
-.metric span { display: block; font-size: 0.72rem; color: var(--cement-4); text-transform: uppercase; letter-spacing: 0.06em; }
-.metric b { font-family: var(--font-display); font-size: 1.25rem; }
 .footer {
-  margin-top: 1.6rem; padding-top: 0.9rem; border-top: 1px solid var(--line);
-  font-size: 0.8rem; color: var(--cement-4);
+  margin-top: 1.4rem; padding-top: 0.8rem; border-top: 1px solid var(--line);
+  font-size: 0.78rem; color: var(--cement-4);
 }
-.win h3 { color: var(--wood-5); }
-@media (max-width: 760px) {
-  .grid-2, .grid-3, .metrics { grid-template-columns: 1fr 1fr; }
-  .doc-head { flex-direction: column; }
+@media (max-width: 720px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .doc-head { flex-direction: column; align-items: flex-start; }
   .doc-head .meta { text-align: left; }
 }
 @media print {
   body { background: white; }
   .wrap { width: 100%; padding: 0; }
+  .panel, .price-box, .note { break-inside: avoid; }
 }
