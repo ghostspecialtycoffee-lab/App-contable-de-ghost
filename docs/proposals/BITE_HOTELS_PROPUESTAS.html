@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Propuestas Comerciales — Ghost Specialty Coffee × BITE Hotels El Peñón</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+    :root {
+      --cream: #FAF7F2;
+      --espresso: #2C1A0E;
+      --gold: #C4943A;
+      --gold-light: #E8C97A;
+      --brown-mid: #6B3F1F;
+      --accent-green: #4A6741;
+      --gray-light: #F5F2EC;
+      --gray-mid: #D9D0C4;
+      --text-main: #2C2318;
+      --text-muted: #7A6A58;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--cream);
+      color: var(--text-main);
+      line-height: 1.7;
+    }
+
+    /* ── COVER ── */
+    .cover {
+      min-height: 100vh;
+      background: linear-gradient(160deg, var(--espresso) 0%, #4A2C10 60%, var(--brown-mid) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cover::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    .cover-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      letter-spacing: 0.4em;
+      color: var(--gold-light);
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+    }
+
+    .cover-divider {
+      width: 80px;
+      height: 2px;
+      background: var(--gold);
+      margin: 0 auto 2rem;
+    }
+
+    .cover h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+      max-width: 700px;
+      margin-bottom: 1rem;
+    }
+
+    .cover h1 span { color: var(--gold-light); }
+
+    .cover-subtitle {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.65);
+      margin-bottom: 3rem;
+      letter-spacing: 0.05em;
+    }
+
+    .cover-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(196,148,58,0.2);
+      border: 1px solid var(--gold);
+      border-radius: 999px;
+      padding: 0.5rem 1.5rem;
+      color: var(--gold-light);
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .cover-meta {
+      position: absolute;
+      bottom: 2rem;
+      left: 0; right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      color: rgba(255,255,255,0.4);
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── LAYOUT ── */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ── TOC ── */
+    .toc {
+      background: var(--espresso);
+      color: #fff;
+      padding: 4rem 2rem;
+    }
+
+    .toc h2 {
+      font-family: 'Playfair Display', serif;
+      color: var(--gold-light);
+      font-size: 1.6rem;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .toc-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1.25rem 1.5rem;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      border-left: 3px solid var(--gold);
+      transition: background 0.2s;
+    }
+
+    .toc-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      color: var(--gold);
+      line-height: 1;
+      min-width: 2rem;
+    }
+
+    .toc-text strong {
+      display: block;
+      font-size: 0.95rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .toc-text span {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.55);
+    }
+
+    /* ── SECTION ── */
+    .proposal-section {
+      padding: 5rem 0;
+      border-bottom: 1px solid var(--gray-mid);
+    }
+
+    .proposal-section:last-child { border-bottom: none; }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .section-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 4rem;
+      color: var(--gold);
+      line-height: 1;
+      opacity: 0.35;
+      flex-shrink: 0;
+    }
+
+    .section-titles { flex: 1; }
+
+    .section-tag {
+      display: inline-block;
+      background: var(--gold);
+      color: #fff;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.85rem;
+      border-radius: 999px;
+      margin-bottom: 0.6rem;
+      font-weight: 600;
+    }
+
+    .section-titles h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+      color: var(--espresso);
+      line-height: 1.2;
+    }
+
+    .section-titles .subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-top: 0.4rem;
+    }
+
+    /* ── SUMMARY BOX ── */
+    .summary-box {
+      background: var(--espresso);
+      color: #fff;
+      border-radius: 16px;
+      padding: 2rem 2.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary-box p {
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: rgba(255,255,255,0.85);
+    }
+
+    /* ── CARDS ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin: 2rem 0;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 12px rgba(44,26,14,0.08);
+      border-top: 3px solid var(--gold);
+    }
+
+    .card-icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .card h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      color: var(--espresso);
+      margin-bottom: 0.5rem;
+    }
+
+    .card p, .card ul {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .card ul { padding-left: 1rem; }
+    .card ul li { margin-bottom: 0.2rem; }
+
+    /* ── MENU TABLE ── */
+    .menu-block {
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(44,26,14,0.08);
+      margin: 2rem 0;
+    }
+
+    .menu-block-header {
+      background: var(--brown-mid);
+      color: #fff;
+      padding: 1rem 1.5rem;
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .menu-block-body {
+      padding: 1rem 1.5rem;
+    }
+
+    .menu-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--gray-light);
+    }
+
+    .menu-row:last-child { border-bottom: none; }
+
+    .menu-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--gold);
+      margin-top: 0.45rem;
+      flex-shrink: 0;
+    }
+
+    .menu-row span {
+      font-size: 0.9rem;
+      color: var(--text-main);
+    }
+
+    /* ── PRICE HIGHLIGHT ── */
+    .price-highlight {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      border-radius: 14px;
+      padding: 1.75rem 2rem;
+      margin: 2rem 0;
+    }
+
+    .price-highlight .label {
+      color: var(--espresso);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .price-highlight .amount {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      color: var(--espresso);
+      font-weight: 700;
+    }
+
+    .price-highlight .note {
+      font-size: 0.8rem;
+      color: rgba(44,26,14,0.7);
+      margin-top: 0.2rem;
+    }
+
+    /* ── TWO COL ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    @media (max-width: 640px) {
+      .two-col { grid-template-columns: 1fr; }
+      .section-number { font-size: 2.5rem; }
+    }
+
+    /* ── TIMELINE ── */
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+      margin: 2rem 0;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0.6rem;
+      top: 0.5rem;
+      bottom: 0.5rem;
+      width: 2px;
+      background: var(--gray-mid);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -1.6rem;
+      top: 0.35rem;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--gold);
+      border: 2px solid var(--cream);
+    }
+
+    .timeline-item h5 {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--espresso);
+      margin-bottom: 0.25rem;
+    }
+
+    .timeline-item p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    /* ── BENEFIT LIST ── */
+    .benefit-list {
+      list-style: none;
+      margin: 1.5rem 0;
+    }
+
+    .benefit-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px dashed var(--gray-mid);
+      font-size: 0.93rem;
+    }
+
+    .benefit-list li:last-child { border-bottom: none; }
+
+    .benefit-list .check {
+      color: var(--accent-green);
+      font-size: 1rem;
+      margin-top: 0.1rem;
+      flex-shrink: 0;
+    }
+
+    /* ── INFO BAND ── */
+    .info-band {
+      background: var(--gray-light);
+      border-left: 4px solid var(--gold);
+      border-radius: 0 10px 10px 0;
+      padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .info-band strong { color: var(--espresso); }
+
+    /* ── CLOSING ── */
+    .closing {
+      background: linear-gradient(160deg, var(--espresso) 0%, #4A2C10 100%);
+      color: #fff;
+      text-align: center;
+      padding: 5rem 2rem;
+    }
+
+    .closing h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: var(--gold-light);
+      margin-bottom: 1rem;
+    }
+
+    .closing p {
+      color: rgba(255,255,255,0.7);
+      max-width: 560px;
+      margin: 0 auto 2rem;
+      font-size: 1rem;
+    }
+
+    .contact-row {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+    }
+
+    .contact-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .contact-item .icon { font-size: 1.4rem; }
+    .contact-item .label { font-size: 0.75rem; color: rgba(255,255,255,0.5); letter-spacing: 0.08em; text-transform: uppercase; }
+    .contact-item .value { font-size: 0.95rem; color: var(--gold-light); }
+
+    /* ── PRINT ── */
+    @media print {
+      .cover { min-height: auto; padding: 3rem; }
+      .toc { page-break-after: always; }
+      .proposal-section { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════ PORTADA ══════════════════ -->
+<div class="cover">
+  <div class="cover-logo">Ghost Specialty Coffee</div>
+  <div class="cover-divider"></div>
+  <h1>Propuestas Comerciales<br/><span>× BITE Hotels El Peñón</span></h1>
+  <p class="cover-subtitle">Hotel El Peñón · El Peñol, Antioquia · Colombia</p>
+  <div class="cover-badge">☕ Cinco Propuestas · Agosto 2026</div>
+  <div class="cover-meta">
+    <span>Ghost Specialty Coffee</span>
+    <span>|</span>
+    <span>Documento Confidencial</span>
+    <span>|</span>
+    <span>Agosto 2026</span>
+  </div>
+</div>
+
+<!-- ══════════════════ ÍNDICE ══════════════════ -->
+<div class="toc">
+  <div class="container">
+    <h2>Contenido de las Propuestas</h2>
+    <div class="toc-grid">
+      <div class="toc-item">
+        <div class="toc-number">01</div>
+        <div class="toc-text">
+          <strong>Servicio de Desayunos Buffet</strong>
+          <span>Experiencia gastronómica completa para huéspedes</span>
+        </div>
+      </div>
+      <div class="toc-item">
+        <div class="toc-number">02</div>
+        <div class="toc-text">
+          <strong>Mejoramiento del Espacio de Cafetería</strong>
+          <span>Optimización de capacidad e identidad de marca</span>
+        </div>
+      </div>
+      <div class="toc-item">
+        <div class="toc-number">03</div>
+        <div class="toc-text">
+          <strong>Gestión de Redes Sociales</strong>
+          <span>Administración y creación de contenido del hotel</span>
+        </div>
+      </div>
+      <div class="toc-item">
+        <div class="toc-number">04</div>
+        <div class="toc-text">
+          <strong>Cápsulas y Drips para Habitaciones</strong>
+          <span>Café de especialidad con marca del hotel</span>
+        </div>
+      </div>
+      <div class="toc-item">
+        <div class="toc-number">05</div>
+        <div class="toc-text">
+          <strong>Propuesta Red de Hoteles Aliados BITE</strong>
+          <span>Expansión a la red de hoteles asociados</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ PROPUESTA 1 ══════════════════ -->
+<div class="proposal-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-number">01</div>
+      <div class="section-titles">
+        <span class="section-tag">Gastronomía</span>
+        <h2>Servicio de Desayunos Buffet para Hotel El Peñón</h2>
+        <p class="subtitle">Una experiencia matutina de especialidad para cada huésped</p>
+      </div>
+    </div>
+
+    <div class="summary-box">
+      <p>
+        Ghost Specialty Coffee propone operar el servicio de desayunos del hotel bajo un modelo buffet de alta calidad,
+        fusionando el mejor café de especialidad de la región con una propuesta gastronómica contemporánea.
+        Esta alianza eleva la experiencia del huésped desde la primera hora del día, generando un diferencial 
+        real frente a otros alojamientos del destino.
+      </p>
+    </div>
+
+    <!-- Precio -->
+    <div class="price-highlight">
+      <div>
+        <div class="label">Tarifa por desayuno por huésped</div>
+        <div class="amount">$13.500 <small style="font-size:1.2rem">COP</small></div>
+        <div class="note">Precio para el hotel (facturación directa). IVA según normatividad vigente.</div>
+      </div>
+      <div style="font-size:3rem">☕</div>
+    </div>
+
+    <!-- Bebidas -->
+    <div class="menu-block">
+      <div class="menu-block-header">☕ Bebidas — tres opciones a elección del huésped</div>
+      <div class="menu-block-body">
+        <div class="menu-row">
+          <div class="menu-dot"></div>
+          <span><strong>Café de Especialidad</strong> — Preparación en barra con granos de origen regional: espresso, americano, cappuccino, latte u otras opciones de carta Ghost según disponibilidad.</span>
+        </div>
+        <div class="menu-row">
+          <div class="menu-dot"></div>
+          <span><strong>Chocolate Puro / Cacao Natural</strong> — Bebida caliente preparada con cacao 100% colombiano sin aditivos artificiales. Opción oscura o con leche.</span>
+        </div>
+        <div class="menu-row">
+          <div class="menu-dot"></div>
+          <span><strong>Jugo Natural</strong> — Jugos de temporada elaborados con frutas frescas de la región. Selección según disponibilidad del mercado local.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panadería -->
+    <div class="two-col">
+      <div class="menu-block">
+        <div class="menu-block-header">🥐 Panadería y Pastelería</div>
+        <div class="menu-block-body">
+          <div class="menu-row"><div class="menu-dot"></div><span>Croissant de mantequilla</span></div>
+          <div class="menu-row"><div class="menu-dot"></div><span>Croissant de chocolate</span></div>
+          <div class="menu-row"><div class="menu-dot"></div><span>Empanada de pollo</span></div>
+          <div class="menu-row"><div class="menu-dot"></div><span>Empanada de carne</span></div>
+          <div class="menu-row"><div class="menu-dot"></div><span>Empanada hawaiana</span></div>
+          <div class="menu-row"><div class="menu-dot"></div><span>Arepas artesanales</span></div>
+        </div>
+      </div>
+
+      <div class="menu-block">
+        <div class="menu-block-header">🍳 Proteínas — Huevos al gusto</div>
+        <div class="menu-block-body">
+          <div class="menu-row"><div class="menu-dot"></div><span>Omelette al gusto</span></div>
+          <div class="menu-row"><div class="menu-dot"></div><span>Huevos al sartén (sunny side / fried)</span></div>
+          <div class="menu-row"><div class="menu-dot"></div><span>Huevos revueltos</span></div>
+          <div class="menu-row"><div class="menu-dot"></div><span>Huevos perico (tomate y cebolla)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sándwiches -->
+    <div class="menu-block">
+      <div class="menu-block-header">🥪 Sándwiches — en pan croissant o brochet</div>
+      <div class="menu-block-body">
+        <div class="menu-row">
+          <div class="menu-dot"></div>
+          <span><strong>Base vegetal:</strong> Lechuga fresca, tomate deshidratado. Vegetales variables según temporada.</span>
+        </div>
+        <div class="menu-row"><div class="menu-dot"></div><span>Sándwich de pernil de cerdo</span></div>
+        <div class="menu-row"><div class="menu-dot"></div><span>Sándwich de jamón</span></div>
+        <div class="menu-row"><div class="menu-dot"></div><span>Sándwich de pollo</span></div>
+        <div class="menu-row"><div class="menu-dot"></div><span>Sándwich al pastor</span></div>
+        <div class="menu-row"><div class="menu-dot"></div><span>Sándwich de huevo</span></div>
+      </div>
+    </div>
+
+    <!-- Fruta -->
+    <div class="menu-block">
+      <div class="menu-block-header">🍓 Complemento</div>
+      <div class="menu-block-body">
+        <div class="menu-row">
+          <div class="menu-dot"></div>
+          <span><strong>Fruta picada de temporada</strong> — Selección fresca según disponibilidad del mercado. Acompaña el desayuno completo como elemento de frescura y color.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-band">
+      <strong>Nota de operación:</strong> El modelo de desayuno puede ajustarse y mejorarse progresivamente en coordinación con el hotel. 
+      Ghost Specialty Coffee opera el servicio desde el espacio de cafetería del hotel, garantizando calidad SCA y estándares de higiene. 
+      El menú puede evolucionar trimestralmente según preferencias de los huéspedes y disponibilidad de temporada.
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">⭐</div>
+        <h4>Diferenciador competitivo</h4>
+        <p>Ningún hotel en El Peñol ofrece café de especialidad SCA en desayuno. Ghost convierte el desayuno en una experiencia memorable.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <h4>Modelo escalable</h4>
+        <p>El menú buffet puede ampliarse o simplificarse según ocupación, temporada o feedback de huéspedes sin afectar la operación.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <h4>Operación autónoma</h4>
+        <p>Ghost gestiona compras, personal de barra y producción. El hotel recibe el servicio llave en mano con facturación consolidada.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ PROPUESTA 2 ══════════════════ -->
+<div class="proposal-section" style="background: var(--gray-light);">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-number">02</div>
+      <div class="section-titles">
+        <span class="section-tag">Diseño & Espacio</span>
+        <h2>Mejoramiento del Espacio de la Cafetería</h2>
+        <p class="subtitle">Identidad visual, capacidad y experiencia de cliente en el punto de venta</p>
+      </div>
+    </div>
+
+    <div class="summary-box">
+      <p>
+        Como resultado de ajustes iniciales con proveedores y la evolución natural del punto de venta,
+        Ghost Specialty Coffee presenta una propuesta de mejoramiento integral del espacio de cafetería 
+        dentro del hotel. El objetivo es consolidar una identidad visual coherente, aumentar la capacidad 
+        de personas sentadas y elevar la percepción del espacio para huéspedes y visitantes del hotel.
+      </p>
+    </div>
+
+    <h3 style="font-family:'Playfair Display',serif;color:var(--espresso);margin-bottom:1.5rem;font-size:1.3rem;">Mejoras Contempladas</h3>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🪑</div>
+        <h4>Nuevas sillas y mesas</h4>
+        <p>Reposición y ampliación del mobiliario para aumentar la capacidad de personas completamente sentadas. Diseño coherente con la estética del hotel.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📐</div>
+        <h4>Optimización de capacidad</h4>
+        <p>Redistribución del layout interior para maximizar el número de puestos disponibles sin comprometer la circulación ni la experiencia.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎨</div>
+        <h4>Identidad visual del local</h4>
+        <p>Formalización de la identidad de marca y del punto de venta Ghost Specialty Coffee, con coherencia visual del 80% respecto al co-working del hotel.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">✨</div>
+        <h4>Mejora visual del espacio</h4>
+        <p>Intervención estética para que el espacio se perciba más cuidado, contemporáneo y alineado con la propuesta de valor boutique del hotel.</p>
+      </div>
+    </div>
+
+    <h3 style="font-family:'Playfair Display',serif;color:var(--espresso);margin:2rem 0 1rem;font-size:1.2rem;">Cronograma Estimado</h3>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h5>Semana 1 — Diagnóstico y diseño</h5>
+        <p>Levantamiento del espacio actual, definición de layout y selección de mobiliario con criterios de coherencia visual hotel-cafetería.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h5>Semana 2 — Adquisición e intervención</h5>
+        <p>Compra e instalación de sillas y mesas. Aplicación de elementos de identidad de marca en el punto de venta.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h5>Semana 3-4 — Acabados y apertura mejorada</h5>
+        <p>Detalles finales de ambientación, señalética y comunicación del nuevo espacio. Apertura con capacidad total habilitada.</p>
+      </div>
+    </div>
+
+    <div class="info-band">
+      <strong>Alineación con el hotel:</strong> La identidad gráfica del espacio Ghost se diseña con una similitud del 80% respecto a la estructura visual del co-working del hotel, generando coherencia de marca para el huésped que transita entre ambos espacios. 
+      <strong>Ejecución esperada en el transcurso de este mes.</strong>
+    </div>
+
+    <ul class="benefit-list">
+      <li>
+        <span class="check">✔</span>
+        <span><strong>Mayor aforo:</strong> Incremento de la capacidad instalada de personas sentadas simultáneamente, reduciendo tiempos de espera en horario pico.</span>
+      </li>
+      <li>
+        <span class="check">✔</span>
+        <span><strong>Mejor percepción del huésped:</strong> Un espacio cuidado eleva directamente la calificación del hotel en plataformas de reseñas (Google, Booking, TripAdvisor).</span>
+      </li>
+      <li>
+        <span class="check">✔</span>
+        <span><strong>Identidad consolidada:</strong> El punto de venta de Ghost deja de verse como un espacio provisional y se convierte en un activo visual del hotel.</span>
+      </li>
+      <li>
+        <span class="check">✔</span>
+        <span><strong>Mayor ticket promedio:</strong> Los entornos bien diseñados generan mayor tiempo de permanencia y consumo por visita.</span>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════════════════ PROPUESTA 3 ══════════════════ -->
+<div class="proposal-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-number">03</div>
+      <div class="section-titles">
+        <span class="section-tag">Marketing Digital</span>
+        <h2>Gestión de Redes Sociales del Hotel</h2>
+        <p class="subtitle">Administración de contenido y comunidad digital a través del equipo multimedia Ghost</p>
+      </div>
+    </div>
+
+    <div class="summary-box">
+      <p>
+        Ghost Specialty Coffee cuenta con un equipo multimedia con experiencia en creación de contenido 
+        para establecimientos gastronómicos y de hospitalidad. Proponemos asumir la gestión de las redes 
+        sociales del hotel bajo un esquema económico que beneficia a ambas partes: el hotel maximiza su 
+        visibilidad digital y Ghost fortalece su posicionamiento como punto de venta premium dentro del hotel.
+      </p>
+    </div>
+
+    <!-- Por qué Ghost -->
+    <h3 style="font-family:'Playfair Display',serif;color:var(--espresso);margin-bottom:1.5rem;font-size:1.2rem;">¿Por qué Ghost gestiona las redes del hotel?</h3>
+    <ul class="benefit-list">
+      <li>
+        <span class="check">✔</span>
+        <span>Ghost ya produce contenido de la cafetería ubicada en el hotel, lo que reduce costos de producción para ambos al unificar las visitas fotográficas y de video.</span>
+      </li>
+      <li>
+        <span class="check">✔</span>
+        <span>Mayor visibilidad del hotel en redes sociales = más tráfico al punto de venta de Ghost = mejor calificación del espacio en Google Maps y plataformas de viaje.</span>
+      </li>
+      <li>
+        <span class="check">✔</span>
+        <span>Coherencia de narrativa visual entre el hotel y la cafetería, generando una experiencia de marca cohesionada para el huésped digital.</span>
+      </li>
+      <li>
+        <span class="check">✔</span>
+        <span>Tarifa económica porque la conveniencia es mutua: el crecimiento digital del hotel es también el crecimiento de Ghost en el destino.</span>
+      </li>
+    </ul>
+
+    <!-- Alcance del servicio -->
+    <h3 style="font-family:'Playfair Display',serif;color:var(--espresso);margin:2rem 0 1rem;font-size:1.2rem;">Alcance del Servicio</h3>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">📱</div>
+        <h4>Administración de plataformas</h4>
+        <p>Gestión de Instagram, Facebook y otras plataformas activas del hotel. Respuesta a comentarios, mensajes directos y reseñas.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📸</div>
+        <h4>Creación de contenido</h4>
+        <p>Producción fotográfica y/o audiovisual de espacios, servicios, experiencias y gastronomía del hotel. Calendarios de contenido mensual.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">✍️</div>
+        <h4>Copywriting y publicaciones</h4>
+        <p>Redacción de textos con tono coherente a la marca del hotel, hashtags estratégicos y gestión de la parrilla semanal.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h4>Reporte mensual</h4>
+        <p>Informe de métricas clave: alcance, engagement, crecimiento de seguidores y top publicaciones para toma de decisiones.</p>
+      </div>
+    </div>
+
+    <!-- Planes -->
+    <h3 style="font-family:'Playfair Display',serif;color:var(--espresso);margin:2rem 0 1rem;font-size:1.2rem;">Plan de Cotización de Contenido</h3>
+
+    <div class="two-col">
+      <div class="card" style="border-top-color: var(--brown-mid);">
+        <div class="card-icon">📦</div>
+        <h4>Plan Básico</h4>
+        <ul>
+          <li>12 publicaciones mensuales</li>
+          <li>2 plataformas (IG + FB)</li>
+          <li>Fotografía estática</li>
+          <li>Gestión de comentarios</li>
+          <li>Reporte mensual</li>
+        </ul>
+        <p style="margin-top:0.75rem; font-weight:600; color:var(--gold);">A convenir según acuerdo</p>
+      </div>
+
+      <div class="card" style="border-top-color: var(--gold);">
+        <div class="card-icon">🚀</div>
+        <h4>Plan Completo</h4>
+        <ul>
+          <li>20+ publicaciones mensuales</li>
+          <li>Stories diarias</li>
+          <li>Reels y video corto</li>
+          <li>3 plataformas</li>
+          <li>Gestión de comunidad</li>
+          <li>Pauta publicitaria básica</li>
+        </ul>
+        <p style="margin-top:0.75rem; font-weight:600; color:var(--gold);">A convenir según acuerdo</p>
+      </div>
+    </div>
+
+    <div class="info-band">
+      <strong>Enfoque estratégico:</strong> El contenido mostrará la experiencia completa del hotel: vistas, habitaciones, gastronomía (incluida la cafetería Ghost), actividades en el entorno y el destino El Peñol / Guatapé. 
+      Esta narrativa integral genera mayor conversión de seguidores en reservas y reseñas positivas.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ PROPUESTA 4 ══════════════════ -->
+<div class="proposal-section" style="background: var(--gray-light);">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-number">04</div>
+      <div class="section-titles">
+        <span class="section-tag">Producto In-Room</span>
+        <h2>Cápsulas y Drips para Habitaciones del Hotel</h2>
+        <p class="subtitle">Café de especialidad en cada habitación, con la marca del hotel</p>
+      </div>
+    </div>
+
+    <div class="summary-box">
+      <p>
+        Ghost Specialty Coffee ofrece al hotel la posibilidad de dotar a todas sus habitaciones con 
+        café de especialidad en formato cápsula o drip, etiquetado con la identidad visual de BITE Hotels El Peñón.
+        Una experiencia premium desde el momento en que el huésped llega a su cuarto, con café cultivado en la región.
+      </p>
+    </div>
+
+    <!-- Productos -->
+    <div class="two-col">
+      <div class="price-highlight" style="flex-direction:column;align-items:flex-start;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">💊</div>
+        <div class="label">Cápsula de especialidad</div>
+        <div class="amount">$1.700 <small style="font-size:1rem">COP / unidad</small></div>
+        <div class="note">Compatible con máquinas express standard. Dosis individual sellada.</div>
+      </div>
+
+      <div class="price-highlight" style="flex-direction:column;align-items:flex-start;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">☕</div>
+        <div class="label">Drip (café filtro individual)</div>
+        <div class="amount">$2.000 <small style="font-size:1rem">COP / unidad</small></div>
+        <div class="note">Empaque individual de infusión directa. Sin máquina, solo agua caliente.</div>
+      </div>
+    </div>
+
+    <h3 style="font-family:'Playfair Display',serif;color:var(--espresso);margin:2rem 0 1rem;font-size:1.2rem;">Especificaciones del Producto</h3>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🏷️</div>
+        <h4>Marca del hotel en la etiqueta</h4>
+        <p>Cada unidad lleva el diseño y logotipo de BITE Hotels El Peñón, creando un recuerdo de marca tangible que el huésped puede llevarse a casa.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">☕</div>
+        <h4>Café de especialidad certificado</h4>
+        <p>Café SCA de origen regional. Diferentes tipos y perfiles de sabor disponibles para crear una experiencia variada por habitación o por temporada.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎁</div>
+        <h4>Potencial como amenity y regalo</h4>
+        <p>Las cápsulas o drips pueden empacarse como kit bienvenida, regalo de cortesía o producto de venta en recepción a precio de retail.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <h4>Reposición periódica</h4>
+        <p>Ghost gestiona el inventario de reposición según la ocupación del hotel con entregas programadas para garantizar disponibilidad permanente.</p>
+      </div>
+    </div>
+
+    <!-- Variedad de cafés -->
+    <h3 style="font-family:'Playfair Display',serif;color:var(--espresso);margin:2rem 0 1rem;font-size:1.2rem;">Variedades Disponibles</h3>
+
+    <div class="menu-block">
+      <div class="menu-block-header">☕ Perfiles de Café para Habitaciones</div>
+      <div class="menu-block-body">
+        <div class="menu-row">
+          <div class="menu-dot"></div>
+          <span><strong>Blend El Peñol</strong> — Mezcla de cafés del oriente antioqueño. Perfil balanceado, chocolatoso con acidez media. Diseñado exclusivamente para el hotel.</span>
+        </div>
+        <div class="menu-row">
+          <div class="menu-dot"></div>
+          <span><strong>Origen único</strong> — Variedad de café de un productor específico de la región. Notas de temporada comunicadas en la etiqueta.</span>
+        </div>
+        <div class="menu-row">
+          <div class="menu-dot"></div>
+          <span><strong>Tostado oscuro</strong> — Perfil robusto para quienes prefieren un café de carácter. Cuerpo pleno y bajo en acidez.</span>
+        </div>
+        <div class="menu-row">
+          <div class="menu-dot"></div>
+          <span><strong>Tostado medio / claro</strong> — Perfil frutal y floral. Ideal para destacar las cualidades sensoriales del café de especialidad del destino.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-band">
+      <strong>Oportunidad de merchandising:</strong> El hotel puede comercializar las cápsulas y drips en recepción como souvenir o producto gourmet. 
+      Ghost provee empaque de retail con precio sugerido de venta. Este canal adicional genera ingresos para el hotel sin inversión en inventario propio.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ PROPUESTA 5 ══════════════════ -->
+<div class="proposal-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-number">05</div>
+      <div class="section-titles">
+        <span class="section-tag">Expansión · Red BITE Hotels</span>
+        <h2>Propuesta para Hoteles Aliados de BITE Hotels</h2>
+        <p class="subtitle">Replicar el modelo Ghost × BITE en toda la red de hoteles asociados</p>
+      </div>
+    </div>
+
+    <div class="summary-box">
+      <p>
+        BITE Hotels es una red de hoteles boutique que comparte visión de hospitalidad, diseño y experiencia de huésped.
+        Ghost Specialty Coffee propone convertirse en el proveedor oficial de café de especialidad para toda la red de 
+        hoteles aliados a BITE, replicando y adaptando el modelo desarrollado en El Peñón a cada propiedad de la red.
+      </p>
+    </div>
+
+    <h3 style="font-family:'Playfair Display',serif;color:var(--espresso);margin-bottom:1.5rem;font-size:1.2rem;">Modelo de Expansión</h3>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">☕</div>
+        <h4>Punto de venta Ghost en cada hotel</h4>
+        <p>Instalación y operación de un punto de café de especialidad en cada propiedad BITE, con identidad Ghost adaptada al ADN visual de cada hotel.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🛏️</div>
+        <h4>Cápsulas y drips en toda la red</h4>
+        <p>Suministro de cápsulas y drips con etiqueta personalizada por hotel. Cada propiedad tiene su propia presentación con el sello Ghost de calidad.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🍳</div>
+        <h4>Desayunos en hoteles aliados</h4>
+        <p>Replicación del modelo de desayunos buffet adaptado a la capacidad y estilo de cada hotel. Mismos estándares de calidad, propuesta gastronómica local.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📱</div>
+        <h4>Gestión digital de la red</h4>
+        <p>Administración de redes sociales para hoteles aliados que así lo requieran, bajo una estrategia de contenido coordinada desde Ghost.</p>
+      </div>
+    </div>
+
+    <!-- Beneficios para BITE -->
+    <h3 style="font-family:'Playfair Display',serif;color:var(--espresso);margin:2rem 0 1rem;font-size:1.2rem;">Beneficios para BITE Hotels como Red</h3>
+
+    <ul class="benefit-list">
+      <li>
+        <span class="check">✔</span>
+        <span><strong>Estándar de calidad unificado:</strong> Todos los huéspedes de cualquier hotel BITE reciben la misma experiencia de café de especialidad, reforzando la identidad de la red.</span>
+      </li>
+      <li>
+        <span class="check">✔</span>
+        <span><strong>Economías de escala:</strong> A mayor volumen de suministro entre hoteles, menor costo unitario para cada propiedad. Ghost escala su operación y comparte el beneficio.</span>
+      </li>
+      <li>
+        <span class="check">✔</span>
+        <span><strong>Diferenciador de red:</strong> Una cadena de hoteles boutique que ofrece café de especialidad colombiano en cada propiedad tiene un valor diferencial muy potente en el mercado de hospitalidad.</span>
+      </li>
+      <li>
+        <span class="check">✔</span>
+        <span><strong>Marca compartida:</strong> La presencia de Ghost en todos los hoteles BITE crea sinergia de marca. El huésped conoce Ghost en un hotel y lo busca en el siguiente destino.</span>
+      </li>
+      <li>
+        <span class="check">✔</span>
+        <span><strong>Alianza estratégica de largo plazo:</strong> Ghost y BITE crecen juntos. A medida que BITE incorpora nuevas propiedades, Ghost tiene garantizado su punto de entrada al mercado.</span>
+      </li>
+    </ul>
+
+    <!-- Roadmap -->
+    <h3 style="font-family:'Playfair Display',serif;color:var(--espresso);margin:2rem 0 1rem;font-size:1.2rem;">Ruta de Implementación Propuesta</h3>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h5>Fase 0 — Piloto en El Peñón (en curso)</h5>
+        <p>Validación del modelo completo en BITE Hotels El Peñón: desayunos, espacio, redes sociales, cápsulas. Documento de aprendizajes y estándares operativos.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h5>Fase 1 — Levantamiento de necesidades por propiedad</h5>
+        <p>Visita y diagnóstico de cada hotel aliado BITE. Identificación de oportunidades específicas: punto de venta, suministro, desayunos o solo cápsulas.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h5>Fase 2 — Diseño de propuesta personalizada por hotel</h5>
+        <p>Propuesta a medida para cada propiedad con precios, formatos y cronograma ajustado a su capacidad operativa.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h5>Fase 3 — Implementación y operación continua</h5>
+        <p>Activación del modelo en cada propiedad. Seguimiento mensual, ajuste de oferta y crecimiento progresivo del servicio.</p>
+      </div>
+    </div>
+
+    <div class="info-band">
+      <strong>Visión de largo plazo:</strong> Ghost Specialty Coffee aspira a ser el café de especialidad oficial de la red BITE Hotels en Colombia, 
+      siendo reconocido por los huéspedes como parte esencial de la experiencia boutique que ofrece la cadena. 
+      Esta alianza es también un vehículo de distribución del café colombiano de especialidad hacia el mercado de hospitalidad nacional.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ CIERRE ══════════════════ -->
+<div class="closing">
+  <div class="container">
+    <div style="font-size:2.5rem;margin-bottom:1.5rem;">☕</div>
+    <h2>Construyamos algo extraordinario juntos</h2>
+    <p>
+      Estas cinco propuestas son el punto de partida de una alianza de largo plazo entre Ghost Specialty Coffee 
+      y BITE Hotels El Peñón. Estamos dispuestos a ajustar, mejorar y co-crear cada propuesta para que se 
+      ajuste perfectamente a la visión del hotel.
+    </p>
+    <div style="width:60px;height:2px;background:var(--gold);margin:1.5rem auto;"></div>
+    <p style="font-style:italic;color:rgba(255,255,255,0.5);font-size:0.9rem;">
+      "El mejor café no es el más caro. Es el que se sirve en el momento exacto, con el cuidado exacto."
+    </p>
+
+    <div class="contact-row">
+      <div class="contact-item">
+        <div class="icon">📍</div>
+        <div class="label">Ubicación</div>
+        <div class="value">El Peñol, Antioquia</div>
+      </div>
+      <div class="contact-item">
+        <div class="icon">☕</div>
+        <div class="label">Empresa</div>
+        <div class="value">Ghost Specialty Coffee</div>
+      </div>
+      <div class="contact-item">
+        <div class="icon">🏨</div>
+        <div class="label">Destinatario</div>
+        <div class="value">BITE Hotels El Peñón</div>
+      </div>
+      <div class="contact-item">
+        <div class="icon">📅</div>
+        <div class="label">Fecha</div>
+        <div class="value">Agosto 2026</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
