@@ -24,7 +24,7 @@ Cifras de trabajo para negociación; escandallo real a 30 días.
 
 | Ítem | COP |
 |------|-----|
-| Bebida promedio (café / cacao / jugo) | 1.800 |
+| Bebida café (espresso / americano / tinto / tinto con leche) | 1.800 |
 | Panadería / base | 1.700 |
 | Proteína (huevos o sándwich) | 2.000 |
 | Fruta | 700 |

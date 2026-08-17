@@ -6,13 +6,23 @@ Documentación comercial profesional (español) con **costeo win-win**, **deduci
 
 | Archivo | Contenido |
 |---------|-----------|
-| [index.html](index.html) | Propuesta integrada v3 (P05 = café 5 lb @ $125.000) (presentación / PDF) |
-| [01-desayunos.md](01-desayunos.md) … [05-hoteles-aliados.md](05-hoteles-aliados.md) | Propuestas individuales |
+| [index.html](index.html) | Vista integrada (referencia interna) |
+| [01-desayunos.md](01-desayunos.md) … [05-hoteles-aliados.md](05-hoteles-aliados.md) | Propuestas individuales (Markdown) |
+| [pdf/](pdf/) | **Entrega hotel:** HTML + **1 PDF por propuesta** (colores de marca) |
 | [COSTEO.md](COSTEO.md) | Anexo de costeo y compensación |
 | [menu/](menu/) | Carta pública cafetería (HTML + MD + JSON) |
 | [marca/](marca/) | Manual de marca (madera · cemento · B/N) |
 | [social-stats.json](social-stats.json) | Métricas Instagram Ghost (snapshot) |
-| `Ghost_BitHotels_Cinco_Propuestas_2026.pdf` | PDF generado |
+
+### PDFs individuales (entrega)
+
+| PDF | Propuesta |
+|-----|-----------|
+| `pdf/01-desayunos.pdf` | Desayunos · bebidas: espresso, americano, tinto, tinto con leche |
+| `pdf/02-espacio.pdf` | Espacio e identidad |
+| `pdf/03-redes.pdf` | Redes sociales hotel |
+| `pdf/04-capsulas-drips.pdf` | Cápsulas y drips |
+| `pdf/05-cafe-red.pdf` | Café red Bit ($125.000 / 5 lb) |
 
 **Sitio web público:** `apps/site` (`pnpm --filter @ghost/site dev` → :3001)
 

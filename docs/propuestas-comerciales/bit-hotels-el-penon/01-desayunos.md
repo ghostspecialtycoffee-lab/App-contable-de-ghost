@@ -9,7 +9,8 @@
 Desayuno completo operado desde la cafetería sede (1.er piso), montaje buffet o estaciones.
 
 ### Incluye
-- Bebidas: café especialidad · chocolate cacao puro · jugos naturales  
+- Bebidas de café (a elección): **espresso · americano · tinto · tinto con leche**  
+
 - Panadería: croissants, pasteles (pollo, carne, hawaiano), arepas, **waflebono**, **migao**  
 - Huevos: omelette, sartén, revueltos, pericos  
 - Sándwiches: croissant o brioche · vegetales · jamón / pollo / cerdo / al pastor / huevo  

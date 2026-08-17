@@ -4,6 +4,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- Propuestas Bit Hotels: entrega **1 PDF por propuesta** (`pdf/01`–`05`) con paleta de marca; desayuno hotel solo espresso / americano / tinto / tinto con leche
+
 ### Added
 - Menú: migao en panadería (desayuno hotel + carta pública + sitio)
 - Sitio web público `@ghost/site` (Next.js :3001) — marca, menú, sede, stats Instagram

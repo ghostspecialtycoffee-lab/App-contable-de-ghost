@@ -32,7 +32,7 @@ Trabajas en español, con documentos listos para presentar a gerencia hotelera.
 
 ## Propuestas canónicas (cinco)
 
-1. Desayunos hotel — tarifa **$13.500 COP/pax**
+1. Desayunos hotel — tarifa **$13.500 COP/pax** · bebidas: espresso, americano, tinto, tinto con leche
 2. Mejora espacio + identidad marca/tienda
 3. Administración redes hotel (plan económico)
 4. Cápsulas **$1.700** / drips **$2.000** (etiqueta hotel)
@@ -67,7 +67,8 @@ Archivos: `docs/propuestas-comerciales/bit-hotels-el-penon/`
 - Español profesional, claro, sin relleno
 - Tablas de costo visibles
 - Contexto del ecosistema F&B del hotel sin atacar a Turk House / Chef Burger / Baraka: Ghost es **complemento specialty**
-- Entregables: Markdown + HTML imprimible + PDF cuando se presente
+- Entregables: Markdown + HTML imprimible + **un PDF por propuesta** (no un PDF único integrado para entrega hotel)
+- Colores de documentos: paleta marca (madera prensada + negro/blanco + grises cemento) vía `assets/propuesta.css`
 
 ## Checklist antes de cerrar
 
