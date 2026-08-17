@@ -67,6 +67,7 @@ Fuente estructurada: [`carta-cafeteria.json`](carta-cafeteria.json)
 | Pastel hawaiano | $9.000 |
 | Arepa | $7.000 |
 | Waflebono | $9.000 |
+| Migao | $9.000 |
 | Galleta de la casa | $5.500 |
 
 ## Huevos & desayuno
@@ -80,7 +81,7 @@ Fuente estructurada: [`carta-cafeteria.json`](carta-cafeteria.json)
 | Combo desayuno Ghost | $28.000 |
 | Combo desayuno vegetariano | $26.000 |
 
-> Combo vegetariano: huevos o omelette de vegetales + panadería sin carne (croissant, waflebono o arepa) + bebida + fruta. En tarifa hotel ($13.500) la opción vegetariana está incluida sin recargo.
+> Combo vegetariano: huevos o omelette de vegetales + panadería sin carne (croissant, waflebono, migao o arepa) + bebida + fruta. En tarifa hotel ($13.500) la opción vegetariana está incluida sin recargo.
 
 ## Sándwiches (croissant o brioche)
 

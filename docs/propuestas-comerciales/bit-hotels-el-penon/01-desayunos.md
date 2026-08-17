@@ -10,10 +10,10 @@ Desayuno completo operado desde la cafetería sede (1.er piso), montaje buffet o
 
 ### Incluye
 - Bebidas: café especialidad · chocolate cacao puro · jugos naturales  
-- Panadería: croissants, pasteles (pollo, carne, hawaiano), arepas, **waflebono**  
+- Panadería: croissants, pasteles (pollo, carne, hawaiano), arepas, **waflebono**, **migao**  
 - Huevos: omelette, sartén, revueltos, pericos  
 - Sándwiches: croissant o brioche · vegetales · jamón / pollo / cerdo / al pastor / huevo  
-- **Opción vegetariana:** sándwich vegetariano (vegetales · queso) o huevos / omelette de vegetales + panadería sin carne (croissant, waflebono, arepa) + bebida + fruta  
+- **Opción vegetariana:** sándwich vegetariano (vegetales · queso) o huevos / omelette de vegetales + panadería sin carne (croissant, waflebono, migao, arepa) + bebida + fruta  
 - Fruta picada  
 
 ## Costeo (win-win)

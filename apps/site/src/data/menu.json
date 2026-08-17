@@ -72,6 +72,7 @@
         { "name": "Pastel hawaiano", "price": 9000, "desc": "Jamón · piña · queso" },
         { "name": "Arepa", "price": 7000, "desc": "Según relleno del día" },
         { "name": "Waflebono", "price": 9000, "desc": "Waffle + pandebono · especialidad de la casa" },
+        { "name": "Migao", "price": 9000, "desc": "Especialidad de la casa" },
         { "name": "Galleta de la casa", "price": 5500, "desc": "Rotación (avena, chocolate, etc.)" }
       ]
     },
@@ -84,7 +85,7 @@
         { "name": "Huevos pericos", "price": 15000, "desc": "Tomate · cebolla" },
         { "name": "Omelette", "price": 17000, "desc": "Relleno a elección (vegetales / jamón / queso)" },
         { "name": "Combo desayuno Ghost", "price": 28000, "desc": "Huevos + panadería + bebida specialty o jugo + fruta" },
-        { "name": "Combo desayuno vegetariano", "price": 26000, "desc": "Huevos o omelette de vegetales + panadería sin carne (croissant / waflebono / arepa) + bebida + fruta" }
+        { "name": "Combo desayuno vegetariano", "price": 26000, "desc": "Huevos o omelette de vegetales + panadería sin carne (croissant / waflebono / migao / arepa) + bebida + fruta" }
       ]
     },
     {

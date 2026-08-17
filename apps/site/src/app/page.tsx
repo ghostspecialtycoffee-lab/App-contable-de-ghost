@@ -146,7 +146,7 @@ export default function HomePage() {
         <h2 className="mt-2 font-display text-3xl text-ink sm:text-4xl">Menú Ghost</h2>
         <p className="mt-2 max-w-2xl text-sm text-cement-4">
           Precios al público (COP). Huéspedes Bit Hotels: desayuno hotel según tarifa B2B
-          acordada ($13.500) — incluye opción vegetariana y waflebono.
+          acordada ($13.500) — incluye opción vegetariana, waflebono y migao.
         </p>
 
         <div className="mt-10 space-y-10">
@@ -216,7 +216,7 @@ export default function HomePage() {
           <div className="rounded-2xl border border-white/10 bg-cement-5/40 p-6">
             <h3 className="font-display text-xl text-wood-3">Para Bit Hotels</h3>
             <ul className="mt-4 space-y-2 text-sm text-cement-1">
-              <li>· Desayunos huésped $13.500 (buffet · opción vegetariana · waflebono)</li>
+              <li>· Desayunos huésped $13.500 (buffet · opción vegetariana · waflebono · migao)</li>
               <li>· Cápsulas $1.700 · drips $2.000</li>
               <li>· Café red 5 lb $125.000 / paquete</li>
               <li>· Contenido &amp; redes plan aliado</li>

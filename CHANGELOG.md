@@ -5,6 +5,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Menú: migao en panadería (desayuno hotel + carta pública + sitio)
 - Sitio web público `@ghost/site` (Next.js :3001) — marca, menú, sede, stats Instagram
 - Snapshot métricas Instagram Ghost (`social-stats.json`: 281 seguidores · 50 posts · 105 following)
 - Propuesta 01 desayunos: opción vegetariana + waflebono en panadería
