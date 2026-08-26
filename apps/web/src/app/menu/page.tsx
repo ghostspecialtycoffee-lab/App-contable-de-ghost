@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 import { GuestMenuCatalog } from "@/components/guest-menu-catalog";
+import { StaticCafeMenu } from "@/components/static-cafe-menu";
 import { usePublicDigitalMenu } from "@/hooks/use-digital-menu-settings";
 import { useGuestMenuProducts } from "@/hooks/use-guest-menu-products";
 import { useMenuOrganizationId } from "@/hooks/use-menu-organization-id";
@@ -28,11 +29,7 @@ function PublicMenuContent() {
   ).length;
 
   if (!hasOrgParam) {
-    return (
-      <div className="mx-auto max-w-lg p-6">
-        <p className="text-sm text-[var(--ghost-danger)]">Enlace de menú no válido.</p>
-      </div>
-    );
+    return <StaticCafeMenu />;
   }
 
   if (loading) {

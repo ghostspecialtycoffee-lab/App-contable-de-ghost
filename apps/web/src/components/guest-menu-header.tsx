@@ -3,11 +3,17 @@
 import { useSearchParams } from "next/navigation";
 
 import { usePublicDigitalMenu } from "@/hooks/use-digital-menu-settings";
+import { useMenuOrganizationId } from "@/hooks/use-menu-organization-id";
 
 export function GuestMenuHeader() {
   const searchParams = useSearchParams();
-  const organizationId = searchParams.get("o");
+  const hasOrganizationReference = Boolean(searchParams.get("o") || searchParams.get("s"));
+  const { organizationId } = useMenuOrganizationId();
   const { config } = usePublicDigitalMenu(organizationId);
+
+  if (!hasOrganizationReference) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--ghost-border)]/80 bg-[var(--ghost-surface-0)]/95 px-4 py-3 backdrop-blur-md">
