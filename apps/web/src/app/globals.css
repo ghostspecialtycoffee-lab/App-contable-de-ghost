@@ -604,6 +604,159 @@ a {
   }
 }
 
+/* ─── Carta / Printable menu ─────────────────────────────────────── */
+@layer components {
+  .carta-root {
+    min-height: 100vh;
+    background: var(--ghost-surface-0);
+    padding: 0;
+  }
+
+  /* Print toolbar */
+  .carta-print-bar {
+    @apply sticky top-0 z-30 flex justify-end border-b border-[var(--ghost-border)] bg-[var(--ghost-surface-1)]/95 px-6 py-3 backdrop-blur-sm;
+  }
+
+  .carta-print-btn {
+    @apply flex items-center gap-2 rounded-xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-0)] px-4 py-2 text-sm font-medium text-[var(--ghost-text-muted)] transition hover:border-[var(--ghost-accent-500)] hover:text-[var(--ghost-text)] active:scale-95;
+  }
+
+  /* Carta page container */
+  .carta-page {
+    @apply mx-auto max-w-2xl space-y-0 px-4 pb-16 pt-8 sm:px-8;
+  }
+
+  /* ── Hero ── */
+  .carta-hero {
+    @apply relative overflow-hidden rounded-3xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)] px-8 py-10 text-center;
+    background: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--ghost-accent-500) 6%, var(--ghost-surface-1)),
+      var(--ghost-surface-1) 60%,
+      color-mix(in srgb, var(--ghost-brand-500) 5%, var(--ghost-surface-1))
+    );
+    box-shadow:
+      0 4px 24px hsl(var(--ghost-shadow-color) / 0.07),
+      inset 0 1px 0 rgba(255 255 255 / 0.5);
+  }
+
+  .carta-hero-glow {
+    @apply pointer-events-none absolute inset-0;
+    background:
+      radial-gradient(circle at 15% 25%, color-mix(in srgb, var(--ghost-accent-500) 10%, transparent), transparent 50%),
+      radial-gradient(circle at 85% 75%, color-mix(in srgb, var(--ghost-brand-500) 7%, transparent), transparent 45%);
+  }
+
+  .carta-hero-body {
+    @apply relative space-y-2;
+  }
+
+  .carta-hero-cup {
+    @apply block text-5xl;
+    filter: drop-shadow(0 2px 4px hsl(var(--ghost-shadow-color) / 0.15));
+  }
+
+  .carta-hero-eyebrow {
+    @apply mt-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--ghost-text-muted)];
+  }
+
+  .carta-hero-title {
+    @apply text-4xl font-bold tracking-tight sm:text-5xl;
+    color: var(--ghost-brand-500);
+    text-shadow: 0 1px 2px hsl(var(--ghost-shadow-color) / 0.1);
+  }
+
+  .carta-hero-tagline {
+    @apply text-sm text-[var(--ghost-text-muted)];
+    letter-spacing: 0.06em;
+  }
+
+  /* ── Ornament divider ── */
+  .carta-ornament {
+    @apply my-7 flex items-center gap-4;
+  }
+
+  .carta-ornament-line {
+    @apply block flex-1 border-t border-dashed border-[var(--ghost-border)];
+  }
+
+  .carta-ornament-diamond {
+    @apply shrink-0 text-[9px] text-[var(--ghost-accent-500)];
+  }
+
+  /* ── Body ── */
+  .carta-body {
+    @apply space-y-0;
+  }
+
+  /* ── Section ── */
+  .carta-section {
+    @apply overflow-hidden rounded-2xl border border-[var(--ghost-border)] bg-[var(--ghost-surface-1)];
+    box-shadow: 0 2px 8px hsl(var(--ghost-shadow-color) / 0.05);
+  }
+
+  .carta-section-header {
+    @apply flex items-start gap-3 border-l-4 px-5 py-4;
+    background: color-mix(in srgb, currentColor 4%, var(--ghost-surface-1));
+  }
+
+  .carta-section-emoji {
+    @apply mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl;
+    background: color-mix(in srgb, var(--ghost-accent-500) 12%, var(--ghost-surface-2));
+  }
+
+  .carta-section-title {
+    @apply text-lg font-bold tracking-tight;
+  }
+
+  .carta-section-subtitle {
+    @apply mt-0.5 text-xs text-[var(--ghost-text-muted)];
+  }
+
+  /* ── Item list ── */
+  .carta-item-list {
+    @apply list-none px-5 pb-4 pt-2;
+    margin: 0;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .carta-item-row {
+    @apply flex min-h-[2.5rem] items-baseline gap-2 border-b border-dashed border-[var(--ghost-surface-3)] last:border-0;
+    padding-block: 0.55rem;
+  }
+
+  .carta-item-name {
+    @apply shrink-0 text-sm font-medium text-[var(--ghost-text)];
+  }
+
+  .carta-item-note {
+    @apply font-normal text-[var(--ghost-text-muted)];
+  }
+
+  .carta-item-dots {
+    @apply min-w-0 flex-1 border-b border-dotted border-[var(--ghost-border)];
+    transform: translateY(-0.25rem);
+  }
+
+  .carta-item-price {
+    @apply shrink-0 text-sm font-bold tabular-nums text-[var(--ghost-brand-500)];
+  }
+
+  /* ── Footer ── */
+  .carta-footer {
+    @apply mt-2 space-y-3 text-center;
+  }
+
+  .carta-footer-note {
+    @apply text-xs text-[var(--ghost-text-muted)];
+  }
+
+  .carta-footer-brand {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--ghost-accent-500)];
+  }
+}
+
 @media print {
   header,
   nav,
@@ -620,5 +773,34 @@ a {
   body {
     background: white !important;
     color: black !important;
+  }
+
+  /* Carta print overrides */
+  .carta-print-bar {
+    display: none !important;
+  }
+
+  .carta-root {
+    background: white !important;
+  }
+
+  .carta-page {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .carta-hero {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+
+  .carta-section {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  .carta-ornament {
+    margin-block: 1rem !important;
   }
 }
