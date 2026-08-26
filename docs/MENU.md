@@ -8,6 +8,11 @@ Vista pública para que los clientes exploren la carta (sin pedir desde el QR de
 |-----|------|
 | Admin | `/digital-menu` |
 | Cliente | `/menu?s={slug}` (recomendado) o `/menu?o={organizationId}` |
+| Muestra editorial | `/menu` |
+
+La ruta sin parámetros presenta una carta de muestra de Ghost Specialty Coffee con cafés,
+acompañantes, bebidas summer, desayunos y almuerzos. Sirve como referencia visual y no consulta
+datos de una organización. Los enlaces con `s` u `o` conservan el catálogo público dinámico.
 
 ## Flujo admin
 

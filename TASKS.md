@@ -43,6 +43,7 @@ _Ninguna tarea marcada in_progress en repo — agente debe tomar la siguiente de
 
 ## Completado reciente
 
+- [x] Carta editorial responsive en `/menu` con cafés, cocina y bebidas
 - [x] Fundación monorepo (#1)
 - [x] Auth + onboarding multi-tenant
 - [x] Inventario base (ítems, functions kardex)

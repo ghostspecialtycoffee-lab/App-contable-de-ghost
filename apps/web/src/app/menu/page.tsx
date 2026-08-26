@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+import { CafeMenuShowcase } from "@/components/cafe-menu-showcase";
 import { GuestMenuCatalog } from "@/components/guest-menu-catalog";
 import { usePublicDigitalMenu } from "@/hooks/use-digital-menu-settings";
 import { useGuestMenuProducts } from "@/hooks/use-guest-menu-products";
@@ -28,11 +29,7 @@ function PublicMenuContent() {
   ).length;
 
   if (!hasOrgParam) {
-    return (
-      <div className="mx-auto max-w-lg p-6">
-        <p className="text-sm text-[var(--ghost-danger)]">Enlace de menú no válido.</p>
-      </div>
-    );
+    return <CafeMenuShowcase />;
   }
 
   if (loading) {

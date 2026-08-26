@@ -8,6 +8,11 @@ export function GuestMenuHeader() {
   const searchParams = useSearchParams();
   const organizationId = searchParams.get("o");
   const { config } = usePublicDigitalMenu(organizationId);
+  const hasOrganizationTarget = Boolean(organizationId || searchParams.get("s"));
+
+  if (!hasOrganizationTarget) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--ghost-border)]/80 bg-[var(--ghost-surface-0)]/95 px-4 py-3 backdrop-blur-md">
