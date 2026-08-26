@@ -8,6 +8,7 @@ Vista pública para que los clientes exploren la carta (sin pedir desde el QR de
 |-----|------|
 | Admin | `/digital-menu` |
 | Cliente | `/menu?s={slug}` (recomendado) o `/menu?o={organizationId}` |
+| Carta estática | `/carta` (diseño tipográfico de carta impresa; precios fijos en código) |
 
 ## Flujo admin
 

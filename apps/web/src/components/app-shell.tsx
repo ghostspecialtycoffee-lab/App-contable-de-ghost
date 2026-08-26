@@ -26,11 +26,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { firebaseUser, organization } = useAuth();
   const { primaryLogo } = useBrandAssets();
-  const isGuestRoute = pathname.startsWith("/mesa") || pathname.startsWith("/menu");
+  const isGuestRoute =
+    pathname.startsWith("/mesa") ||
+    pathname.startsWith("/menu") ||
+    pathname.startsWith("/carta");
   const isSalesRoute = isSalesExtensionPath(pathname);
 
   if (isGuestRoute) {
     const isMenu = pathname.startsWith("/menu");
+    const isCarta = pathname.startsWith("/carta");
+
+    if (isCarta) {
+      return (
+        <div className="min-h-screen bg-[var(--carta-paper)]">
+          <main>{children}</main>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-[var(--ghost-surface-0)]">
         {isMenu ? (

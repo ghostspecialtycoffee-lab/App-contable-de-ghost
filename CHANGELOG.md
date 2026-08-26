@@ -5,6 +5,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Carta pública tipográfica en `/carta` (Ghost Specialty Coffee): cafés calientes/fríos, acompañantes, summer, desayuno y fitness
 - Agente interpretativo LLM: 20 herramientas (caja, carta, mesas, inventario, compras, gastos, admin)
 - Routing de lenguaje natural compuesto al agente Gemini cuando hay `GEMINI_API_KEY`
 - Contexto enriquecido para el agente (productos, insumos, mesas, comandas, stock bajo)
