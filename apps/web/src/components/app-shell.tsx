@@ -27,7 +27,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { firebaseUser, organization } = useAuth();
   const { primaryLogo } = useBrandAssets();
   const isGuestRoute = pathname.startsWith("/mesa") || pathname.startsWith("/menu");
+  const isCartaRoute = pathname.startsWith("/carta");
   const isSalesRoute = isSalesExtensionPath(pathname);
+
+  if (isCartaRoute) {
+    return <main>{children}</main>;
+  }
 
   if (isGuestRoute) {
     const isMenu = pathname.startsWith("/menu");
