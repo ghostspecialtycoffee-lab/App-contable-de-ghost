@@ -1,0 +1,386 @@
+/* Carta pública — tipografía de menú de cafetería, sin cards ni chrome de app */
+
+.carta-root {
+  --carta-ink: #1c1915;
+  --carta-muted: #6b645a;
+  --carta-paper: #f3efe8;
+  --carta-sheet: #faf8f4;
+  --carta-line: #d4cdc2;
+  --carta-accent: #3f5c48;
+  --carta-accent-soft: #5a7a63;
+  --carta-deep: #243028;
+  --carta-warm: #8b6b45;
+  position: relative;
+  min-height: 100vh;
+  color: var(--carta-ink);
+  font-family: var(--carta-body), ui-sans-serif, system-ui, sans-serif;
+  background: var(--carta-paper);
+  overflow-x: hidden;
+}
+
+.carta-atmosphere {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -10%, rgba(63, 92, 72, 0.14), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 20%, rgba(139, 107, 69, 0.08), transparent 50%),
+    radial-gradient(ellipse 40% 35% at 0% 60%, rgba(36, 48, 40, 0.06), transparent 45%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(28, 25, 21, 0.012) 3px,
+      rgba(28, 25, 21, 0.012) 4px
+    );
+}
+
+.carta-hero {
+  position: relative;
+  z-index: 1;
+  min-height: min(92vh, 720px);
+  display: flex;
+  align-items: flex-end;
+  isolation: isolate;
+}
+
+.carta-hero-plane {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(28, 25, 21, 0.15) 0%, rgba(28, 25, 21, 0.55) 55%, rgba(28, 25, 21, 0.82) 100%),
+    linear-gradient(125deg, #2a3830 0%, #1a221c 42%, #3a2e22 100%);
+  transform-origin: center top;
+  animation: carta-hero-settle 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.carta-hero-plane::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+}
+
+.carta-hero-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 4.5rem 1.5rem 3.25rem;
+  color: #f6f2ea;
+  animation: carta-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+.carta-brand {
+  margin: 0 0 0.75rem;
+  font-family: var(--carta-display), ui-serif, Georgia, serif;
+  font-size: clamp(2.75rem, 9vw, 4.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+
+.carta-headline {
+  margin: 0 0 0.85rem;
+  font-family: var(--carta-body), ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(246, 242, 234, 0.72);
+}
+
+.carta-lede {
+  margin: 0 0 1.75rem;
+  max-width: 22rem;
+  font-size: 1.05rem;
+  font-weight: 300;
+  line-height: 1.55;
+  color: rgba(246, 242, 234, 0.82);
+}
+
+.carta-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.carta-cta,
+.carta-cta-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.carta-cta {
+  background: #f6f2ea;
+  color: var(--carta-deep);
+  border: 1px solid #f6f2ea;
+}
+
+.carta-cta:hover {
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.carta-cta-ghost {
+  background: transparent;
+  color: #f6f2ea;
+  border: 1px solid rgba(246, 242, 234, 0.35);
+}
+
+.carta-cta-ghost:hover {
+  border-color: rgba(246, 242, 234, 0.7);
+  background: rgba(246, 242, 234, 0.06);
+}
+
+.carta-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--carta-line);
+  background: color-mix(in srgb, var(--carta-paper) 92%, transparent);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.carta-nav-ready {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.carta-nav-track {
+  display: flex;
+  gap: 0.35rem;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.carta-nav-track::-webkit-scrollbar {
+  display: none;
+}
+
+.carta-nav-link {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--carta-muted);
+  white-space: nowrap;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.carta-nav-link:hover {
+  color: var(--carta-ink);
+  background: color-mix(in srgb, var(--carta-accent) 10%, transparent);
+}
+
+.carta-sheet {
+  position: relative;
+  z-index: 1;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2.25rem 1.25rem 4.5rem;
+}
+
+.carta-sheet-rule {
+  height: 1px;
+  margin: 0 0 2rem;
+  background: linear-gradient(90deg, transparent, var(--carta-line) 15%, var(--carta-line) 85%, transparent);
+}
+
+.carta-section {
+  margin-bottom: 2.75rem;
+  scroll-margin-top: 4.5rem;
+  animation: carta-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.carta-section-head {
+  margin-bottom: 1.15rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--carta-line);
+}
+
+.carta-section-title {
+  margin: 0;
+  font-family: var(--carta-display), ui-serif, Georgia, serif;
+  font-size: clamp(1.65rem, 4.5vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--carta-deep);
+}
+
+.carta-section-sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 300;
+  color: var(--carta-muted);
+}
+
+.carta-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.carta-row {
+  margin: 0;
+}
+
+.carta-row-main {
+  display: grid;
+  grid-template-columns: auto minmax(1.25rem, 1fr) auto;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.carta-item-name {
+  font-size: 1.02rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.carta-leader {
+  border-bottom: 1px dotted color-mix(in srgb, var(--carta-line) 90%, var(--carta-muted));
+  transform: translateY(-0.28em);
+  min-width: 1rem;
+}
+
+.carta-item-price {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--carta-accent);
+  white-space: nowrap;
+}
+
+.carta-item-note {
+  margin: 0.2rem 0 0;
+  padding-left: 0.05rem;
+  font-size: 0.8rem;
+  font-weight: 300;
+  color: var(--carta-muted);
+}
+
+.carta-footer {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--carta-line);
+  text-align: center;
+}
+
+.carta-footer p {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 300;
+  color: var(--carta-muted);
+  line-height: 1.5;
+}
+
+@keyframes carta-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes carta-hero-settle {
+  from {
+    transform: scale(1.04);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (min-width: 640px) {
+  .carta-hero-inner {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .carta-sheet {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .carta-nav-track {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carta-hero-plane,
+  .carta-hero-inner,
+  .carta-section,
+  .carta-nav {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+@media print {
+  .carta-atmosphere,
+  .carta-nav,
+  .carta-hero-actions {
+    display: none !important;
+  }
+
+  .carta-root {
+    background: white;
+  }
+
+  .carta-hero {
+    min-height: auto;
+  }
+
+  .carta-hero-plane {
+    background: #243028 !important;
+    animation: none !important;
+  }
+
+  .carta-hero-inner {
+    padding: 1.5rem 0 1rem;
+    animation: none !important;
+  }
+
+  .carta-sheet {
+    max-width: none;
+    padding: 1rem 0 0;
+  }
+
+  .carta-section {
+    break-inside: avoid;
+    animation: none !important;
+  }
+}

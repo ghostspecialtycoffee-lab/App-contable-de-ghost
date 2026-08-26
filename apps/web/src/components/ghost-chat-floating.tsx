@@ -39,7 +39,7 @@ function ChatFabIcon({ open }: { open: boolean }) {
   );
 }
 
-const HIDDEN_PREFIXES = ["/login", "/register", "/mesa", "/menu", "/digital-menu"];
+const HIDDEN_PREFIXES = ["/login", "/register", "/mesa", "/menu", "/carta", "/digital-menu"];
 
 export function GhostChatFloating() {
   const [open, setOpen] = useState(false);
