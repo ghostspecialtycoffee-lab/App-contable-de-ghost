@@ -1,0 +1,90 @@
+{
+  "brand": "Ghost",
+  "tagline": "Café de especialidad",
+  "subtitle": "Carta elaborada con granos seleccionados, horneado del día y cocina limpia.",
+  "currencyNote": "Precios en pesos colombianos (COP)",
+  "sections": [
+    {
+      "id": "calientes",
+      "title": "Cafés calientes",
+      "tagline": "Espresso bar y aromáticas",
+      "items": [
+        { "name": "Capuchino", "price": 7000 },
+        { "name": "Americano", "price": 5000 },
+        { "name": "Filtrados exóticos", "price": 8000 },
+        { "name": "Café Lattes", "price": 7000 },
+        { "name": "Aromática tropical", "price": 6000 },
+        { "name": "Aromática jengibre / limón", "price": 6000 }
+      ]
+    },
+    {
+      "id": "acompanantes",
+      "title": "Acompañantes",
+      "tagline": "Horneados para acompañar tu taza",
+      "items": [
+        { "name": "Croissant", "price": 3600 },
+        { "name": "Torta Red velvet", "price": 7000 },
+        { "name": "Torta Chocolate", "price": 7000 },
+        { "name": "Torta de Naranja", "price": 7000 }
+      ]
+    },
+    {
+      "id": "frios",
+      "title": "Cafés fríos",
+      "tagline": "Frescos, intensos y listos para el calor",
+      "items": [
+        { "name": "Cold brew", "price": 8000 },
+        { "name": "Granizados 10 onzas", "price": 13000 },
+        { "name": "Frappé de café", "price": 15000 }
+      ]
+    },
+    {
+      "id": "summer",
+      "title": "Cócteles y bebidas summer",
+      "tagline": "Refrescantes de temporada",
+      "items": [
+        { "name": "Cóctel Coffee sangria", "price": 15000 },
+        { "name": "Soda cereza", "price": 9000 },
+        { "name": "Soda de la casa", "price": 8000 },
+        { "name": "Sangría", "price": 9000 },
+        { "name": "Mojito naranja", "price": 9000 },
+        { "name": "Mojito maracuyá", "price": 9000 },
+        { "name": "Michelada", "price": 7000 },
+        { "name": "Michelada de sandía", "price": 9000 },
+        { "name": "Borojó", "price": 9000 },
+        { "name": "Borojó cargado", "price": 19000 }
+      ]
+    },
+    {
+      "id": "desayuno",
+      "title": "Desayuno express",
+      "tagline": "Para empezar el día sin prisa",
+      "items": [
+        { "name": "Desayuno del día", "price": 11000 },
+        { "name": "Desayuno saludable", "price": 15000 },
+        { "name": "Avena", "price": 6000 },
+        { "name": "Milo frío / caliente", "price": 5000 },
+        { "name": "Chocolatte", "price": 4000 },
+        { "name": "Tinto", "price": 3000 }
+      ]
+    },
+    {
+      "id": "almuerzos",
+      "title": "Almuerzos fitness",
+      "tagline": "Porciones generosas con ensalada del día",
+      "items": [
+        {
+          "name": "Pollo y verduras en salsa",
+          "note": "400 g + ensalada del día",
+          "price": 17000
+        },
+        {
+          "name": "Carne de res y verduras en salsa",
+          "note": "400 g + ensalada del día",
+          "price": 17000
+        },
+        { "name": "Batidos fitness", "price": 9000 }
+      ]
+    }
+  ]
+}
