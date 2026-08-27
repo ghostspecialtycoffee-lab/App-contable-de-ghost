@@ -89,7 +89,7 @@ export function CafeCarta() {
 
       <section className="carta-hero" aria-label="Portada de la carta">
         <div className="carta-hero-media" aria-hidden="true">
-          <img src="/ghost-menu-photo.jpg" alt="" className="carta-hero-image" />
+          <img src="/carta-hero.jpg" alt="" className="carta-hero-image" />
           <div className="carta-hero-scrim" />
         </div>
         <div className="carta-hero-content">
