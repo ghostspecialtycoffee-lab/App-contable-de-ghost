@@ -249,22 +249,33 @@
 }
 
 .carta-row-main {
-  display: grid;
-  grid-template-columns: auto minmax(1.25rem, 1fr) auto;
+  display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: 0.55rem;
 }
 
 .carta-item-name {
+  flex: 0 1 auto;
   font-size: 1.02rem;
   font-weight: 500;
   letter-spacing: -0.01em;
 }
 
 .carta-leader {
-  border-bottom: 1px dotted color-mix(in srgb, var(--carta-line) 90%, var(--carta-muted));
-  transform: translateY(-0.28em);
-  min-width: 1rem;
+  flex: 1 1 auto;
+  align-self: center;
+  min-width: 1.75rem;
+  height: 0.35em;
+  margin: 0 0.1rem;
+  border: 0;
+  background-image: radial-gradient(
+    circle closest-side,
+    color-mix(in srgb, var(--carta-muted) 70%, transparent) 1.1px,
+    transparent 1.25px
+  );
+  background-size: 0.38rem 100%;
+  background-position: center;
+  background-repeat: repeat-x;
 }
 
 .carta-item-price {
